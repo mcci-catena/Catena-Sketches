@@ -101,6 +101,8 @@ void setup()
 
 void loop() 
 {
+  safe_printf("oneWire.reset() ==> %u\n", oneWire.reset());
+
   if (fBme)
   {
     Serial.print("Temperature = ");
