@@ -4,6 +4,7 @@
 #include <Adafruit_BME280.h>
 #include <OneWire.h>
 #include <DallasTemperature.h>
+#include <SHT1x.h>
 
 #include <stdio.h>
 #include <stdarg.h>
@@ -12,9 +13,10 @@
 //#define SEALEVELPRESSURE_HPA (1013.25)
 #define SEALEVELPRESSURE_HPA (1027.087) // 3170 Perry City Road, 2016-10-04 22:57
 
-// +temp
-#define PIN_ONE_WIRE  0 /* arduino D0 */
-// -temp
+// external pins
+#define PIN_ONE_WIRE  0   /* arduino D0 */
+#define PIN_SHT10_CLK 11  /* arduino D11 */
+#define PIN_SHT10_DATA 10 /* arduino D10 */
 
 // forwards
 static void configureLuxSensor(void);
@@ -34,7 +36,10 @@ bool fTsl;
 OneWire oneWire(PIN_ONE_WIRE);
 DallasTemperature sensor_WaterTemp(&oneWire);
 bool fWaterTemp;
-// -temp
+
+//  The SHT10 soil sensor
+SHT1x sensor_Soil(PIN_SHT10_DATA, PIN_SHT10_CLK);
+bool fSoilSensor;
 
 void safe_printf(const char *fmt, ...)
 {
@@ -97,6 +102,10 @@ void setup()
     {
       fWaterTemp = true;
     }
+
+    /* initalize the soil sensor... not yet.*/
+    /* sensor_Soil.begin() */
+    fSoilSensor = true;
 }
 
 void loop() 
@@ -156,6 +165,13 @@ void loop()
   else
   {
     safe_printf("No water temperature\n");
+  }
+
+  if (fSoilSensor)
+  {
+    /* display temp and RH. library doesn't tell whether sensor is disconnected but gives us huge values instead */
+    Serial.print("Soil temperature: "); Serial.print(sensor_Soil.readTemperatureC()); Serial.println(" C");
+    Serial.print("Soil humidity:    "); Serial.print(sensor_Soil.readHumidity()); Serial.println(" %");
   }
   delay(2000);
 }
