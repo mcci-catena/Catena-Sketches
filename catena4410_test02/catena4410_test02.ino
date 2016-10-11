@@ -104,30 +104,6 @@ void setup()
 
 void loop() 
 {
-  safe_printf("oneWire.reset() ==> %u\n", oneWire.reset());
-
-  unsigned nDevices;
-  for (nDevices = 0;;++nDevices)
-  {
-    DeviceAddress address;
-    unsigned fSearch;
-    fSearch = oneWire.search(address);
-    if (fSearch)
-    {
-      safe_printf("oneWire.search() returned %02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x\n",
-            address[0], address[1], address[2], address[3],
-            address[4], address[5], address[6], address[7]
-            );
-      safe_printf("sensor_WaterTemp.validAddress() ==> %u\n", sensor_WaterTemp.validAddress(address) ? 1 : 0);
-      safe_printf("sensor_WaterTemp.validFamily() ==> %u\n",  sensor_WaterTemp.validFamily(address) ? 1 : 0);
-    }
-    else
-      {
-        safe_printf("Found %u devices\n", nDevices);
-        break;
-      }
-    }
-
   if (fBme)
   {
     Serial.print("Temperature = ");
@@ -172,6 +148,17 @@ void loop()
   else
   {
     safe_printf("No Lux sensor\n");
+  }
+
+  if (fWaterTemp)
+  {
+    sensor_WaterTemp.requestTemperatures();
+    float waterTempC = sensor_WaterTemp.getTempCByIndex(0);
+    Serial.print("Water temperature: "); Serial.print(waterTempC); Serial.println(" C");
+  }
+  else
+  {
+    safe_printf("No water temperature\n");
   }
   delay(2000);
 }
