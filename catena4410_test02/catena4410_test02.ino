@@ -14,9 +14,10 @@
 #define SEALEVELPRESSURE_HPA (1027.087) // 3170 Perry City Road, 2016-10-04 22:57
 
 // external pins
-#define PIN_ONE_WIRE  0   /* arduino D0 */
-#define PIN_SHT10_CLK 11  /* arduino D11 */
-#define PIN_SHT10_DATA 10 /* arduino D10 */
+#define PIN_ONE_WIRE  0     /* arduino D0 */
+#define PIN_SHT10_CLK 11    /* arduino D11 */
+#define PIN_SHT10_DATA 10   /* arduino D10 */
+#define APIN_VBAT_SENSE A7  /* arduino A7 */
 
 typedef uint8_t AtmelSam21UniqueID_buffer_t[128/8];
 
@@ -79,6 +80,13 @@ void GetAtmelUniqueId(
         }
       }
     }
+
+float
+readCatenaVbat(void)
+{
+  float rawVoltage = analogRead(APIN_VBAT_SENSE);
+  return rawVoltage * 2 * 3.3 / 1024;
+}
 
 void setup() 
 {
@@ -144,6 +152,7 @@ void loop()
 {
   if (fBme)
   {
+    Serial.print("Vbat = "); Serial.print(readCatenaVbat()); Serial.println(" V");
     Serial.print("Temperature = ");
     Serial.print(bme.readTemperature());
     Serial.println(" *C");
