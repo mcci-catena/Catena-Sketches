@@ -2,6 +2,8 @@
 #include <Adafruit_Sensor.h>
 #include <Adafruit_TSL2561_U.h>
 #include <Adafruit_BME280.h>
+#include <OneWire.h>
+#include <DallasTemperature.h>
 
 #include <stdio.h>
 #include <stdarg.h>
@@ -10,8 +12,14 @@
 //#define SEALEVELPRESSURE_HPA (1013.25)
 #define SEALEVELPRESSURE_HPA (1027.087) // 3170 Perry City Road, 2016-10-04 22:57
 
+// +temp
+#define PIN_ONE_WIRE  0 /* arduino D0 */
+// -temp
+
+// forwards
 static void configureLuxSensor(void);
 static void displayLuxSensorDetails(void);
+static bool displayTempSensorDetails(void);
 
 // globals
 //   The temperature/humidity sensor
@@ -21,6 +29,12 @@ bool fBme;
 //   The LUX sensor
 Adafruit_TSL2561_Unified tsl = Adafruit_TSL2561_Unified(TSL2561_ADDR_FLOAT, 12345);
 bool fTsl;
+
+//   The submersible temperature sensor
+OneWire oneWire(PIN_ONE_WIRE);
+DallasTemperature sensor_WaterTemp(&oneWire);
+bool fWaterTemp;
+// -temp
 
 void safe_printf(const char *fmt, ...)
 {
@@ -69,6 +83,19 @@ void setup()
     else
     {
       fBme = true;
+    }
+
+    /* initialize the pond sensor */
+    sensor_WaterTemp.begin();
+
+     if (! displayTempSensorDetails())
+    {
+      safe_printf("water temperature not found: is it connected?\n");
+      fWaterTemp = false;
+    }
+    else
+    {
+      fWaterTemp = true;
     }
 }
 
@@ -158,3 +185,15 @@ static void configureLuxSensor(void)
   Serial.println("------------------------------------");
 }
 
+
+static bool displayTempSensorDetails(void)
+{
+  const unsigned nDevices = sensor_WaterTemp.getDeviceCount();
+  if (nDevices == 0)
+    return false;
+
+  for (unsigned iDevice = 0; iDevice < nDevices; ++iDevice)
+  {
+    // print interesting info
+  }
+}
