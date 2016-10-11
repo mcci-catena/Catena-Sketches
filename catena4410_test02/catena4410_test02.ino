@@ -86,6 +86,9 @@ void setup()
     }
 
     /* initialize the pond sensor */
+    unsigned fResetStatus = oneWire.reset();
+    safe_printf("oneWire.reset() ==> %u\n", fResetStatus);
+    
     sensor_WaterTemp.begin();
 
      if (! displayTempSensorDetails())
@@ -101,21 +104,29 @@ void setup()
 
 void loop() 
 {
-  DeviceAddress address;
-  unsigned fSearch;
   safe_printf("oneWire.reset() ==> %u\n", oneWire.reset());
-  fSearch = oneWire.search(address);
-  if (fSearch)
+
+  unsigned nDevices;
+  for (nDevices = 0;;++nDevices)
   {
-    safe_printf("oneWire.search() returned %02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x\n",
-          address[0], address[1], address[2], address[3],
-          address[4], address[5], address[6], address[7]
-          );
-    safe_printf("sensor_WaterTemp.validAddress() ==> %u\n", sensor_WaterTemp.validAddress(address) ? 1 : 0);
-    safe_printf("sensor_WaterTemp.validFamily() ==> %u\n",  sensor_WaterTemp.validFamily(address) ? 1 : 0);
-  }
-  else
-    safe_printf("oneWire.search() returned FALSE\n");
+    DeviceAddress address;
+    unsigned fSearch;
+    fSearch = oneWire.search(address);
+    if (fSearch)
+    {
+      safe_printf("oneWire.search() returned %02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x\n",
+            address[0], address[1], address[2], address[3],
+            address[4], address[5], address[6], address[7]
+            );
+      safe_printf("sensor_WaterTemp.validAddress() ==> %u\n", sensor_WaterTemp.validAddress(address) ? 1 : 0);
+      safe_printf("sensor_WaterTemp.validFamily() ==> %u\n",  sensor_WaterTemp.validFamily(address) ? 1 : 0);
+    }
+    else
+      {
+        safe_printf("Found %u devices\n", nDevices);
+        break;
+      }
+    }
 
   if (fBme)
   {
@@ -208,8 +219,10 @@ static bool displayTempSensorDetails(void)
   if (nDevices == 0)
     return false;
 
+  safe_printf("found %u devices\n", nDevices);
   for (unsigned iDevice = 0; iDevice < nDevices; ++iDevice)
   {
     // print interesting info
   }
+  return true;
 }
