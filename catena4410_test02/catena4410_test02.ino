@@ -18,6 +18,8 @@
 #define PIN_SHT10_CLK 11  /* arduino D11 */
 #define PIN_SHT10_DATA 10 /* arduino D10 */
 
+typedef uint8_t AtmelSam21UniqueID_buffer_t[128/8];
+
 // forwards
 static void configureLuxSensor(void);
 static void displayLuxSensorDetails(void);
@@ -59,12 +61,42 @@ void safe_printf(const char *fmt, ...)
     Serial.print(buf);
 }
 
+void GetAtmelUniqueId(
+    AtmelSam21UniqueID_buffer_t pIdBuffer
+    )
+    {
+      uint32_t const idWords[4] = { 0x80A00C, 0x80A040, 0x80A044, 0x80A048 };
+
+      for (unsigned i = 0; i < sizeof(idWords) / sizeof(idWords[0]); ++i)
+      {
+        uint32_t const * const pWord = (uint32_t *) idWords[i];
+        uint32_t idWord = *pWord;
+
+        for (unsigned j = 0; j < 4; ++j)
+        {
+          *pIdBuffer++ = (uint8_t) idWord;
+          idWord >>= 8;
+        }
+      }
+    }
+
 void setup() 
 {
+    AtmelSam21UniqueID_buffer_t CpuID;
+
     while (!Serial); // wait for Serial to be initialized
     Serial.begin(115200);
 
     safe_printf("Basic Catena 4410 test\n");
+
+    GetAtmelUniqueId(CpuID);
+
+    safe_printf("CPU Unique ID: ");
+    for (unsigned i = 0; i < sizeof(CpuID); ++i)
+    {
+      safe_printf("%s%02x", i == 0 ? "" : "-", CpuID[i]);
+    }
+    safe_printf("\n");
 
     /* initialize the lux sensor */
     if (! tsl.begin())
