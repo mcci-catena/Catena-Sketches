@@ -86,9 +86,6 @@ void setup()
     }
 
     /* initialize the pond sensor */
-    unsigned fResetStatus = oneWire.reset();
-    safe_printf("oneWire.reset() ==> %u\n", fResetStatus);
-    
     sensor_WaterTemp.begin();
 
      if (! displayTempSensorDetails())
