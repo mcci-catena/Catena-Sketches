@@ -53,12 +53,6 @@ Revision history:
 //#define SEALEVELPRESSURE_HPA (1013.25)
 #define SEALEVELPRESSURE_HPA (1027.087) // 3170 Perry City Road, 2016-10-04 22:57
 
-// external pins
-#define PIN_ONE_WIRE  0     /* arduino D0 */
-#define PIN_SHT10_CLK 11    /* arduino D11 */
-#define PIN_SHT10_DATA 10   /* arduino D10 */
-#define APIN_VBAT_SENSE A7  /* arduino A7 */
-
 // forwards
 static void configureLuxSensor(void);
 static void displayLuxSensorDetails(void);
@@ -101,12 +95,12 @@ Adafruit_TSL2561_Unified tsl = Adafruit_TSL2561_Unified(TSL2561_ADDR_FLOAT, 1234
 bool fTsl;
 
 //   The submersible temperature sensor
-OneWire oneWire(PIN_ONE_WIRE);
+OneWire oneWire(Catena4410::PIN_ONE_WIRE);
 DallasTemperature sensor_WaterTemp(&oneWire);
 bool fWaterTemp;
 
 //  The SHT10 soil sensor
-SHT1x sensor_Soil(PIN_SHT10_DATA, PIN_SHT10_CLK);
+SHT1x sensor_Soil(Catena4410::PIN_SHT10_DATA, Catena4410::PIN_SHT10_CLK);
 bool fSoilSensor;
 
 void setup() 
