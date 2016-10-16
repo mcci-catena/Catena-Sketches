@@ -59,8 +59,6 @@ Revision history:
 #define PIN_SHT10_DATA 10   /* arduino D10 */
 #define APIN_VBAT_SENSE A7  /* arduino A7 */
 
-typedef uint8_t AtmelSam21UniqueID_buffer_t[128/8];
-
 // forwards
 static void configureLuxSensor(void);
 static void displayLuxSensorDetails(void);
