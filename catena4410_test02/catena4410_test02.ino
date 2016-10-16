@@ -1,3 +1,36 @@
+/* catena4410_test02.ino	Sat Oct 15 2016 23:08:27 tmm */
+
+/*
+
+Module:  catena4410_test02.ino
+
+Function:
+	Test program #2 for the Catena 4410.
+
+Version:
+	V0.1.0	Sat Oct 15 2016 23:08:27 tmm	Edit level 1
+
+Copyright notice:
+	This file copyright (C) 2016 by
+
+		MCCI Corporation
+		3520 Krums Corners Road
+		Ithaca, NY  14850
+
+	An unpublished work.  All rights reserved.
+	
+	This file is proprietary information, and may not be disclosed or
+	copied without the prior permission of MCCI Corporation.
+ 
+Author:
+	Terry Moore, MCCI Corporation	October 2016
+
+Revision history:
+   1.00a  Sat Oct 15 2016 23:08:27  tmm
+	Module created.
+
+*/
+
 #include <Catena4410.h>
 #include <Wire.h>
 #include <Adafruit_Sensor.h>
@@ -6,6 +39,15 @@
 #include <OneWire.h>
 #include <DallasTemperature.h>
 #include <SHT1x.h>
+
+/****************************************************************************\
+|
+|		Manifest constants & typedefs.
+|
+|	This is strictly for private types and constants which will not 
+|	be exported.
+|
+\****************************************************************************/
 
 // manifests.
 //#define SEALEVELPRESSURE_HPA (1013.25)
@@ -23,6 +65,31 @@ typedef uint8_t AtmelSam21UniqueID_buffer_t[128/8];
 static void configureLuxSensor(void);
 static void displayLuxSensorDetails(void);
 static bool displayTempSensorDetails(void);
+
+/****************************************************************************\
+|
+|	Read-only data.
+|
+|	If program is to be ROM-able, these must all be tagged read-only 
+|	using the ROM storage class; they may be global.
+|
+\****************************************************************************/
+
+
+/****************************************************************************\
+|
+|	VARIABLES:
+|
+|	If program is to be ROM-able, these must be initialized
+|	using the BSS keyword.  (This allows for compilers that require
+|	every variable to have an initializer.)  Note that only those 
+|	variables owned by this module should be declared here, using the BSS
+|	keyword; this allows for linkers that dislike multiple declarations
+|	of objects.
+|
+\****************************************************************************/
+
+
 
 // globals
 Catena4410 gCatena4410;
