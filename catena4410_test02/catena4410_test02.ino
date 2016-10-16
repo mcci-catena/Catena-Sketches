@@ -109,12 +109,6 @@ bool fWaterTemp;
 SHT1x sensor_Soil(PIN_SHT10_DATA, PIN_SHT10_CLK);
 bool fSoilSensor;
 
-float readCatenaVbat(void)
-{
-  float rawVoltage = analogRead(APIN_VBAT_SENSE);
-  return rawVoltage * 2 * 3.3 / 1024;
-}
-
 void setup() 
 {
     Catena4410::UniqueID_buffer_t CpuID;
@@ -179,7 +173,7 @@ void loop()
 {
   if (fBme)
   {
-    Serial.print("Vbat = "); Serial.print(readCatenaVbat()); Serial.println(" V");
+    Serial.print("Vbat = "); Serial.print(gCatena4410.ReadVbat()); Serial.println(" V");
     Serial.print("Temperature = ");
     Serial.print(bme.readTemperature());
     Serial.println(" *C");
