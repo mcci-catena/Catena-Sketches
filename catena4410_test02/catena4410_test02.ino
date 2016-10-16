@@ -1,3 +1,4 @@
+#include <Catena4410.h>
 #include <Wire.h>
 #include <Adafruit_Sensor.h>
 #include <Adafruit_TSL2561_U.h>
@@ -5,9 +6,6 @@
 #include <OneWire.h>
 #include <DallasTemperature.h>
 #include <SHT1x.h>
-
-#include <stdio.h>
-#include <stdarg.h>
 
 // manifests.
 //#define SEALEVELPRESSURE_HPA (1013.25)
@@ -27,6 +25,8 @@ static void displayLuxSensorDetails(void);
 static bool displayTempSensorDetails(void);
 
 // globals
+Catena4410 gCatena4410;
+
 //   The temperature/humidity sensor
 Adafruit_BME280 bme; // The default initalizer creates an I2C connection
 bool fBme;
@@ -44,41 +44,13 @@ bool fWaterTemp;
 SHT1x sensor_Soil(PIN_SHT10_DATA, PIN_SHT10_CLK);
 bool fSoilSensor;
 
-void safe_printf(const char *fmt, ...)
-{
-    if (! Serial) 
-      return;
-
-    char buf[128];
-    va_list ap;
-    int nc;
-    
-    va_start(ap, fmt);
-    nc = vsnprintf(buf, sizeof(buf) - 1, fmt, ap);
-    va_end(ap);
-
-    // in case we overflowed:
-    buf[sizeof(buf) - 1] = '\0';
-    Serial.print(buf);
-}
+#define safe_printf	gCatena4410.SafePrintf
 
 void GetAtmelUniqueId(
     AtmelSam21UniqueID_buffer_t pIdBuffer
     )
     {
-      uint32_t const idWords[4] = { 0x80A00C, 0x80A040, 0x80A044, 0x80A048 };
-
-      for (unsigned i = 0; i < sizeof(idWords) / sizeof(idWords[0]); ++i)
-      {
-        uint32_t const * const pWord = (uint32_t *) idWords[i];
-        uint32_t idWord = *pWord;
-
-        for (unsigned j = 0; j < 4; ++j)
-        {
-          *pIdBuffer++ = (uint8_t) idWord;
-          idWord >>= 8;
-        }
-      }
+    gCatena4410.GetUniqueID(pIdBuffer);
     }
 
 float
