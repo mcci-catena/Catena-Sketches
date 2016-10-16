@@ -113,15 +113,7 @@ bool fSoilSensor;
 
 #define safe_printf	gCatena4410.SafePrintf
 
-void GetAtmelUniqueId(
-    AtmelSam21UniqueID_buffer_t pIdBuffer
-    )
-    {
-    gCatena4410.GetUniqueID(pIdBuffer);
-    }
-
-float
-readCatenaVbat(void)
+float readCatenaVbat(void)
 {
   float rawVoltage = analogRead(APIN_VBAT_SENSE);
   return rawVoltage * 2 * 3.3 / 1024;
@@ -129,7 +121,7 @@ readCatenaVbat(void)
 
 void setup() 
 {
-    AtmelSam21UniqueID_buffer_t CpuID;
+    Catena4410::UniqueID_buffer_t CpuID;
 
     while (!Serial); // wait for Serial to be initialized
     Serial.begin(115200);
