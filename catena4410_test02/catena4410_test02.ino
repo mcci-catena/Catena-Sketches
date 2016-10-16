@@ -111,8 +111,6 @@ bool fWaterTemp;
 SHT1x sensor_Soil(PIN_SHT10_DATA, PIN_SHT10_CLK);
 bool fSoilSensor;
 
-#define safe_printf	gCatena4410.SafePrintf
-
 float readCatenaVbat(void)
 {
   float rawVoltage = analogRead(APIN_VBAT_SENSE);
@@ -126,21 +124,21 @@ void setup()
     while (!Serial); // wait for Serial to be initialized
     Serial.begin(115200);
 
-    safe_printf("Basic Catena 4410 test\n");
+    gCatena4410.SafePrintf("Basic Catena 4410 test\n");
 
     gCatena4410.GetUniqueID(CpuID);
 
-    safe_printf("CPU Unique ID: ");
+    gCatena4410.SafePrintf("CPU Unique ID: ");
     for (unsigned i = 0; i < sizeof(CpuID); ++i)
     {
-      safe_printf("%s%02x", i == 0 ? "" : "-", CpuID[i]);
+      gCatena4410.SafePrintf("%s%02x", i == 0 ? "" : "-", CpuID[i]);
     }
-    safe_printf("\n");
+    gCatena4410.SafePrintf("\n");
 
     /* initialize the lux sensor */
     if (! tsl.begin())
     {
-      safe_printf("No TSL2561 detected: check wiring\n");
+      gCatena4410.SafePrintf("No TSL2561 detected: check wiring\n");
       fTsl = false;
     }
     else
@@ -153,7 +151,7 @@ void setup()
     /* initialize the BME280 */
     if (! bme.begin())
     {
-      safe_printf("No BME280 found: check wiring\n");
+      gCatena4410.SafePrintf("No BME280 found: check wiring\n");
       fBme = false;
     }
     else
@@ -166,7 +164,7 @@ void setup()
 
      if (! displayTempSensorDetails())
     {
-      safe_printf("water temperature not found: is it connected?\n");
+      gCatena4410.SafePrintf("water temperature not found: is it connected?\n");
       fWaterTemp = false;
     }
     else
@@ -203,7 +201,7 @@ void loop()
   }
   else
   {
-    safe_printf("No BME280 sensor\n");
+    gCatena4410.SafePrintf("No BME280 sensor\n");
   }
   if (fTsl)
   {
@@ -225,7 +223,7 @@ void loop()
   }
   else
   {
-    safe_printf("No Lux sensor\n");
+    gCatena4410.SafePrintf("No Lux sensor\n");
   }
 
   if (fWaterTemp)
@@ -236,7 +234,7 @@ void loop()
   }
   else
   {
-    safe_printf("No water temperature\n");
+    gCatena4410.SafePrintf("No water temperature\n");
   }
 
   if (fSoilSensor)
@@ -291,7 +289,7 @@ static bool displayTempSensorDetails(void)
   if (nDevices == 0)
     return false;
 
-  safe_printf("found %u devices\n", nDevices);
+  gCatena4410.SafePrintf("found %u devices\n", nDevices);
   for (unsigned iDevice = 0; iDevice < nDevices; ++iDevice)
   {
     // print interesting info
