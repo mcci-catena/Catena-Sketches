@@ -136,7 +136,7 @@ void setup()
 
     safe_printf("Basic Catena 4410 test\n");
 
-    GetAtmelUniqueId(CpuID);
+    gCatena4410.GetUniqueID(CpuID);
 
     safe_printf("CPU Unique ID: ");
     for (unsigned i = 0; i < sizeof(CpuID); ++i)
