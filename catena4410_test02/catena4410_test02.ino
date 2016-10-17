@@ -123,6 +123,21 @@ void setup()
     /* display info about the NVM configuration */
     gCatena4410.SafePrintf("NVMCTRL register: %#010x\n", *(volatile uint32_t *) (NVMCTRL_USER));
 
+    /* find the platform */
+    Catena4410::EUI64_buffer_t SysEUI;
+
+    const CATENA_PLATFORM * const pPlatform = gCatena4410.GetPlatformForID(CpuID, SysEUI);
+    if (pPlatform)
+    {
+      gCatena4410.SafePrintf("EUI64: ");
+      for (unsigned i = 0; i < sizeof(SysEUI); ++i)
+      {
+        gCatena4410.SafePrintf("%s%02x", i == 0 ? "" : "-", SysEUI[i]);
+      }
+      gCatena4410.SafePrintf("\n");
+      gCatena4410.SafePrintf("Flags:  %#010x\n", pPlatform->Flags);
+    }
+
     /* initialize the lux sensor */
     if (! tsl.begin())
     {
