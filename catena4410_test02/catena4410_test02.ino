@@ -111,7 +111,6 @@ void setup()
     Serial.begin(115200);
 
     gCatena4410.SafePrintf("Basic Catena 4410 test\n");
-
     gCatena4410.GetUniqueID(CpuID);
 
     gCatena4410.SafePrintf("CPU Unique ID: ");
@@ -120,6 +119,9 @@ void setup()
       gCatena4410.SafePrintf("%s%02x", i == 0 ? "" : "-", CpuID[i]);
     }
     gCatena4410.SafePrintf("\n");
+
+    /* display info about the NVM configuration */
+    gCatena4410.SafePrintf("NVMCTRL register: %#010x\n", *(volatile uint32_t *) (NVMCTRL_USER));
 
     /* initialize the lux sensor */
     if (! tsl.begin())
