@@ -1,14 +1,14 @@
-/* catena4410_test02.ino	Sat Oct 15 2016 23:08:27 tmm */
+/* catena4410_test03.ino	Mon Oct 24 2016 22:03:44 tmm */
 
 /*
 
-Module:  catena4410_test02.ino
+Module:  catena4410_test03.ino
 
 Function:
-	Test program #2 for the Catena 4410.
+	Test program #3 for Catena 4410 -- adds LoRaWAN setup
 
 Version:
-	V0.1.0	Sat Oct 15 2016 23:08:27 tmm	Edit level 1
+	V0.1.0	Mon Oct 24 2016 22:03:44 tmm	Edit level 1
 
 Copyright notice:
 	This file copyright (C) 2016 by
@@ -26,7 +26,7 @@ Author:
 	Terry Moore, MCCI Corporation	October 2016
 
 Revision history:
-   1.00a  Sat Oct 15 2016 23:08:27  tmm
+   1.00a  Mon Oct 24 2016 22:03:44  tmm
 	Module created.
 
 */
@@ -39,6 +39,7 @@ Revision history:
 #include <OneWire.h>
 #include <DallasTemperature.h>
 #include <SHT1x.h>
+#include <Arduino_LoRaWAN.h>
 
 /****************************************************************************\
 |
@@ -81,10 +82,16 @@ static bool displayTempSensorDetails(void);
 |
 \****************************************************************************/
 
-
-
 // globals
 Catena4410 gCatena4410;
+
+//
+// the LoRaWAN backhaul.  Note that we use the
+// Catena4410 version so it can provide hardware-specific
+// information to the base class.
+//
+Catena4410::LoRaWAN gLoRaWAN;
+
 
 //   The temperature/humidity sensor
 Adafruit_BME280 bme; // The default initalizer creates an I2C connection
@@ -102,40 +109,58 @@ bool fWaterTemp;
 //  The SHT10 soil sensor
 SHT1x sensor_Soil(Catena4410::PIN_SHT10_DATA, Catena4410::PIN_SHT10_CLK);
 bool fSoilSensor;
+
+/*
 
-void setup() 
+Name:	setup()
+
+Function:
+        Arduino setup function.
+
+Definition:
+        void setup(
+            void
+            );
+
+Description:
+	This function is called by the Arduino framework after
+	basic framework has been initialized. We initialize the sensors
+	that are present on the platform, set up the LoRaWAN connection,
+        and (ultimately) return to the 
+
+Returns:
+	xxx
+
+*/
+
+void setup(void) 
 {
-    Catena4410::UniqueID_buffer_t CpuID;
+    gCatena4410.begin();
 
-    while (!Serial); // wait for Serial to be initialized
-    Serial.begin(115200);
+    gLoRaWAN.begin();
 
-    gCatena4410.SafePrintf("Basic Catena 4410 test\n");
-    gCatena4410.GetUniqueID(CpuID);
+    Catena4410::UniqueID_string_t CpuIDstring;
 
-    gCatena4410.SafePrintf("CPU Unique ID: ");
-    for (unsigned i = 0; i < sizeof(CpuID); ++i)
-    {
-      gCatena4410.SafePrintf("%s%02x", i == 0 ? "" : "-", CpuID[i]);
-    }
-    gCatena4410.SafePrintf("\n");
+    gCatena4410.SafePrintf("Catena 4410 test03\n");
 
-    /* display info about the NVM configuration */
-    gCatena4410.SafePrintf("NVMCTRL register: %#010x\n", *(volatile uint32_t *) (NVMCTRL_USER));
+    gCatena4410.SafePrintf("CPU Unique ID: %s\n", 
+        gCatena4410.GetUniqueIDstring(CpuIDstring)
+        );
 
     /* find the platform */
-    Catena4410::EUI64_buffer_t SysEUI;
+    const Catena4410::EUI64_buffer_t *pSysEUI = gCatena4410.GetSysEUI();
 
-    const CATENA_PLATFORM * const pPlatform = gCatena4410.GetPlatformForID(CpuID, SysEUI);
+    const CATENA_PLATFORM * const pPlatform = gCatena4410.GetPlatform();
+
     if (pPlatform)
     {
       gCatena4410.SafePrintf("EUI64: ");
-      for (unsigned i = 0; i < sizeof(SysEUI); ++i)
+      for (unsigned i = 0; i < sizeof(*pSysEUI); ++i)
       {
-        gCatena4410.SafePrintf("%s%02x", i == 0 ? "" : "-", SysEUI[i]);
+        gCatena4410.SafePrintf("%s%02x", i == 0 ? "" : "-", pSysEUI[i]);
       }
       gCatena4410.SafePrintf("\n");
-      gCatena4410.SafePrintf("Flags:  %#010x\n", pPlatform->Flags);
+      gCatena4410.SafePrintf("Platform Flags:  %#010x\n", gCatena4410.GetPlatformFlags());
     }
 
     /* initialize the lux sensor */
@@ -182,10 +207,18 @@ void setup()
 
 void loop() 
 {
+  gLoRaWAN.loop();
+
+  if (gLoRaWAN.GetTxReady())
+    {
+    const static uint8_t msg[] = "hello world";
+    gLoRaWAN.SendBuffer(msg, sizeof(msg) - 1); 
+    }
+    
+  Serial.print("Vbat = "); Serial.print(gCatena4410.ReadVbat()); Serial.println(" V");
   if (fBme)
   {
-    Serial.print("Vbat = "); Serial.print(gCatena4410.ReadVbat()); Serial.println(" V");
-    Serial.print("Temperature = ");
+     Serial.print("Temperature = ");
     Serial.print(bme.readTemperature());
     Serial.println(" *C");
 
