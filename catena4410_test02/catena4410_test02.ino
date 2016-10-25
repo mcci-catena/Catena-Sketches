@@ -135,7 +135,7 @@ void setup()
         gCatena4410.SafePrintf("%s%02x", i == 0 ? "" : "-", SysEUI[i]);
       }
       gCatena4410.SafePrintf("\n");
-      gCatena4410.SafePrintf("Flags:  %#010x\n", pPlatform->Flags);
+      gCatena4410.SafePrintf("Platform Flags:  %#010x\n", pPlatform->PlatformFlags);
     }
 
     /* initialize the lux sensor */
