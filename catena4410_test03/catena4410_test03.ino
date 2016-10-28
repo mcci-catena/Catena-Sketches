@@ -1,4 +1,4 @@
-/* catena4410_test03.ino	Mon Oct 24 2016 22:03:44 tmm */
+/* catena4410_test03.ino	Thu Oct 27 2016 23:44:39 tmm */
 
 /*
 
@@ -8,7 +8,7 @@ Function:
 	Test program #3 for Catena 4410 -- adds LoRaWAN setup
 
 Version:
-	V0.1.0	Mon Oct 24 2016 22:03:44 tmm	Edit level 1
+	V0.3.0	Thu Oct 27 2016 23:44:39 tmm	Edit level 2
 
 Copyright notice:
 	This file copyright (C) 2016 by
@@ -143,8 +143,8 @@ void setup(void)
 
     gCatena4410.SafePrintf("Catena 4410 test03\n");
 
-    gCatena4410.SafePrintf("CPU Unique ID: %s\n", 
-        gCatena4410.GetUniqueIDstring(CpuIDstring)
+    gCatena4410.SafePrintf("CPU Unique ID: %s\n",
+        gCatena4410.GetUniqueIDstring(&CpuIDstring)
         );
 
     /* find the platform */
@@ -155,12 +155,19 @@ void setup(void)
     if (pPlatform)
     {
       gCatena4410.SafePrintf("EUI64: ");
-      for (unsigned i = 0; i < sizeof(*pSysEUI); ++i)
+      for (unsigned i = 0; i < sizeof(pSysEUI->b); ++i)
       {
-        gCatena4410.SafePrintf("%s%02x", i == 0 ? "" : "-", pSysEUI[i]);
+        gCatena4410.SafePrintf("%s%02x", i == 0 ? "" : "-", pSysEUI->b[i]);
       }
       gCatena4410.SafePrintf("\n");
-      gCatena4410.SafePrintf("Platform Flags:  %#010x\n", gCatena4410.GetPlatformFlags());
+      gCatena4410.SafePrintf(
+            "Platform Flags:  %#010x\n",
+            gCatena4410.GetPlatformFlags()
+            );
+      gCatena4410.SafePrintf(
+            "Operating Flags:  %#010x\n",
+            gCatena4410.GetOperatingFlags()
+            );
     }
 
     /* initialize the lux sensor */

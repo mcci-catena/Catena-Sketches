@@ -1,4 +1,4 @@
-/* catena4410_test02.ino	Sat Oct 15 2016 23:08:27 tmm */
+/* catena4410_test02.ino	Thu Oct 27 2016 23:38:28 tmm */
 
 /*
 
@@ -8,7 +8,7 @@ Function:
 	Test program #2 for the Catena 4410.
 
 Version:
-	V0.1.0	Sat Oct 15 2016 23:08:27 tmm	Edit level 1
+	V0.3.0	Thu Oct 27 2016 23:38:28 tmm	Edit level 2
 
 Copyright notice:
 	This file copyright (C) 2016 by
@@ -111,12 +111,12 @@ void setup()
     Serial.begin(115200);
 
     gCatena4410.SafePrintf("Basic Catena 4410 test\n");
-    gCatena4410.GetUniqueID(CpuID);
+    gCatena4410.GetUniqueID(&CpuID);
 
     gCatena4410.SafePrintf("CPU Unique ID: ");
-    for (unsigned i = 0; i < sizeof(CpuID); ++i)
+    for (unsigned i = 0; i < sizeof(CpuID.b); ++i)
     {
-      gCatena4410.SafePrintf("%s%02x", i == 0 ? "" : "-", CpuID[i]);
+      gCatena4410.SafePrintf("%s%02x", i == 0 ? "" : "-", CpuID.b[i]);
     }
     gCatena4410.SafePrintf("\n");
 
@@ -126,13 +126,13 @@ void setup()
     /* find the platform */
     Catena4410::EUI64_buffer_t SysEUI;
 
-    const CATENA_PLATFORM * const pPlatform = gCatena4410.GetPlatformForID(CpuID, SysEUI);
+    const CATENA_PLATFORM * const pPlatform = gCatena4410.GetPlatformForID(&CpuID, &SysEUI);
     if (pPlatform)
     {
       gCatena4410.SafePrintf("EUI64: ");
-      for (unsigned i = 0; i < sizeof(SysEUI); ++i)
+      for (unsigned i = 0; i < sizeof(SysEUI.b); ++i)
       {
-        gCatena4410.SafePrintf("%s%02x", i == 0 ? "" : "-", SysEUI[i]);
+        gCatena4410.SafePrintf("%s%02x", i == 0 ? "" : "-", SysEUI.b[i]);
       }
       gCatena4410.SafePrintf("\n");
       gCatena4410.SafePrintf("Platform Flags:  %#010x\n", pPlatform->PlatformFlags);
