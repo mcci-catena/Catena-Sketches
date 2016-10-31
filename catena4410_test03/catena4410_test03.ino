@@ -184,7 +184,7 @@ void setup(void)
     }
 
     /* initialize the BME280 */
-    if (! bme.begin())
+    if (! bme.begin(BME280_ADDRESS, Adafruit_BME280::OPERATING_MODE::Sleep))
     {
       gCatena4410.SafePrintf("No BME280 found: check wiring\n");
       fBme = false;
