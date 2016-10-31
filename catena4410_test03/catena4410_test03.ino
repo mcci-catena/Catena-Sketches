@@ -51,8 +51,9 @@ Revision history:
 \****************************************************************************/
 
 // manifests.
-//#define SEALEVELPRESSURE_HPA (1013.25)
-#define SEALEVELPRESSURE_HPA (1027.087) // 3170 Perry City Road, 2016-10-04 22:57
+// change as needed by measuring pressure at a known altitude then using
+// the formulae from the datasheet.
+#define SEALEVELPRESSURE_HPA (1027.087F)
 
 // forwards
 static void configureLuxSensor(void);
