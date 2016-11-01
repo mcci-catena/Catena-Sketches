@@ -31,3 +31,11 @@
 # Backup files
 *.BAK
 *.CKP
+
+# Visual Studio things (for the Visual Micro stuff)
+.vs
+Debug
+Release
+__vm
+*.vcxproj
+*.vcxproj.filters
