@@ -130,7 +130,7 @@ Description:
         and (ultimately) return to the 
 
 Returns:
-	xxx
+	No explicit result.
 
 */
 
@@ -138,11 +138,12 @@ void setup(void)
 {
     gCatena4410.begin();
 
-    gLoRaWAN.begin();
+    gCatena4410.SafePrintf("Catena 4410 test03 %s %s\n", __DATE__, __TIME__);
+
+    if (! gLoRaWAN.begin(&gCatena4410))
+	gCatena4410.SafePrintf("LoRaWAN init failed\n");
 
     Catena4410::UniqueID_string_t CpuIDstring;
-
-    gCatena4410.SafePrintf("Catena 4410 test03\n");
 
     gCatena4410.SafePrintf("CPU Unique ID: %s\n",
         gCatena4410.GetUniqueIDstring(&CpuIDstring)
@@ -217,12 +218,15 @@ void loop()
 {
   gLoRaWAN.loop();
 
+  // we can't actually sucessfully send and run the sensors, so this app
+  // doesn't try to send.
   if (gLoRaWAN.GetTxReady())
     {
-    const static uint8_t msg[] = "hello world";
-    gLoRaWAN.SendBuffer(msg, sizeof(msg) - 1); 
+//  const static uint8_t msg[] = "hello world";
+//  gLoRaWAN.SendBuffer(msg, sizeof(msg) - 1); 
     }
-    
+
+
   Serial.print("Vbat = "); Serial.print(gCatena4410.ReadVbat()); Serial.println(" V");
   if (fBme)
   {
