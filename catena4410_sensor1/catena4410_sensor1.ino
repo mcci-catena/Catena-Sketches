@@ -299,7 +299,7 @@ enum    {
 
 enum    {
         // set this to interval between measurements, in seconds
-        CATCFG_T_CYCLE = 5 * 60,
+        CATCFG_T_CYCLE = 60,
         CATCFG_T_WARMUP = 1,
         CATCFG_T_SETTLE = 5,
         CATCFG_T_INTERVAL = CATCFG_T_CYCLE - (CATCFG_T_WARMUP +
