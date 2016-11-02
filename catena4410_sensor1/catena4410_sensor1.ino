@@ -32,6 +32,7 @@ Revision history:
 */
 
 #include <Catena4410.h>
+#include <CatenaRTC.h>
 #include <Wire.h>
 #include <Adafruit_Sensor.h>
 #include <Adafruit_TSL2561_U.h>
@@ -62,11 +63,15 @@ enum class LedPattern:uint64_t
 
         OneEigth = 0b100000001,
         OneSixteenth = 0b10000000000000001,
+        FastFlash = 0b1010101,
         TwoShort = 0b10000000000000001001,
         FiftyFiftySlow = 0b100000000000000001111111111111111,
 
         Joining = TwoShort,
+        Measuring = FastFlash,
         Sending = FiftyFiftySlow,
+        WarmingUp = OneEigth,
+        Settling = OneSixteenth,
         };
 
 class StatusLed
@@ -132,10 +137,182 @@ private:
         uint32_t        m_StartTime;
         };
 
+// build a transmit buffer
+class TxBuffer_t
+        {
+private:
+        uint8_t buf[32];   // this sets the largest buffer size
+        uint8_t *p;
+public:
+        TxBuffer_t() : p(buf) {};
+        void begin()
+                {
+                p = buf;
+                }
+        void put(uint8_t c)
+                {
+                if (p < buf + sizeof(buf))
+                        *p++ = c;
+                }
+        void put1u(int32_t v)
+                {
+                if (v > 0xFF)
+                        v = 0xFF;
+                else if (v < 0)
+                        v = 0;
+                put((uint8_t) v);
+                }
+        void put2(uint32_t v)
+                {
+                if (v > 0xFFFF)
+                        v = 0xFFFF;
+
+                put((uint8_t) (v >> 8));
+                put((uint8_t) v);
+                }
+        void put2(int32_t v)
+                {
+                if (v < -0x8000)
+                        v = -0x8000;
+                else if (v > 0x7FFF)
+                        v = 0x7FFF;
+
+                put2((uint32_t) v);
+                }
+        void put3(uint32_t v)
+                {
+                if (v > 0xFFFFFF)
+                        v = 0xFFFFFF;
+
+                put((uint8_t) (v >> 16));
+                put((uint8_t) (v >> 8));
+                put((uint8_t) v);
+                }
+        void put2u(int32_t v)
+                {
+                if (v < 0)
+                        v = 0;
+                else if (v > 0xFFFF)
+                        v = 0xFFFF;
+                put2((uint32_t) v);
+                }
+        void put3(int32_t v)
+                {
+                if (v < -0x800000)
+                        v = -0x800000;
+                else if (v > 0x7FFFFF)
+                        v = 0x7FFFFF;
+                put3((uint32_t) v);
+                }
+        uint8_t *getp(void)
+                {
+                return p;
+                }
+        size_t getn(void)
+                {
+                return p - buf;
+                }
+        uint8_t *getbase(void)
+                {
+                return buf;
+                }
+        void put2sf(float v)
+                {
+                int32_t iv;
+
+                if (v > 32766.5f)
+                        iv = 0x7fff;
+                else if (v < -32767.5f)
+                        iv = -0x8000;
+                else
+                        iv = (int32_t)(v + 0.5f);
+
+                put2(iv);
+                }
+        void put2uf(float v)
+                {
+                uint32_t iv;
+
+                if (v > 65535.5f)
+                        iv = 0xffff;
+                else if (v < 0.5f)
+                        iv = 0;
+                else
+                        iv = (uint32_t)(v + 0.5f);
+
+                put2(iv);
+                }
+        void put1uf(float v)
+                {
+                uint8_t c;
+
+                if (v > 254.5)
+                        c = 0xFF;
+                else if (v < 0.5)
+                        c = 0;
+                else
+                        c = (uint8_t) v;
+
+                put(c);
+                }
+        void putT(float T)
+                {
+                put2sf(T * 256.0f + 0.5f);                
+                }
+        void putRH(float RH)
+                {
+                put1uf((RH / 0.390625f) + 0.5f);
+                }
+        void putV(float V)
+                {
+                put2sf(V * 4096.0f + 0.5f);
+                }
+        void putP(float P)
+                {
+                put2uf(P / 4.0f + 0.5f);
+                }
+        void putLux(float Lux)
+                {
+                put2uf(Lux);
+                }
+        };
+
+/* the magic byte at the front of the buffer */
+enum    {
+        FormatSensor1 = 0x11,
+        };
+
+/* the flags for the second byte of the buffer */
+enum    {
+        FlagVbat = 1 << 0,
+        FlagVcc = 1 << 1,
+        FlagTPH = 1 << 2,
+        FlagLux = 1 << 3,
+        FlagWater = 1 << 4,
+        FlagSoilTH = 1 << 5,
+        };
+
+/* how long do we wait between measurements (in seconds) */
+enum    {
+        TimePerPacketSeconds = 5 * 60,
+        };
+
+enum    {
+        // set this to interval between measurements, in seconds
+        CATCFG_T_CYCLE = 5 * 60,
+        CATCFG_T_WARMUP = 1,
+        CATCFG_T_SETTLE = 5,
+        CATCFG_T_INTERVAL = CATCFG_T_CYCLE - (CATCFG_T_WARMUP +
+                                                CATCFG_T_SETTLE),
+        };
+
 // forwards
 static void configureLuxSensor(void);
 static void displayLuxSensorDetails(void);
 static bool displayTempSensorDetails(void);
+static void settleDoneCb(osjob_t *pSendJob);
+static void warmupDoneCb(osjob_t *pSendJob);
+static Arduino_LoRaWAN::SendBufferCbFn sendBufferDoneCb;
 
 /****************************************************************************\
 |
@@ -169,6 +346,9 @@ Catena4410 gCatena4410;
 // information to the base class.
 //
 Catena4410::LoRaWAN gLoRaWAN;
+
+// the RTC instance, used for sleeping
+CatenaRTC gRtc;
 
 //   The temperature/humidity sensor
 Adafruit_BME280 bme; // The default initalizer creates an I2C connection
@@ -225,6 +405,9 @@ void setup(void)
 
     // set up the status led
     gLed.begin();
+
+    // set up the RTC object
+    gRtc.begin();
 
     if (! gLoRaWAN.begin(&gCatena4410))
 	gCatena4410.SafePrintf("LoRaWAN init failed\n");
@@ -306,9 +489,12 @@ void setup(void)
     if (fBme)
        (void) bme.readTemperature();
 
-    // startSendingUplink();
+    startSendingUplink();
 }
 
+// The Arduino loop routine -- in our case, we just drive the other loops.
+// If we try to do too much, we can break the LMIC radio. So the work is
+// done by outcalls scheduled from the LMIC os loop.
 void loop() 
 {
   gLoRaWAN.loop();
@@ -319,89 +505,137 @@ void loop()
 void startSendingUplink(void)
 {
   Adafruit_BME280::Measurements Measurements;
+  TxBuffer_t b;
+  LedPattern savedLed = gLed.Set(LedPattern::Measuring);
+
+  b.begin();
+  uint8_t flag;
+
+  flag = 0;
+
+  b.put(0x11); /* the flag for this record format */
+  uint8_t * const pFlag = b.getp();
+  b.put(0x00); /* will be set to the flags */
+
+  // vBat is sent as 5000 * v
+  float vBat = gCatena4410.ReadVbat();
+  gCatena4410.SafePrintf("vBat:   %d mV\n", (int) (vBat * 1000.0f));
+  b.putV(vBat);
+  flag |= FlagVbat;
 
   if (fBme)
        {
-       bme.readTemperaturePressureHumidity();
+       Adafruit_BME280::Measurements m = bme.readTemperaturePressureHumidity();
+       // temperature is 2 bytes from -0x80.00 to +0x7F.FF degrees C
+       // pressure is 2 bytes, hPa * 10.
+       // humidity is one byte, where 0 == 0/256 and 0xFF == 255/256.
+       gCatena4410.SafePrintf("BME280:  T: %d P: %d RH: %d\n", (int) m.Temperature, (int) m.Pressure, (int)m.Humidity);
+       b.putT(m.Temperature);
+       b.putP(m.Pressure);
+       b.putRH(m.Humidity);
+
+       flag |= FlagTPH;
        }
-}
-#if 0
-// we can't actually sucessfully send and run the sensors, so this app
-  // doesn't try to send.
-  if (gLoRaWAN.GetTxReady())
-    {
-//  const static uint8_t msg[] = "hello world";
-//  gLoRaWAN.SendBuffer(msg, sizeof(msg) - 1); 
-    }
 
-
-  Serial.print("Vbat = "); Serial.print(gCatena4410.ReadVbat()); Serial.println(" V");
-  if (fBme)
-  {
-     Serial.print("Temperature = ");
-    Serial.print(bme.readTemperature());
-    Serial.println(" *C");
-
-    Serial.print("Pressure = ");
-
-    Serial.print(bme.readPressure() / 100.0F);
-    Serial.println(" hPa");
-
-    Serial.print("Approx. Altitude = ");
-    Serial.print(bme.readAltitude(SEALEVELPRESSURE_HPA));
-    Serial.println(" m");
-
-    Serial.print("Humidity = ");
-    Serial.print(bme.readHumidity());
-    Serial.println(" %");
-  }
-  else
-  {
-    gCatena4410.SafePrintf("No BME280 sensor\n");
-  }
   if (fTsl)
   {
     /* Get a new sensor event */ 
     sensors_event_t event;
     tsl.getEvent(&event);
-   
-    /* Display the results (light is measured in lux) */
-    if (event.light)
+
+    gCatena4410.SafePrintf("TSL:     Lux: %d\n", (int) event.light);
+
+    /* record the results (light is measured in lux) */
+    if (event.light > 0 && event.light < 65536)
     {
-      Serial.print(event.light); Serial.println(" lux");
+      b.putLux(event.light);
+      flag |= FlagLux;
     }
-    else
-    {
-      /* If event.light = 0 lux the sensor is probably saturated
-         and no reliable data could be generated! */
-      Serial.println("Sensor overload");
-    }
-  }
-  else
-  {
-    gCatena4410.SafePrintf("No Lux sensor\n");
   }
 
   if (fWaterTemp)
-  {
-    sensor_WaterTemp.requestTemperatures();
-    float waterTempC = sensor_WaterTemp.getTempCByIndex(0);
-    Serial.print("Water temperature: "); Serial.print(waterTempC); Serial.println(" C");
-  }
-  else
-  {
-    gCatena4410.SafePrintf("No water temperature\n");
-  }
+    {
+    const unsigned nDevices = sensor_WaterTemp.getDeviceCount();
+    if (nDevices > 0)
+        {
+        sensor_WaterTemp.requestTemperatures();
+        float waterTempC = sensor_WaterTemp.getTempCByIndex(0);
+
+        gCatena4410.SafePrintf("Water:   T: %d\n", (int) waterTempC
+        );
+
+        b.putT(waterTempC);
+        flag |= FlagWater;
+        }
+    }
 
   if (fSoilSensor)
-  {
+    {
     /* display temp and RH. library doesn't tell whether sensor is disconnected but gives us huge values instead */
-    Serial.print("Soil temperature: "); Serial.print(sensor_Soil.readTemperatureC()); Serial.println(" C");
-    Serial.print("Soil humidity:    "); Serial.print(sensor_Soil.readHumidity()); Serial.println(" %");
-  }
-  delay(2000);
+    float SoilT = sensor_Soil.readTemperatureC();
+    if (SoilT <= 100.0)
+        {
+        float SoilRH = sensor_Soil.readHumidity();
+
+        b.putT(SoilT);
+        b.putRH(SoilRH);
+        gCatena4410.SafePrintf("Soil:    T: %d RH: %d\n", (int) SoilT, (int) SoilRH);
+
+        flag |= FlagSoilTH;
+        }
+    }
+
+  *pFlag = flag;
+  if (savedLed != LedPattern::Joining)
+          gLed.Set(LedPattern::Sending);
+  else
+          gLed.Set(LedPattern::Joining);
+
+  gLoRaWAN.SendBuffer(b.getbase(), b.getn(), sendBufferDoneCb, NULL);
 }
-#endif
+
+static void
+sendBufferDoneCb(
+    void *pContext,
+    bool fStatus
+    )
+    {
+    gLed.Set(LedPattern::Settling);
+    os_setTimedCallback(
+            &sensorJob,
+            os_getTime()+sec2osticks(CATCFG_T_SETTLE),
+            settleDoneCb
+            );
+    }
+
+static void settleDoneCb(
+    osjob_t *pSendJob
+    )
+    {
+    /* ok... now it's time for a deep sleep */
+    gLed.Set(LedPattern::Off);
+    gRtc.SetAlarm(CATCFG_T_INTERVAL);
+    gRtc.SleepForAlarm(
+        CatenaRTC::MATCH_HHMMSS, 
+        CatenaRTC::SleepMode::IdleCpu
+        );
+
+    /* and now... we're awake again. trigger another measurement */
+    gLed.Set(LedPattern::WarmingUp);
+    
+    os_setTimedCallback(
+            &sensorJob,
+            os_getTime()+sec2osticks(CATCFG_T_WARMUP),
+            warmupDoneCb
+            );
+    }
+
+static void warmupDoneCb(
+    osjob_t *pJob
+    )
+    {
+    startSendingUplink();
+    }
 
 /* functions */
 static void displayLuxSensorDetails(void)
