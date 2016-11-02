@@ -553,7 +553,7 @@ void startSendingUplink(void)
     }
   }
 
-  if (fWaterTemp)
+  /* if (! fWaterTemp) */
     {
     const unsigned nDevices = sensor_WaterTemp.getDeviceCount();
     if (nDevices > 0)
