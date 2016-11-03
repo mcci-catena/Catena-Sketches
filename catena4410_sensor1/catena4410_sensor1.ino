@@ -322,6 +322,7 @@ static Arduino_LoRaWAN::SendBufferCbFn sendBufferDoneCb;
 |
 \****************************************************************************/
 
+static const char sVersion[] = "0.1.0";
 
 /****************************************************************************\
 |
@@ -400,7 +401,7 @@ void setup(void)
 {
     gCatena4410.begin();
 
-    gCatena4410.SafePrintf("Catena 4410 sensor1 %s %s\n", __DATE__, __TIME__);
+    gCatena4410.SafePrintf("Catena 4410 sensor1 V%s\n", sVersion);
 
     // set up the status led
     gLed.begin();
