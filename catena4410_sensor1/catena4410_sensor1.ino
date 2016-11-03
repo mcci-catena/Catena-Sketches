@@ -32,6 +32,8 @@ Revision history:
 */
 
 #include <Catena4410.h>
+#include <Catena_LoRaWAN_provisioning.h>
+
 #include <CatenaRTC.h>
 #include <Wire.h>
 #include <Adafruit_Sensor.h>
@@ -43,6 +45,7 @@ Revision history:
 #include <Arduino_LoRaWAN.h>
 #include <lmic.h>
 #include <hal/hal.h>
+#include <SPI.h>
 
 #include <type_traits>
 
