@@ -518,7 +518,7 @@ void startSendingUplink(void)
 
   // vBat is sent as 5000 * v
   float vBat = gCatena4410.ReadVbat();
-  gCatena4410.SafePrintf("vBat:   %d mV\n", (int) (vBat * 1000.0f));
+  gCatena4410.SafePrintf("vBat:    %d mV\n", (int) (vBat * 1000.0f));
   b.putV(vBat);
   flag |= FlagVbat;
 
