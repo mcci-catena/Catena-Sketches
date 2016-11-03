@@ -294,12 +294,10 @@ enum    {
 
 /* how long do we wait between measurements (in seconds) */
 enum    {
-        TimePerPacketSeconds = 5 * 60,
-        };
-
-enum    {
         // set this to interval between measurements, in seconds
-        CATCFG_T_CYCLE = 2 * 60,
+        // Actual time will be a little longer because have to
+        // add measurement and broadcast time.
+        CATCFG_T_CYCLE = 6 * 60,        // ten messages/hour
         CATCFG_T_WARMUP = 1,
         CATCFG_T_SETTLE = 5,
         CATCFG_T_INTERVAL = CATCFG_T_CYCLE - (CATCFG_T_WARMUP +
