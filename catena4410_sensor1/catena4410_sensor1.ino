@@ -308,6 +308,7 @@ enum    {
 static void configureLuxSensor(void);
 static void displayLuxSensorDetails(void);
 static bool displayTempSensorDetails(void);
+static bool checkWaterSensorPresent(void);
 static void settleDoneCb(osjob_t *pSendJob);
 static void warmupDoneCb(osjob_t *pSendJob);
 static Arduino_LoRaWAN::SendBufferCbFn sendBufferDoneCb;
@@ -551,22 +552,41 @@ void startSendingUplink(void)
     }
   }
 
-  /* if (! fWaterTemp) */
-    {
-    const unsigned nDevices = sensor_WaterTemp.getDeviceCount();
-    if (nDevices > 0)
+  /* 
+  || Measure and transmit the "water temperature" (OneWire) 
+  || tranducer value. This is complicated because we want
+  || to support plug/unplug and the sw interface is not
+  || really hot-pluggable.
+  */
+  if (! fWaterTemp && checkWaterSensorPresent())
+        fWaterTemp = true;
+
+  if (fWaterTemp)
         {
         sensor_WaterTemp.requestTemperatures();
         float waterTempC = sensor_WaterTemp.getTempCByIndex(0);
 
-        gCatena4410.SafePrintf("Water:   T: %d\n", (int) waterTempC
-        );
-
-        b.putT(waterTempC);
-        flag |= FlagWater;
+        gCatena4410.SafePrintf("Water:   T: %d\n", (int) waterTempC);
+        if (waterTempC <= 0.0)
+                {
+                // discard data and reset flag 
+                // so we'll check again next time
+                fWaterTemp = false;
+                }
+        else
+                {
+                // transmit the measurement
+                b.putT(waterTempC);
+                flag |= FlagWater;
+                }
         }
-    }
 
+  /*
+  || Measure and transmit the "soil sensor" transducer
+  || values. The sensor can be hotplugged at will; the
+  || library being used gets very slow if the sensor is
+  || not being used, but otherwise adapts nicely.
+  */
   if (fSoilSensor)
     {
     /* display temp and RH. library doesn't tell whether sensor is disconnected but gives us huge values instead */
@@ -671,6 +691,13 @@ static void configureLuxSensor(void)
   Serial.println("------------------------------------");
 }
 
+static bool checkWaterSensorPresent(void)
+{
+  // this is unpleasant. But the way to deal with plugging is to call
+  // begin again.
+  sensor_WaterTemp.begin();
+  return sensor_WaterTemp.getDeviceCount() != 0;
+}
 
 static bool displayTempSensorDetails(void)
 {
