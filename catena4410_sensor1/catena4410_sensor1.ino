@@ -129,6 +129,7 @@ public:
                 m_Pattern = newPattern;
                 m_Current = 0;
                 digitalWrite(m_Pin, LOW);
+                return oldPattern;
                 }
 
 private:
