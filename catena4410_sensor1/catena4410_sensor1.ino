@@ -93,7 +93,6 @@ public:
         void loop(void)
                 {
                 uint32_t delta;
-                uint32_t ticks;
                 uint32_t now;
 
                 now = millis();
@@ -506,7 +505,6 @@ void loop()
 
 void startSendingUplink(void)
 {
-  Adafruit_BME280::Measurements Measurements;
   TxBuffer_t b;
   LedPattern savedLed = gLed.Set(LedPattern::Measuring);
 
