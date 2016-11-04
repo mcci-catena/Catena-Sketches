@@ -43,6 +43,7 @@ Revision history:
 #include <Arduino_LoRaWAN.h>
 #include <lmic.h>
 #include <hal/hal.h>
+#include <mcciadk_baselib.h>
 
 #include <type_traits>
 
