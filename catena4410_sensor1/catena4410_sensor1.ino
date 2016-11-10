@@ -305,6 +305,12 @@ enum    {
                                                 CATCFG_T_SETTLE),
         };
 
+/* the mask of inputs that need pullups */
+enum    {
+        // which ports need pullup enabled?
+        CATCFG_PULLUP_BITS = 0x284c34,  // bits 2, 4, 5, 10, 11, 14, 19, 21
+        };
+
 // forwards
 static void configureLuxSensor(void);
 static void displayLuxSensorDetails(void);
@@ -490,7 +496,17 @@ void setup(void)
     if (fBme)
        (void) bme.readTemperature();
 
+    /* trigger a join by sending the first packet */
     startSendingUplink();
+
+    /* set up the remaining pull-ups */
+    uint32_t const uIoPullups = CATCFG_PULLUP_BITS;
+
+    for (uint32_t i = 0; i < 32; ++i)
+            {
+            if (uIoPullups & (1 << i))
+                PORT->Group[0].PINCFG[i].bit.PULLEN = 1;
+            }
 }
 
 // The Arduino loop routine -- in our case, we just drive the other loops.
@@ -627,17 +643,24 @@ sendBufferDoneCb(
             );
     }
 
+#include <delay.h>
+
 static void settleDoneCb(
     osjob_t *pSendJob
     )
     {
+    uint32_t startTime;
+
     /* ok... now it's time for a deep sleep */
     gLed.Set(LedPattern::Off);
+
+    startTime = millis();
     gRtc.SetAlarm(CATCFG_T_INTERVAL);
     gRtc.SleepForAlarm(
         CatenaRTC::MATCH_HHMMSS, 
-        CatenaRTC::SleepMode::IdleCpu
+        CatenaRTC::SleepMode::IdleCpuAhbApb
         );
+    adjust_millis_forward(CATCFG_T_INTERVAL  * 1000);
 
     /* and now... we're awake again. trigger another measurement */
     gLed.Set(LedPattern::WarmingUp);
