@@ -85,7 +85,7 @@ static Arduino_LoRaWAN::SendBufferCbFn sendBufferDoneCb;
 |
 \****************************************************************************/
 
-static const char sVersion[] = "0.1.1";
+static const char sVersion[] = "0.1.2";
 
 /****************************************************************************\
 |
@@ -145,9 +145,6 @@ Returns:
 
 void setup(void) 
 {
-    while (! Serial)
-        /* wait */;
-
     gCatena.begin();
 
     gCatena.SafePrintf("Catena 4420 sensor1 V%s\n", sVersion);
@@ -189,6 +186,7 @@ void setup(void)
             gCatena.GetOperatingFlags()
             );
     }
+
 
     /* now, we kick off things by sending our first message */
     gLed.Set(LedPattern::Joining);
