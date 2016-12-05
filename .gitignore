@@ -39,4 +39,5 @@ Release
 __vm
 *.vcxproj
 *.vcxproj.filters
+*.vcxproj.user
 *.sln

@@ -140,9 +140,6 @@ void setup(void)
 
     gCatena4410.SafePrintf("Catena 4410 test03 %s %s\n", __DATE__, __TIME__);
 
-    if (! gLoRaWAN.begin(&gCatena4410))
-	gCatena4410.SafePrintf("LoRaWAN init failed\n");
-
     Catena4410::UniqueID_string_t CpuIDstring;
 
     gCatena4410.SafePrintf("CPU Unique ID: %s\n",
@@ -171,6 +168,9 @@ void setup(void)
             gCatena4410.GetOperatingFlags()
             );
     }
+
+    if (! gLoRaWAN.begin(&gCatena4410))
+      gCatena4410.SafePrintf("LoRaWAN init failed\n");
 
     /* initialize the lux sensor */
     if (! tsl.begin())
