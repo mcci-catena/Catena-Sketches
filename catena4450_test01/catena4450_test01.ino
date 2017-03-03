@@ -3,6 +3,7 @@
 #include <BH1750.h>
 #include <stdio.h>
 #include <stdarg.h>
+#include <Adafruit_FRAM_I2C.h>
 
 // manifests.
 //#define SEALEVELPRESSURE_HPA (1013.25)
@@ -19,6 +20,8 @@ bool fBme;
 //   The LUX sensor
 BH1750 bh1750;
 bool fLux;
+Adafruit_FRAM_I2C fram;
+bool fFram;
 
 void safe_printf(const char *fmt, ...)
 {
@@ -60,6 +63,18 @@ void setup()
     {
       fBme = true;
     }
+
+    /* initialize the FRAM */
+    if (! fram.begin())
+      {
+        safe_printf("failed to init FRAM: check wiring\n");
+        fFram = false;
+      }
+    else
+      {
+        fFram = true;
+      }
+
 }
 
 void loop() 
@@ -99,6 +114,26 @@ void loop()
   else
   {
     safe_printf("No Lux sensor\n");
+  }
+
+  if (fFram)
+  {
+    uint32_t uCount;
+    uint16_t pCount;
+
+    pCount = 0;
+    uCount = fram.read8(pCount+0) | fram.read8(pCount+1) << 8 | fram.read8(pCount+2) << 16 | fram.read8(pCount+3) << 24;
+    Serial.print(uCount, HEX); Serial.println(" cycles");
+    if (uCount == 0 || (uCount & -uCount) != uCount)
+    {
+      Serial.println("** not a power of 2, resetting **");
+      uCount = 1;
+    }
+    uCount = uCount << 1;
+    fram.write8(pCount + 0, uCount & 0xFF); 
+    fram.write8(pCount + 1, (uCount >> 8) & 0xFF);
+    fram.write8(pCount + 2, (uCount >> 16) & 0xFF);
+    fram.write8(pCount + 3, (uCount >> 24) & 0xFF);
   }
   delay(2000);
 }
