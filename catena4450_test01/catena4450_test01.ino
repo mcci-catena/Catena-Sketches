@@ -27,9 +27,21 @@ bool fLux;
 Adafruit_FRAM_I2C fram;
 bool fFram;
 
+//   The contact sensors
+bool fHasPower1;
+uint8_t kPinPower1P1;
+uint8_t kPinPower1P2;
+
 void setup() 
 {
+    bool fNoGood;
+
+    fNoGood = false;
+    
     gCatena.begin();
+    
+    while (! Serial)
+      /* idle */;
 
     gCatena.SafePrintf("Basic Catena 4450 test %s %s\n", __DATE__, __TIME__);
     CatenaSamd21::UniqueID_string_t CpuIDstring;
@@ -38,24 +50,84 @@ void setup()
       gCatena.GetUniqueIDstring(&CpuIDstring)
       );
 
+    const CatenaBase::EUI64_buffer_t *pSysEUI = gCatena.GetSysEUI();
+    static const CatenaBase::EUI64_buffer_t zeroEUI = {};
+
+    if (pSysEUI == NULL)
+      {
+      gCatena.SafePrintf("**** no SysEUI, check provisioning ****\n");
+      }
+   else if (memcmp(pSysEUI, &zeroEUI, sizeof(zeroEUI)) == 0)
+      {
+      gCatena.SafePrintf("**** SysEUI == 0, check provisioning ****\n");
+      fNoGood = true;
+      }
+   else 
+      {
+      gCatena.SafePrintf("EUI64: ");
+      for (unsigned i = 0; i < sizeof(pSysEUI->b); ++i)
+        {
+        gCatena.SafePrintf("%s%02x", i == 0 ? "" : "-", pSysEUI->b[i]);
+        }
+      gCatena.SafePrintf("\n");
+      fNoGood = true;
+      }
+
+    uint32_t flags;
+    const CATENA_PLATFORM * const pPlatform = gCatena.GetPlatform();
+    if (pPlatform == NULL)
+      {
+      gCatena.SafePrintf("**** no platform, check provisioning ****\n");
+      fNoGood = true;
+      flags = 0;
+      }
+    else
+      {
+      flags = gCatena.GetPlatformFlags();
+
+      gCatena.SafePrintf(
+          "Platform flags: 0x%08x\n",
+          flags
+          );
+      }
+
     /* initialize the lux sensor */
-    bh1750.begin();
-    fLux = true;
-    displayLuxSensorDetails();
+    if (flags & CatenaSamd21::fHasLuxRohm)
+      {
+      bh1750.begin();
+      fLux = true;
+      displayLuxSensorDetails();
+      }
+    else
+      {
+      fLux = false;
+      }
 
     /* initialize the BME280 */
-    if (! bme.begin())
+    if (! (flags & CatenaSamd21::fHasBme280))
+    {
+      gCatena.SafePrintf("flags say no BME280!\n");
+      fBme = false;
+    }
+    else if (! bme.begin())
     {
       gCatena.SafePrintf("No BME280 found: check wiring\n");
       fBme = false;
     }
     else
     {
+      /* read and discard one value */
+      (void) bme.readTemperature();
       fBme = true;
     }
 
     /* initialize the FRAM */
-    if (! fram.begin())
+    if (! (flags & CatenaSamd21::fHasFRAM))
+      {
+        gCatena.SafePrintf("flags say no FRAM!\n");
+        fFram = false;
+      }
+    else if (! fram.begin())
       {
         gCatena.SafePrintf("failed to init FRAM: check wiring\n");
         fFram = false;
@@ -65,6 +137,32 @@ void setup()
         fFram = true;
       }
 
+   /* is it modded? */
+   uint32_t modnumber = gCatena.PlatformFlags_GetModNumber(flags);
+
+   fHasPower1 = false;
+   
+   if (modnumber != 0)
+      {
+      gCatena.SafePrintf("Catena 4450m%d\n", modnumber);
+      if (modnumber == 101)
+        {
+        fHasPower1 = true;
+        kPinPower1P1 = 14;
+        kPinPower1P2 = 15;
+        
+        pinMode(kPinPower1P1, INPUT);
+        pinMode(kPinPower1P2, INPUT);
+        }
+      else
+        {
+        gCatena.SafePrintf("unknown mod number %d\n", modnumber);
+        }
+      }
+   else
+      {
+      gCatena.SafePrintf("No mods detected\n");
+      }
 }
 
 void loop() 
@@ -124,6 +222,21 @@ void loop()
     fram.write8(pCount + 2, (uCount >> 16) & 0xFF);
     fram.write8(pCount + 3, (uCount >> 24) & 0xFF);
   }
+
+  if (fHasPower1)
+    {
+    int p1Val, p2Val;
+
+    p1Val = digitalRead(kPinPower1P1);
+    p2Val = digitalRead(kPinPower1P2);
+
+    gCatena.SafePrintf("P1 = %-4s  P2 = %-4s\n", 
+        p1Val ? "HIGH": "low", 
+        p2Val ? "HIGH" : "low"
+        );
+    }
+
+  gCatena.SafePrintf("---\n");
   delay(2000);
 }
 
