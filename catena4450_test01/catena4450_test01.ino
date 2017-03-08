@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdarg.h>
 #include <Adafruit_FRAM_I2C.h>
+#include <Catena4410.h>
 
 // manifests.
 //#define SEALEVELPRESSURE_HPA (1013.25)
@@ -13,6 +14,9 @@ static void configureLuxSensor(void);
 static void displayLuxSensorDetails(void);
 
 // globals
+// the catena
+Catena4410 gCatena;
+
 //   The temperature/humidity sensor
 Adafruit_BME280 bme; // The default initalizer creates an I2C connection
 bool fBme;
@@ -23,30 +27,16 @@ bool fLux;
 Adafruit_FRAM_I2C fram;
 bool fFram;
 
-void safe_printf(const char *fmt, ...)
-{
-    if (! Serial) 
-      return;
-
-    char buf[128];
-    va_list ap;
-    int nc;
-    
-    va_start(ap, fmt);
-    nc = vsnprintf(buf, sizeof(buf) - 1, fmt, ap);
-    va_end(ap);
-
-    // in case we overflowed:
-    buf[sizeof(buf) - 1] = '\0';
-    Serial.print(buf);
-}
-
 void setup() 
 {
-    while (!Serial); // wait for Serial to be initialized
-    Serial.begin(115200);
+    gCatena.begin();
 
-    safe_printf("Basic Catena 4450 test\n");
+    gCatena.SafePrintf("Basic Catena 4450 test %s %s\n", __DATE__, __TIME__);
+    CatenaSamd21::UniqueID_string_t CpuIDstring;
+
+    gCatena.SafePrintf("CPU Unique ID: %s\n", 
+      gCatena.GetUniqueIDstring(&CpuIDstring)
+      );
 
     /* initialize the lux sensor */
     bh1750.begin();
@@ -56,7 +46,7 @@ void setup()
     /* initialize the BME280 */
     if (! bme.begin())
     {
-      safe_printf("No BME280 found: check wiring\n");
+      gCatena.SafePrintf("No BME280 found: check wiring\n");
       fBme = false;
     }
     else
@@ -67,7 +57,7 @@ void setup()
     /* initialize the FRAM */
     if (! fram.begin())
       {
-        safe_printf("failed to init FRAM: check wiring\n");
+        gCatena.SafePrintf("failed to init FRAM: check wiring\n");
         fFram = false;
       }
     else
@@ -81,26 +71,25 @@ void loop()
 {
   if (fBme)
   {
-    Serial.print("Temperature = ");
-    Serial.print(bme.readTemperature());
-    Serial.println(" *C");
+    if (Serial) Serial.print("Temperature = ");
+    if (Serial) Serial.print(bme.readTemperature());
+    if (Serial) Serial.println(" *C");
 
-    Serial.print("Pressure = ");
+    if (Serial) Serial.print("Pressure = ");
+    if (Serial) Serial.print(bme.readPressure() / 100.0F);
+    if (Serial) Serial.println(" hPa");
 
-    Serial.print(bme.readPressure() / 100.0F);
-    Serial.println(" hPa");
+    if (Serial) Serial.print("Approx. Altitude = ");
+    if (Serial) Serial.print(bme.readAltitude(SEALEVELPRESSURE_HPA));
+    if (Serial) Serial.println(" m");
 
-    Serial.print("Approx. Altitude = ");
-    Serial.print(bme.readAltitude(SEALEVELPRESSURE_HPA));
-    Serial.println(" m");
-
-    Serial.print("Humidity = ");
-    Serial.print(bme.readHumidity());
-    Serial.println(" %");
+    if (Serial) Serial.print("Humidity = ");
+    if (Serial) Serial.print(bme.readHumidity());
+    if (Serial) Serial.println(" %");
   }
   else
   {
-    safe_printf("No BME280 sensor\n");
+    gCatena.SafePrintf("No BME280 sensor\n");
   }
   if (fLux)
   {
@@ -109,11 +98,11 @@ void loop()
 
     light = bh1750.readLightLevel();
 
-    Serial.print(light); Serial.println(" lux");
+    if (Serial) Serial.print(light); if (Serial) Serial.println(" lux");
   }
   else
   {
-    safe_printf("No Lux sensor\n");
+    gCatena.SafePrintf("No Lux sensor\n");
   }
 
   if (fFram)
@@ -123,10 +112,10 @@ void loop()
 
     pCount = 0;
     uCount = fram.read8(pCount+0) | fram.read8(pCount+1) << 8 | fram.read8(pCount+2) << 16 | fram.read8(pCount+3) << 24;
-    Serial.print(uCount, HEX); Serial.println(" cycles");
+    if (Serial) Serial.print(uCount, HEX); if (Serial) Serial.println(" cycles");
     if (uCount == 0 || (uCount & -uCount) != uCount)
     {
-      Serial.println("** not a power of 2, resetting **");
+      if (Serial) Serial.println("** not a power of 2, resetting **");
       uCount = 1;
     }
     uCount = uCount << 1;
