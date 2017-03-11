@@ -1,3 +1,36 @@
+/* catena4450_test01.ino	Fri Mar 10 2017 18:51:56 tmm */
+
+/*
+
+Module:  catena4450_test01.ino
+
+Function:
+	Test program for Catena 4450 and variants.
+
+Version:
+	V1.00a	Fri Mar 10 2017 18:51:56 tmm	Edit level 1
+
+Copyright notice:
+	This file copyright (C) 2017 by
+
+		MCCI Corporation
+		3520 Krums Corners Road
+		Ithaca, NY  14850
+
+	An unpublished work.  All rights reserved.
+	
+	This file is proprietary information, and may not be disclosed or
+	copied without the prior permission of MCCI Corporation.
+ 
+Author:
+	Terry Moore, MCCI Corporation	March 2017
+
+Revision history:
+   1.00a  Fri Mar 10 2017 18:51:56  tmm
+	Module created.
+
+*/
+
 #include <Wire.h>
 #include <Adafruit_BME280.h>
 #include <BH1750.h>
@@ -5,13 +38,45 @@
 #include <stdarg.h>
 #include <Adafruit_FRAM_I2C.h>
 #include <Catena4410.h>
+
+/****************************************************************************\
+|
+|		Manifest constants & typedefs.
+|
+|	This is strictly for private types and constants which will not 
+|	be exported.
+|
+\****************************************************************************/
 
-// manifests.
 //#define SEALEVELPRESSURE_HPA (1013.25)
 #define SEALEVELPRESSURE_HPA (1027.087) // 3170 Perry City Road, 2016-10-04 22:57
 
 static void configureLuxSensor(void);
 static void displayLuxSensorDetails(void);
+
+
+/****************************************************************************\
+|
+|	Read-only data.
+|
+|	If program is to be ROM-able, these must all be tagged read-only 
+|	using the ROM storage class; they may be global.
+|
+\****************************************************************************/
+
+
+/****************************************************************************\
+|
+|	VARIABLES:
+|
+|	If program is to be ROM-able, these must be initialized
+|	using the BSS keyword.  (This allows for compilers that require
+|	every variable to have an initializer.)  Note that only those 
+|	variables owned by this module should be declared here, using the BSS
+|	keyword; this allows for linkers that dislike multiple declarations
+|	of objects.
+|
+\****************************************************************************/
 
 // globals
 // the catena
@@ -31,6 +96,27 @@ bool fFram;
 bool fHasPower1;
 uint8_t kPinPower1P1;
 uint8_t kPinPower1P2;
+
+/*
+
+Name:	setup()
+
+Function:
+	Arduino setup routine: called once at boot.
+
+Definition:
+	void setup(void);
+
+Description:
+	In this test program, setup does the required things for initializing
+	the platform.
+
+	This test is intended for simplistic stand-alone use.
+
+Returns:
+	No explicit result.
+
+*/
 
 void setup() 
 {
@@ -144,12 +230,12 @@ void setup()
    
    if (modnumber != 0)
       {
-      gCatena.SafePrintf("Catena 4450m%d\n", modnumber);
+      gCatena.SafePrintf("Catena 4450-M%u\n", modnumber);
       if (modnumber == 101)
         {
         fHasPower1 = true;
-        kPinPower1P1 = 14;
-        kPinPower1P2 = 15;
+        kPinPower1P1 = A0;
+        kPinPower1P2 = A1;
         
         pinMode(kPinPower1P1, INPUT);
         pinMode(kPinPower1P2, INPUT);
@@ -164,6 +250,28 @@ void setup()
       gCatena.SafePrintf("No mods detected\n");
       }
 }
+
+/*
+
+Name:	loop()
+
+Function:
+	The Arduino runtime loop.
+
+Definition:
+	void loop(void);
+
+Description:
+	This routine is called continually from the background scheduler,
+	and services all the operating tasks.
+
+	In this test program, it simply prints information from the enabled
+	sensors to the USB serial port.
+
+Returns:
+	No explicit result.
+
+*/
 
 void loop() 
 {
@@ -263,4 +371,3 @@ static void configureLuxSensor(void)
 {
   bh1750.configure(BH1750_ONE_TIME_HIGH_RES_MODE_2);
 }
-
