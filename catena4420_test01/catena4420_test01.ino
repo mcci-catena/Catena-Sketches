@@ -1,4 +1,4 @@
-/* catena4420_test01.ino	Sun Dec  4 2016 23:29:28 tmm */
+/* catena4420_test01.ino	Fri Mar 10 2017 21:59:54 tmm */
 
 /*
 
@@ -8,10 +8,10 @@ Function:
 	First test for Catena4420.
 
 Version:
-	V1.00a	Sun Dec  4 2016 23:29:28 tmm	Edit level 1
+	V1.00a	Fri Mar 10 2017 21:59:54 tmm	Edit level 2
 
 Copyright notice:
-	This file copyright (C) 2016 by
+	This file copyright (C) 2016-2017 by
 
 		MCCI Corporation
 		3520 Krums Corners Road
@@ -29,11 +29,14 @@ Revision history:
    1.00a  Sun Dec  4 2016 23:29:28  tmm
 	Module created.
 
+   1.00a  Fri Mar 10 2017 21:59:54  tmm
+	Rename catena_led.h and catena_txbuffer.h. Minor cleanups.
+
 */
 
 #include <Catena4420.h>
-#include <catena_led.h>
-#include <catena_txbuffer.h>
+#include <Catena_Led.h>
+#include <Catena_TxBuffer.h>
 #include <CatenaRTC.h>
 #include <Wire.h>
 #include <Arduino_LoRaWAN.h>
@@ -65,12 +68,6 @@ enum    {
                                                 CATCFG_T_SETTLE),
         };
 
-/* the mask of inputs that need pullups */
-enum    {
-        // which ports need pullup enabled?
-        CATCFG_PULLUP_BITS = 0x284c34,  // bits 2, 4, 5, 10, 11, 14, 19, 21
-        };
-
 // forwards
 static void settleDoneCb(osjob_t *pSendJob);
 static void warmupDoneCb(osjob_t *pSendJob);
@@ -85,7 +82,7 @@ static Arduino_LoRaWAN::SendBufferCbFn sendBufferDoneCb;
 |
 \****************************************************************************/
 
-static const char sVersion[] = "0.1.2";
+static const char sVersion[] = "0.1.3";
 
 /****************************************************************************\
 |
@@ -194,6 +191,29 @@ void setup(void)
     /* trigger a join by sending the first packet */
     startSendingUplink();
 }
+
+/*
+
+Name:	loop()
+
+Function:
+	The Arduino runtime loop.
+
+Definition:
+	void loop(void);
+
+Description:
+	This routine is called continually from the background scheduler,
+	and services all the operating tasks.
+
+	This routine merely pushes the LoRaWAN-related code and drives teh
+	LED. It can't do very much (or delay) while the LMIC code is running,
+	as this can mess up the air interface.
+
+Returns:
+	No explicit result.
+
+*/
 
 // The Arduino loop routine -- in our case, we just drive the other loops.
 // If we try to do too much, we can break the LMIC radio. So the work is
