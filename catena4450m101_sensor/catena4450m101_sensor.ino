@@ -33,8 +33,8 @@ Revision history:
 
 #include <Catena4410.h>
 #include <CatenaRTC.h>
-#include <catena_led.h>
-#include <catena_txbuffer.h>
+#include <Catena_Led.h>
+#include <Catena_TxBuffer.h>
 
 #include <Wire.h>
 #include <Adafruit_BME280.h>
