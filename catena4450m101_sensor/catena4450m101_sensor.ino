@@ -54,6 +54,7 @@ Revision history:
 |
 \****************************************************************************/
 
+using namespace McciCatena;
 
 /* how long do we wait between measurements (in seconds) */
 enum    {

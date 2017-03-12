@@ -31,6 +31,7 @@ Revision history:
 
    1.00a  Fri Mar 10 2017 21:59:54  tmm
 	Rename catena_led.h and catena_txbuffer.h. Minor cleanups.
+	Use McciCatena namespace.
 
 */
 
@@ -55,6 +56,7 @@ Revision history:
 |
 \****************************************************************************/
 
+using namespace McciCatena;
 
 /* how long do we wait between measurements (in seconds) */
 enum    {
