@@ -31,7 +31,7 @@ Revision history:
 
 */
 
-#include <Catena4410.h>
+#include <Catena4450.h>
 #include <CatenaRTC.h>
 #include <Catena_Led.h>
 #include <Catena_TxBuffer.h>
@@ -45,6 +45,8 @@ Revision history:
 
 #include <type_traits>
 
+#include <Catena_Fram2K.h>
+
 /****************************************************************************\
 |
 |		Manifest constants & typedefs.
@@ -55,6 +57,7 @@ Revision history:
 \****************************************************************************/
 
 using namespace McciCatena;
+using ThisCatena = Catena4450;
 
 /* how long do we wait between measurements (in seconds) */
 enum    {
@@ -108,14 +111,14 @@ static const char sVersion[] = "0.1.0";
 \****************************************************************************/
 
 // globals
-Catena4410 gCatena4410;
+ThisCatena gCatena;
 
 //
 // the LoRaWAN backhaul.  Note that we use the
-// Catena4410 version so it can provide hardware-specific
+// ThisCatena version so it can provide hardware-specific
 // information to the base class.
 //
-Catena4410::LoRaWAN gLoRaWAN;
+ThisCatena::LoRaWAN gLoRaWAN;
 
 // the RTC instance, used for sleeping
 CatenaRTC gRtc;
@@ -125,7 +128,7 @@ Adafruit_BME280 bme; // The default initalizer creates an I2C connection
 bool fBme;
 
 //  the LED flasher
-StatusLed gLed(Catena4410::PIN_STATUS_LED);
+StatusLed gLed(ThisCatena::PIN_STATUS_LED);
 
 //  the job that's used to synchronize us with the LMIC code
 static osjob_t sensorJob;
@@ -156,9 +159,9 @@ Returns:
 
 void setup(void) 
 {
-    gCatena4410.begin();
+    gCatena.begin();
 
-    gCatena4410.SafePrintf("Catena 4450 sensor1 V%s\n", sVersion);
+    gCatena.SafePrintf("Catena 4450 sensor1 V%s\n", sVersion);
 
     // set up the status led
     gLed.begin();
@@ -166,42 +169,42 @@ void setup(void)
     // set up the RTC object
     gRtc.begin();
 
-    if (! gLoRaWAN.begin(&gCatena4410))
-	gCatena4410.SafePrintf("LoRaWAN init failed\n");
+    if (! gLoRaWAN.begin(&gCatena))
+	gCatena.SafePrintf("LoRaWAN init failed\n");
 
-    Catena4410::UniqueID_string_t CpuIDstring;
+    ThisCatena::UniqueID_string_t CpuIDstring;
 
-    gCatena4410.SafePrintf("CPU Unique ID: %s\n",
-        gCatena4410.GetUniqueIDstring(&CpuIDstring)
+    gCatena.SafePrintf("CPU Unique ID: %s\n",
+        gCatena.GetUniqueIDstring(&CpuIDstring)
         );
 
     /* find the platform */
-    const Catena4410::EUI64_buffer_t *pSysEUI = gCatena4410.GetSysEUI();
+    const ThisCatena::EUI64_buffer_t *pSysEUI = gCatena.GetSysEUI();
 
-    const CATENA_PLATFORM * const pPlatform = gCatena4410.GetPlatform();
+    const CATENA_PLATFORM * const pPlatform = gCatena.GetPlatform();
 
     if (pPlatform)
     {
-      gCatena4410.SafePrintf("EUI64: ");
+      gCatena.SafePrintf("EUI64: ");
       for (unsigned i = 0; i < sizeof(pSysEUI->b); ++i)
       {
-        gCatena4410.SafePrintf("%s%02x", i == 0 ? "" : "-", pSysEUI->b[i]);
+        gCatena.SafePrintf("%s%02x", i == 0 ? "" : "-", pSysEUI->b[i]);
       }
-      gCatena4410.SafePrintf("\n");
-      gCatena4410.SafePrintf(
+      gCatena.SafePrintf("\n");
+      gCatena.SafePrintf(
             "Platform Flags:  %#010x\n",
-            gCatena4410.GetPlatformFlags()
+            gCatena.GetPlatformFlags()
             );
-      gCatena4410.SafePrintf(
+      gCatena.SafePrintf(
             "Operating Flags:  %#010x\n",
-            gCatena4410.GetOperatingFlags()
+            gCatena.GetOperatingFlags()
             );
     }
 
     /* initialize the BME280 */
     if (! bme.begin(BME280_ADDRESS, Adafruit_BME280::OPERATING_MODE::Sleep))
     {
-      gCatena4410.SafePrintf("No BME280 found: check wiring\n");
+      gCatena.SafePrintf("No BME280 found: check wiring\n");
       fBme = false;
     }
     else
@@ -246,8 +249,8 @@ void startSendingUplink(void)
   b.put(0x00); /* will be set to the flags */
 
   // vBat is sent as 5000 * v
-  float vBat = gCatena4410.ReadVbat();
-  gCatena4410.SafePrintf("vBat:    %d mV\n", (int) (vBat * 1000.0f));
+  float vBat = gCatena.ReadVbat();
+  gCatena.SafePrintf("vBat:    %d mV\n", (int) (vBat * 1000.0f));
   b.putV(vBat);
   flag |= FlagVbat;
 
@@ -257,7 +260,7 @@ void startSendingUplink(void)
        // temperature is 2 bytes from -0x80.00 to +0x7F.FF degrees C
        // pressure is 2 bytes, hPa * 10.
        // humidity is one byte, where 0 == 0/256 and 0xFF == 255/256.
-       gCatena4410.SafePrintf("BME280:  T: %d P: %d RH: %d\n", (int) m.Temperature, (int) m.Pressure, (int)m.Humidity);
+       gCatena.SafePrintf("BME280:  T: %d P: %d RH: %d\n", (int) m.Temperature, (int) m.Pressure, (int)m.Humidity);
        b.putT(m.Temperature);
        b.putP(m.Pressure);
        b.putRH(m.Humidity);
