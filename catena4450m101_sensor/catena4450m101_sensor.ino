@@ -45,8 +45,6 @@ Revision history:
 
 #include <type_traits>
 
-#include <Catena_Fram2K.h>
-
 /****************************************************************************\
 |
 |		Manifest constants & typedefs.
@@ -84,6 +82,7 @@ static bool displayTempSensorDetails(void);
 static bool checkWaterSensorPresent(void);
 static void settleDoneCb(osjob_t *pSendJob);
 static void warmupDoneCb(osjob_t *pSendJob);
+static void txFailedDoneCb(osjob_t *pSendJob);
 static Arduino_LoRaWAN::SendBufferCbFn sendBufferDoneCb;
 
 /****************************************************************************\
@@ -169,8 +168,11 @@ void setup(void)
     // set up the RTC object
     gRtc.begin();
 
+    gCatena.SafePrintf("LoRaWAN init: ");
     if (! gLoRaWAN.begin(&gCatena))
-	gCatena.SafePrintf("LoRaWAN init failed\n");
+	gCatena.SafePrintf("failed\n");
+    else
+        gCatena.SafePrintf("OK\n");
 
     ThisCatena::UniqueID_string_t CpuIDstring;
 
@@ -283,13 +285,34 @@ sendBufferDoneCb(
     bool fStatus
     )
     {
+    osjobcb_t pFn;
+
     gLed.Set(LedPattern::Settling);
+    if (! fStatus)
+        {
+        gCatena.SafePrintf("send buffer failed\n");
+        pFn = txFailedDoneCb;
+        }
+    else
+        {
+        pFn = settleDoneCb;
+        }
     os_setTimedCallback(
             &sensorJob,
             os_getTime()+sec2osticks(CATCFG_T_SETTLE),
-            settleDoneCb
+            pFn
             );
     }
+
+static void
+txFailedDoneCb(
+        osjob_t *pSendJob
+        )
+        {
+        gCatena.SafePrintf("not provisioned, idling\n");
+        gLoRaWAN.Shutdown();
+        gLed.Set(LedPattern::NotProvisioned);
+        }
 
 #include <delay.h>
 
