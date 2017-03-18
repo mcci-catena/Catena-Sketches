@@ -315,9 +315,17 @@ void loop()
   {
     uint32_t uCount;
     uint16_t pCount;
+    size_t nRead;
 
     pCount = 0;
-    uCount = fram.read8(pCount+0) | fram.read8(pCount+1) << 8 | fram.read8(pCount+2) << 16 | fram.read8(pCount+3) << 24;
+    uCount = 0xDEADBEEF;
+    nRead = fram.read(pCount, (uint8_t *)&uCount, sizeof(uCount));
+    
+    if (nRead != sizeof(uCount))
+        {
+        gCatena.SafePrintf("too few bytes read: %zu\n", nRead);
+        }
+
     if (Serial) Serial.print(uCount, HEX); if (Serial) Serial.println(" cycles");
     if (uCount == 0 || (uCount & -uCount) != uCount)
     {
@@ -325,10 +333,7 @@ void loop()
       uCount = 1;
     }
     uCount = uCount << 1;
-    fram.write8(pCount + 0, uCount & 0xFF); 
-    fram.write8(pCount + 1, (uCount >> 8) & 0xFF);
-    fram.write8(pCount + 2, (uCount >> 16) & 0xFF);
-    fram.write8(pCount + 3, (uCount >> 24) & 0xFF);
+    fram.write(pCount, (uint8_t *)&uCount, sizeof(uCount));
   }
 
   if (fHasPower1)
