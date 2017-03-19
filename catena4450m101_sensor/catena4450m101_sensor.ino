@@ -119,6 +119,11 @@ ThisCatena gCatena;
 //
 ThisCatena::LoRaWAN gLoRaWAN;
 
+//
+// the LED
+//
+StatusLed gLed (ThisCatena::PIN_STATUS_LED);
+
 // the RTC instance, used for sleeping
 CatenaRTC gRtc;
 
@@ -126,8 +131,6 @@ CatenaRTC gRtc;
 Adafruit_BME280 bme; // The default initalizer creates an I2C connection
 bool fBme;
 
-//  the LED flasher
-StatusLed gLed(ThisCatena::PIN_STATUS_LED);
 
 //  the job that's used to synchronize us with the LMIC code
 static osjob_t sensorJob;
@@ -162,8 +165,8 @@ void setup(void)
 
     gCatena.SafePrintf("Catena 4450 sensor1 V%s\n", sVersion);
 
-    // set up the status led
     gLed.begin();
+    gCatena.registerObject(&gLed);
 
     // set up the RTC object
     gRtc.begin();
@@ -233,8 +236,6 @@ void loop()
 {
   gCatena.poll();
   gLoRaWAN.loop();
-
-  gLed.loop();
 }
 
 void startSendingUplink(void)
