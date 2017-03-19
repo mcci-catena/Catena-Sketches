@@ -231,6 +231,7 @@ void setup(void)
 // done by outcalls scheduled from the LMIC os loop.
 void loop() 
 {
+  gCatena.poll();
   gLoRaWAN.loop();
 
   gLed.loop();
