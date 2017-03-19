@@ -35,6 +35,7 @@ Revision history:
 #include <CatenaRTC.h>
 #include <Catena_Led.h>
 #include <Catena_TxBuffer.h>
+#include <Catena_CommandStream.h>
 
 #include <Wire.h>
 #include <Adafruit_BME280.h>
@@ -173,9 +174,15 @@ void setup(void)
 
     gCatena.SafePrintf("LoRaWAN init: ");
     if (! gLoRaWAN.begin(&gCatena))
+        {
 	gCatena.SafePrintf("failed\n");
+        gCatena.registerObject(&gLoRaWAN);
+        }
     else
+        {
         gCatena.SafePrintf("OK\n");
+        gCatena.registerObject(&gLoRaWAN);
+        }
 
     ThisCatena::UniqueID_string_t CpuIDstring;
 
@@ -235,7 +242,6 @@ void setup(void)
 void loop() 
 {
   gCatena.poll();
-  gLoRaWAN.loop();
 }
 
 void startSendingUplink(void)
