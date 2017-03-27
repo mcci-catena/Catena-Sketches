@@ -236,6 +236,7 @@ void setup(void)
                 {
                 bh1750.begin();
                 fLux = true;
+                bh1750.configure(BH1750_ONE_TIME_HIGH_RES_MODE_2);
                 }
         else
                 {
@@ -331,16 +332,6 @@ void startSendingUplink(void)
         b.putBootCountLsb(bootCount);
         flag |= FlagsSensor2::FlagBoot;
         }
-  if (fLux)
-        {
-        /* Get a new sensor event */
-        uint16_t light;
-
-        light = bh1750.readLightLevel();
-        gCatena.SafePrintf("BH1750: %u lux\n", light);
-        b.putLux(light);
-        flag |= FlagsSensor2::FlagLux;
-        }
 
   if (fBme)
        {
@@ -360,6 +351,18 @@ void startSendingUplink(void)
 
        flag |= FlagsSensor2::FlagTPH;
        }
+
+  if (fLux)
+        {
+        /* Get a new sensor event */
+        uint16_t light;
+
+        light = bh1750.readLightLevel();
+        gCatena.SafePrintf("BH1750:  %u lux\n", light);
+        b.putLux(light);
+        flag |= FlagsSensor2::FlagLux;
+        }
+
   if (fHasPower1)
         {
         uint32_t power1in, power1out;
@@ -368,7 +371,7 @@ void startSendingUplink(void)
         power1out = gPower1P2.getcurrent();
 
         gCatena.SafePrintf(
-                "Power:  IN: %u  OUT: %u\n",
+                "Power:   IN: %u  OUT: %u\n",
                 power1in,
                 power1out
                 );
