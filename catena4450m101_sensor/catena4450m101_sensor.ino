@@ -36,10 +36,12 @@ Revision history:
 #include <Catena_Led.h>
 #include <Catena_TxBuffer.h>
 #include <Catena_CommandStream.h>
+#include <Catena_Totalizer.h>
 
 #include <Wire.h>
 #include <Adafruit_BME280.h>
 #include <Arduino_LoRaWAN.h>
+#include <BH1750.h>
 #include <lmic.h>
 #include <hal/hal.h>
 #include <mcciadk_baselib.h>
@@ -77,10 +79,6 @@ enum    {
         };
 
 // forwards
-static void configureLuxSensor(void);
-static void displayLuxSensorDetails(void);
-static bool displayTempSensorDetails(void);
-static bool checkWaterSensorPresent(void);
 static void settleDoneCb(osjob_t *pSendJob);
 static void warmupDoneCb(osjob_t *pSendJob);
 static void txFailedDoneCb(osjob_t *pSendJob);
@@ -133,6 +131,17 @@ CatenaRTC gRtc;
 Adafruit_BME280 bme; // The default initalizer creates an I2C connection
 bool fBme;
 
+//   The LUX sensor
+BH1750 bh1750;
+bool fLux;
+
+//   The contact sensors
+bool fHasPower1;
+uint8_t kPinPower1P1;
+uint8_t kPinPower1P2;
+
+cTotalizer gPower1P1;
+cTotalizer gPower1P2;
 
 //  the job that's used to synchronize us with the LMIC code
 static osjob_t sensorJob;
@@ -162,88 +171,139 @@ Returns:
 */
 
 void setup(void) 
-{
-    gCatena.begin();
-
-    gCatena.SafePrintf("Catena 4450 sensor1 V%s\n", sVersion);
-
-    gLed.begin();
-    gCatena.registerObject(&gLed);
-
-    // set up the RTC object
-    gRtc.begin();
-
-    gCatena.SafePrintf("LoRaWAN init: ");
-    if (! gLoRaWAN.begin(&gCatena))
         {
-	gCatena.SafePrintf("failed\n");
-        gCatena.registerObject(&gLoRaWAN);
+        gCatena.begin();
+
+        gCatena.SafePrintf("Catena 4450 sensor1 V%s\n", sVersion);
+
+        gLed.begin();
+        gCatena.registerObject(&gLed);
+
+        // set up the RTC object
+        gRtc.begin();
+
+        gCatena.SafePrintf("LoRaWAN init: ");
+        if (!gLoRaWAN.begin(&gCatena))
+                {
+                gCatena.SafePrintf("failed\n");
+                gCatena.registerObject(&gLoRaWAN);
+                }
+        else
+                {
+                gCatena.SafePrintf("OK\n");
+                gCatena.registerObject(&gLoRaWAN);
+                }
+
+        ThisCatena::UniqueID_string_t CpuIDstring;
+
+        gCatena.SafePrintf("CPU Unique ID: %s\n",
+                gCatena.GetUniqueIDstring(&CpuIDstring)
+                );
+
+        /* find the platform */
+        const ThisCatena::EUI64_buffer_t *pSysEUI = gCatena.GetSysEUI();
+
+        uint32_t flags;
+        const CATENA_PLATFORM * const pPlatform = gCatena.GetPlatform();
+
+        if (pPlatform)
+                {
+                gCatena.SafePrintf("EUI64: ");
+                for (unsigned i = 0; i < sizeof(pSysEUI->b); ++i)
+                        {
+                        gCatena.SafePrintf("%s%02x", i == 0 ? "" : "-", pSysEUI->b[i]);
+                        }
+                gCatena.SafePrintf("\n");
+                flags = gCatena.GetPlatformFlags();
+                gCatena.SafePrintf(
+                        "Platform Flags:  %#010x\n",
+                        flags
+                        );
+                gCatena.SafePrintf(
+                        "Operating Flags:  %#010x\n",
+                        gCatena.GetOperatingFlags()
+                        );
+                }
+        else
+                {
+                gCatena.SafePrintf("**** no platform, check provisioning ****\n");
+                flags = 0;
+                }
+
+
+        /* initialize the lux sensor */
+        if (flags & CatenaSamd21::fHasLuxRohm)
+                {
+                bh1750.begin();
+                fLux = true;
+                }
+        else
+                {
+                fLux = false;
+                }
+
+        /* initialize the BME280 */
+        if (!bme.begin(BME280_ADDRESS, Adafruit_BME280::OPERATING_MODE::Sleep))
+                {
+                gCatena.SafePrintf("No BME280 found: check wiring\n");
+                fBme = false;
+                }
+        else
+                {
+                fBme = true;
+                }
+
+        /* is it modded? */
+        uint32_t modnumber = gCatena.PlatformFlags_GetModNumber(flags);
+
+        fHasPower1 = false;
+
+        if (modnumber != 0)
+                {
+                gCatena.SafePrintf("Catena 4450-M%u\n", modnumber);
+                if (modnumber == 101)
+                        {
+                        fHasPower1 = true;
+                        kPinPower1P1 = A0;
+                        kPinPower1P2 = A1;
+                        }
+                else
+                        {
+                        gCatena.SafePrintf("unknown mod number %d\n", modnumber);
+                        }
+                }
+        else
+                {
+                gCatena.SafePrintf("No mods detected\n");
+                }
+
+        if (fHasPower1)
+                {
+                if (! gPower1P1.begin(kPinPower1P1) ||
+                    ! gPower1P2.begin(kPinPower1P2))
+                        {
+                        fHasPower1 = false;
+                        }
+                }
+
+        /* now, we kick off things by sending our first message */
+        gLed.Set(LedPattern::Joining);
+
+        /* warm up the BME280 by discarding a measurement */
+        if (fBme)
+                (void)bme.readTemperature();
+
+        /* trigger a join by sending the first packet */
+        startSendingUplink();
         }
-    else
-        {
-        gCatena.SafePrintf("OK\n");
-        gCatena.registerObject(&gLoRaWAN);
-        }
-
-    ThisCatena::UniqueID_string_t CpuIDstring;
-
-    gCatena.SafePrintf("CPU Unique ID: %s\n",
-        gCatena.GetUniqueIDstring(&CpuIDstring)
-        );
-
-    /* find the platform */
-    const ThisCatena::EUI64_buffer_t *pSysEUI = gCatena.GetSysEUI();
-
-    const CATENA_PLATFORM * const pPlatform = gCatena.GetPlatform();
-
-    if (pPlatform)
-    {
-      gCatena.SafePrintf("EUI64: ");
-      for (unsigned i = 0; i < sizeof(pSysEUI->b); ++i)
-      {
-        gCatena.SafePrintf("%s%02x", i == 0 ? "" : "-", pSysEUI->b[i]);
-      }
-      gCatena.SafePrintf("\n");
-      gCatena.SafePrintf(
-            "Platform Flags:  %#010x\n",
-            gCatena.GetPlatformFlags()
-            );
-      gCatena.SafePrintf(
-            "Operating Flags:  %#010x\n",
-            gCatena.GetOperatingFlags()
-            );
-    }
-
-    /* initialize the BME280 */
-    if (! bme.begin(BME280_ADDRESS, Adafruit_BME280::OPERATING_MODE::Sleep))
-    {
-      gCatena.SafePrintf("No BME280 found: check wiring\n");
-      fBme = false;
-    }
-    else
-    {
-      fBme = true;
-    }
-
-    /* now, we kick off things by sending our first message */
-    gLed.Set(LedPattern::Joining);
-
-    /* warm up the BME280 by discarding a measurement */
-    if (fBme)
-       (void) bme.readTemperature();
-
-    /* trigger a join by sending the first packet */
-    startSendingUplink();
-
-}
 
 // The Arduino loop routine -- in our case, we just drive the other loops.
 // If we try to do too much, we can break the LMIC radio. So the work is
 // done by outcalls scheduled from the LMIC os loop.
 void loop() 
-{
-  gCatena.poll();
-}
+        {
+        gCatena.poll();
+        }
 
 void startSendingUplink(void)
 {
@@ -251,11 +311,11 @@ void startSendingUplink(void)
   LedPattern savedLed = gLed.Set(LedPattern::Measuring);
 
   b.begin();
-  uint8_t flag;
+  FlagsSensor2 flag;
 
-  flag = 0;
+  flag = FlagsSensor2(0);
 
-  b.put(0x11); /* the flag for this record format */
+  b.put(FormatSensor2); /* the flag for this record format */
   uint8_t * const pFlag = b.getp();
   b.put(0x00); /* will be set to the flags */
 
@@ -263,7 +323,24 @@ void startSendingUplink(void)
   float vBat = gCatena.ReadVbat();
   gCatena.SafePrintf("vBat:    %d mV\n", (int) (vBat * 1000.0f));
   b.putV(vBat);
-  flag |= FlagVbat;
+  flag |= FlagsSensor2::FlagVbat;
+
+  uint32_t bootCount;
+  if (gCatena.getBootCount(bootCount))
+        {
+        b.putBootCountLsb(bootCount);
+        flag |= FlagsSensor2::FlagBoot;
+        }
+  if (fLux)
+        {
+        /* Get a new sensor event */
+        uint16_t light;
+
+        light = bh1750.readLightLevel();
+        gCatena.SafePrintf("BH1750: %u lux\n", light);
+        b.putLux(light);
+        flag |= FlagsSensor2::FlagLux;
+        }
 
   if (fBme)
        {
@@ -271,15 +348,37 @@ void startSendingUplink(void)
        // temperature is 2 bytes from -0x80.00 to +0x7F.FF degrees C
        // pressure is 2 bytes, hPa * 10.
        // humidity is one byte, where 0 == 0/256 and 0xFF == 255/256.
-       gCatena.SafePrintf("BME280:  T: %d P: %d RH: %d\n", (int) m.Temperature, (int) m.Pressure, (int)m.Humidity);
+       gCatena.SafePrintf(
+                "BME280:  T: %d P: %d RH: %d\n", 
+                (int) m.Temperature, 
+                (int) m.Pressure, 
+                (int) m.Humidity
+                );
        b.putT(m.Temperature);
        b.putP(m.Pressure);
        b.putRH(m.Humidity);
 
-       flag |= FlagTPH;
+       flag |= FlagsSensor2::FlagTPH;
        }
+  if (fHasPower1)
+        {
+        uint32_t power1in, power1out;
 
-  *pFlag = flag;
+        power1in = gPower1P1.getcurrent();
+        power1out = gPower1P2.getcurrent();
+
+        gCatena.SafePrintf(
+                "Power:  IN: %u  OUT: %u\n",
+                power1in,
+                power1out
+                );
+        b.putWH(power1in);
+        b.putWH(power1out);
+
+        flag |= FlagsSensor2::FlagWattHours;
+        }
+
+  *pFlag = uint8_t(flag);
   if (savedLed != LedPattern::Joining)
           gLed.Set(LedPattern::Sending);
   else
@@ -332,7 +431,8 @@ static void settleDoneCb(
     uint32_t startTime;
 
     // if connected to USB, don't sleep
-    if (Serial.dtr())
+    // ditto if we're monitoring pulses.
+    if (Serial.dtr() || fHasPower1)
         {
         gLed.Set(LedPattern::Sleeping);
         os_setTimedCallback(
