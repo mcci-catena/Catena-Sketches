@@ -84,6 +84,7 @@ static bool checkWaterSensorPresent(void);
 static void settleDoneCb(osjob_t *pSendJob);
 static void warmupDoneCb(osjob_t *pSendJob);
 static void txFailedDoneCb(osjob_t *pSendJob);
+static void sleepDoneCb(osjob_t *pSendJob);
 static Arduino_LoRaWAN::SendBufferCbFn sendBufferDoneCb;
 
 /****************************************************************************\
@@ -330,6 +331,18 @@ static void settleDoneCb(
     {
     uint32_t startTime;
 
+    // if connected to USB, don't sleep
+    if (Serial.dtr())
+        {
+        gLed.Set(LedPattern::Sleeping);
+        os_setTimedCallback(
+                &sensorJob,
+                os_getTime() + sec2osticks(CATCFG_T_INTERVAL),
+                sleepDoneCb
+                );
+        return;
+        }
+
     /* ok... now it's time for a deep sleep */
     gLed.Set(LedPattern::Off);
 
@@ -342,14 +355,21 @@ static void settleDoneCb(
     adjust_millis_forward(CATCFG_T_INTERVAL  * 1000);
 
     /* and now... we're awake again. trigger another measurement */
-    gLed.Set(LedPattern::WarmingUp);
-    
-    os_setTimedCallback(
-            &sensorJob,
-            os_getTime()+sec2osticks(CATCFG_T_WARMUP),
-            warmupDoneCb
-            );
+    sleepDoneCb(pSendJob);
     }
+
+static void sleepDoneCb(
+        osjob_t *pJob
+        )
+        {
+        gLed.Set(LedPattern::WarmingUp);
+
+        os_setTimedCallback(
+                &sensorJob,
+                os_getTime() + sec2osticks(CATCFG_T_WARMUP),
+                warmupDoneCb
+                );
+        }
 
 static void warmupDoneCb(
     osjob_t *pJob
