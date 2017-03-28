@@ -1,4 +1,4 @@
-/* catena4450m101_sensor.ino	Fri Mar 10 2017 21:42:21 tmm */
+/* catena4450m101_sensor.ino	Tue Mar 28 2017 19:52:20 tmm */
 
 /*
 
@@ -8,7 +8,7 @@ Function:
 	Code for the electric sensor with Catena 4450-M101.
 
 Version:
-	V0.1.0	Fri Mar 10 2017 21:42:21 tmm	Edit level 1
+	V0.1.1	Tue Mar 28 2017 19:52:20 tmm	Edit level 1
 
 Copyright notice:
 	This file copyright (C) 2017 by
@@ -28,6 +28,10 @@ Author:
 Revision history:
    0.1.0  Fri Mar 10 2017 21:42:21  tmm
 	Module created.
+
+   0.1.1  Tue Mar 28 2017 19:52:20  tmm
+	Fix bug: not reading current lux value because sensor was not in
+	continuous mode. Add 150uA of current draw.
 
 */
 
@@ -236,7 +240,7 @@ void setup(void)
                 {
                 bh1750.begin();
                 fLux = true;
-                bh1750.configure(BH1750_ONE_TIME_HIGH_RES_MODE_2);
+                bh1750.configure(BH1750_CONTINUOUS_HIGH_RES_MODE_2);
                 }
         else
                 {
