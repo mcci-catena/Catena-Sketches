@@ -7,6 +7,7 @@ It needs the following repos to build:
 *  https://github.com/mcci-catena/Catena-mcciadk
 *  https://github.com/mcci-catena/arduino-lmic
 *  https://github.com/mcci-catena/Adafruit_BME280_Library
+*  https://github.com/mcci-catena/Adafruit_Sensor
 *  https://github.com/mcci-catena/RTCZero
 *  https://github.com/mcci-catena/BH1750
 

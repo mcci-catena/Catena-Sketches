@@ -9,6 +9,7 @@ https://github.com/mcci-catena/arduino-lorawan.git
 https://github.com/mcci-catena/Catena-mcciadk.git
 https://github.com/mcci-catena/arduino-lmic.git
 https://github.com/mcci-catena/Adafruit_BME280_Library.git
+https://github.com/mcci-catena/Adafruit_Sensor.git
 https://github.com/mcci-catena/RTCZero.git
 https://github.com/mcci-catena/BH1750.git'
 
