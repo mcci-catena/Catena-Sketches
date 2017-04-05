@@ -12,3 +12,11 @@ It needs the following repos to build:
 *  https://github.com/mcci-catena/BH1750
 
 The script 'git-boot.sh' in this directory will get all the things you need.
+
+After you've done that, you may also need to do the following:
+
+```bash
+git remote add mcci-catena https://github.com/mcci-catena/ArduinoCore-samd.git
+git fetch mcci-catena --all
+git merge mcci-catena/TMM-Sleep
+```
