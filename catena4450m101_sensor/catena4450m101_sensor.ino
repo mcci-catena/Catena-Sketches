@@ -18,10 +18,10 @@ Copyright notice:
 		Ithaca, NY  14850
 
 	An unpublished work.  All rights reserved.
-	
+
 	This file is proprietary information, and may not be disclosed or
 	copied without the prior permission of MCCI Corporation.
- 
+
 Author:
 	Terry Moore, MCCI Corporation	March 2017
 
@@ -56,7 +56,7 @@ Revision history:
 |
 |		Manifest constants & typedefs.
 |
-|	This is strictly for private types and constants which will not 
+|	This is strictly for private types and constants which will not
 |	be exported.
 |
 \****************************************************************************/
@@ -93,7 +93,7 @@ static Arduino_LoRaWAN::SendBufferCbFn sendBufferDoneCb;
 |
 |	Read-only data.
 |
-|	If program is to be ROM-able, these must all be tagged read-only 
+|	If program is to be ROM-able, these must all be tagged read-only
 |	using the ROM storage class; they may be global.
 |
 \****************************************************************************/
@@ -106,7 +106,7 @@ static const char sVersion[] = "0.1.0";
 |
 |	If program is to be ROM-able, these must be initialized
 |	using the BSS keyword.  (This allows for compilers that require
-|	every variable to have an initializer.)  Note that only those 
+|	every variable to have an initializer.)  Note that only those
 |	variables owned by this module should be declared here, using the BSS
 |	keyword; this allows for linkers that dislike multiple declarations
 |	of objects.
@@ -167,14 +167,15 @@ Description:
 	This function is called by the Arduino framework after
 	basic framework has been initialized. We initialize the sensors
 	that are present on the platform, set up the LoRaWAN connection,
-        and (ultimately) return to the 
+        and (ultimately) return to the framework, which then calls loop()
+        forever.
 
 Returns:
 	No explicit result.
 
 */
 
-void setup(void) 
+void setup(void)
         {
         gCatena.begin();
 
@@ -305,7 +306,7 @@ void setup(void)
 // The Arduino loop routine -- in our case, we just drive the other loops.
 // If we try to do too much, we can break the LMIC radio. So the work is
 // done by outcalls scheduled from the LMIC os loop.
-void loop() 
+void loop()
         {
         gCatena.poll();
         }
@@ -344,9 +345,9 @@ void startSendingUplink(void)
        // pressure is 2 bytes, hPa * 10.
        // humidity is one byte, where 0 == 0/256 and 0xFF == 255/256.
        gCatena.SafePrintf(
-                "BME280:  T: %d P: %d RH: %d\n", 
-                (int) m.Temperature, 
-                (int) m.Pressure, 
+                "BME280:  T: %d P: %d RH: %d\n",
+                (int) m.Temperature,
+                (int) m.Pressure,
                 (int) m.Humidity
                 );
        b.putT(m.Temperature);
@@ -456,7 +457,7 @@ static void settleDoneCb(
     startTime = millis();
     gRtc.SetAlarm(CATCFG_T_INTERVAL);
     gRtc.SleepForAlarm(
-        CatenaRTC::MATCH_HHMMSS, 
+        CatenaRTC::MATCH_HHMMSS,
         CatenaRTC::SleepMode::IdleCpuAhbApb
         );
     adjust_millis_forward(CATCFG_T_INTERVAL  * 1000);
