@@ -50,6 +50,7 @@ Revision history:
 #include <hal/hal.h>
 #include <mcciadk_baselib.h>
 
+#include <cmath>
 #include <type_traits>
 
 /****************************************************************************\
@@ -98,7 +99,7 @@ static Arduino_LoRaWAN::SendBufferCbFn sendBufferDoneCb;
 |
 \****************************************************************************/
 
-static const char sVersion[] = "0.1.0";
+static const char sVersion[] = "0.1.3";
 
 /****************************************************************************\
 |
@@ -150,6 +151,13 @@ cTotalizer gPower1P2;
 //  the job that's used to synchronize us with the LMIC code
 static osjob_t sensorJob;
 void sensorJob_cb(osjob_t *pJob);
+
+// function for scaling power
+static uint16_t
+dNdT_getFrac(
+        uint32_t deltaC,
+        uint32_t delta_ms
+        );
 
 /*
 
@@ -295,6 +303,24 @@ void setup(void)
         /* now, we kick off things by sending our first message */
         gLed.Set(LedPattern::Joining);
 
+        // unit testing for the scaling functions
+        gCatena.SafePrintf(
+                "dNdT_getFrac tests: "
+                "0/0: %04x 90/6m: %04x 89/6:00.1: %04x 1439/6m: %04x\n",
+                dNdT_getFrac(0, 0),
+                dNdT_getFrac(90, 6 * 60 * 1000),
+                dNdT_getFrac(89, 6 * 60 * 1000 + 100),
+                dNdT_getFrac(1439, 6 * 60 * 1000)
+                );
+        gCatena.SafePrintf(
+                "dNdT_getFrac tests: "
+                "1/6m: %04x 20/6m: %04x 1/60:00.1: %04x 1440/5:59.99: %04x\n",
+                dNdT_getFrac(1, 6 * 60 * 1000),
+                dNdT_getFrac(20, 6 * 60 * 1000),
+                dNdT_getFrac(1, 60 * 60 * 1000 + 100),
+                dNdT_getFrac(1440, 6 * 60 * 1000 - 10)
+                );
+
         /* warm up the BME280 by discarding a measurement */
         if (fBme)
                 (void)bme.readTemperature();
@@ -309,6 +335,40 @@ void setup(void)
 void loop()
         {
         gCatena.poll();
+        }
+
+static uint16_t dNdT_getFrac(
+        uint32_t deltaC,
+        uint32_t delta_ms
+        )
+        {
+        if (delta_ms == 0 || deltaC == 0)
+                return 0;
+
+        // this is a value in [0,1)
+        float dNdTperHour = float(deltaC * 250) / float(delta_ms);
+
+        if (dNdTperHour <= 0)
+                return 0;
+        else if (dNdTperHour >= 1)
+                return 0xFFFF;
+        else
+                {
+                int iExp;
+                float normalValue;
+                normalValue = frexpf(dNdTperHour, &iExp);
+
+                // dNdTperHour is supposed to be in [0..1), so useful exp
+                // is [0..-15]
+                iExp += 15;
+                if (iExp < 0)
+                        iExp = 0;
+                if (iExp > 15)
+                        return 0xFFFF;
+
+
+                return (uint16_t)((iExp << 12u) + (unsigned) scalbnf(normalValue, 12));
+                }
         }
 
 void startSendingUplink(void)
@@ -371,19 +431,54 @@ void startSendingUplink(void)
   if (fHasPower1)
         {
         uint32_t power1in, power1out;
+        uint32_t power1in_dc, power1in_dt;
+        uint32_t power1out_dc, power1out_dt;
 
         power1in = gPower1P1.getcurrent();
+        gPower1P1.getDeltaCountAndTime(power1in_dc, power1in_dt);
+        gPower1P1.setReference();
+
         power1out = gPower1P2.getcurrent();
+        gPower1P2.getDeltaCountAndTime(power1out_dc, power1out_dt);
+        gPower1P2.setReference();
 
         gCatena.SafePrintf(
-                "Power:   IN: %u  OUT: %u\n",
+                "Power:   IN: %u OUT: %u\n",
                 power1in,
                 power1out
                 );
         b.putWH(power1in);
         b.putWH(power1out);
-
         flag |= FlagsSensor2::FlagWattHours;
+
+        // we know that we get at most 4 pulses per second, no matter
+        // the scaling. Therefore, if we convert to pulses/hour, we'll
+        // have a value that is no more than 3600 * 4, or 14,400.
+        // This fits in 14 bits. At low pulse rates, there's more
+        // info in the denominator than in the numerator. So FP is really
+        // called for. We use a simple floating point format, since this
+        // is unsigned: 4 bits of exponent, 12 bits of fraction, and we
+        // don't bother to omit the MSB of the (normalized fraction);
+        // and we multiply by 2^(exp+1) (so 0x0800 is 2 * 0.5 == 1,
+        // 0xF8000 is 2^16 * 1 = 65536).
+        uint16_t fracPower1In = dNdT_getFrac(power1in_dc, power1in_dt);
+        uint16_t fracPower1Out = dNdT_getFrac(power1out_dc, power1out_dt);
+        b.putPulseFraction(
+                fracPower1In
+                );
+        b.putPulseFraction(
+                fracPower1Out
+                );
+
+        gCatena.SafePrintf(
+                "Power:   IN: %u/%u (%04x) OUT: %u/%u (%04x)\n",
+                power1in_dc, power1in_dt,
+                fracPower1In,
+                power1out_dc, power1out_dt,
+                fracPower1Out
+                );
+
+        flag |= FlagsSensor2::FlagPulsesPerHour;
         }
 
   *pFlag = uint8_t(flag);
