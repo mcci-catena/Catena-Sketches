@@ -22,25 +22,12 @@
 ##############################################################################
 
 PNAME=$(basename "$0")
+PDIR=$(dirname "$0")
 OPTDEBUG=0
 OPTVERBOSE=0
 #### LIBRARY_ROOT_DEFAULT: the path to the Arduino libraries on your
 #### system.
 LIBRARY_ROOT_DEFAULT=~/Documents/Arduino/libraries
-
-### use a long quoted string to get the repositories
-### into LIBRARY_REPOS.  Multiple lines for readabilty.
-LIBRARY_REPOS='
-https://github.com/mcci-catena/Adafruit_FRAM_I2C.git
-https://github.com/mcci-catena/Catena4410-Arduino-Library.git
-https://github.com/mcci-catena/arduino-lorawan.git
-https://github.com/mcci-catena/Catena-mcciadk.git
-https://github.com/mcci-catena/arduino-lmic.git
-https://github.com/mcci-catena/Adafruit_BME280_Library.git
-https://github.com/mcci-catena/Adafruit_Sensor.git
-https://github.com/mcci-catena/RTCZero.git
-https://github.com/mcci-catena/BH1750.git
-'
 
 ##############################################################################
 # verbose output
@@ -62,6 +49,20 @@ function _error {
 function _fatal {
 	_error "$@" ; exit 1
 }
+
+##############################################################################
+# load the list of repos
+##############################################################################
+
+### use a long quoted string to get the repositories
+### into LIBRARY_REPOS.  Multiple lines for readabilty.
+LIBRARY_REPOS_DAT="${PDIR}/git-repos.dat"
+if [ ! -f "${LIBRARY_REPOS_DAT}" ]; then
+	_fatal "can't find suitable git-repos.dat:" "${LIBRARY_REPOS_DAT}"
+fi
+
+# parse the repo file, deleting comments
+LIBRARY_REPOS=$(sed -e 's/#.*$//' ${PDIR}/git-repos.dat)
 
 ##############################################################################
 # Scan the options
