@@ -69,13 +69,14 @@ LIBRARY_REPOS=$(sed -e 's/#.*$//' ${PDIR}/git-repos.dat)
 ##############################################################################
 
 LIBRARY_ROOT="${LIBRARY_ROOT_DEFAULT}"
-USAGE="${PNAME} -[D H l* T v]"
+USAGE="${PNAME} -[D H l* T u v]"
 
 #OPTDEBUG and OPTVERBOS are above
 OPTDRYRUN=0
+OPTUPDATE=0
 
 NEXTBOOL=1
-while getopts DHl:nTv c
+while getopts DHl:nTuv c
 do
 	# postcondition: NEXTBOOL=0 iff previous option was -n
 	# in all other cases, NEXTBOOL=1
@@ -90,6 +91,7 @@ do
 	l)	LIBRARY_ROOT="$OPTARG";;
 	n)	NEXTBOOL=-1;;
 	T)	OPTDRYRUN=$NEXTBOOL;;
+	u)	OPTUPDATE=$NEXTBOOL;;
 	v)	OPTVERBOSE=$NEXTBOOL;;
 	H)	less 1>&2 <<.
 Pull all the repos for this project from github.
@@ -102,6 +104,7 @@ Switches:
 	-l {path} 	sets the target "arduino library path".
 			Default is $LIBRARY_ROOT_DEFAULT.
 	-T		Do a trial run (go through the motions).
+	-u		Do a git pull if repo already is found.
 	-v		turns on verbose mode; -nv is the default.
 	-H		prints this help message.
 .
@@ -126,11 +129,12 @@ fi
 #### make sure we can cd to that directory
 cd "$LIBRARY_ROOT" || _fatal "can't cd:" "$LIBRARY_ROOT"
 
-#### keep track of successes in OK_REPOS, failures in NG_REPOS,
+#### keep track of successes in CLONED_REPOS, failures in NG_REPOS,
 #### and skipped repos in SKIPPED_REPOS
-OK_REPOS=	#empty
+CLONED_REPOS=	#empty
 NG_REPOS=	#empty
 SKIPPED_REPOS=	#empty
+PULLED_REPOS=	#empty
 
 #### scan through each of the libraries. Don't quote LIBRARY_REPOS
 #### because we want bash to split it into words.
@@ -143,8 +147,23 @@ for r in $LIBRARY_REPOS ; do
 	# skip the download.
 	#
 	if [ -d $rname ]; then
-		echo "repo $r already exists as $rname"
-		SKIPPED_REPOS="${SKIPPED_REPOS}${SKIPPED_REPOS:+ }$rname"
+		if [ $OPTUPDATE -eq 0 ]; then
+			echo "repo $r already exists as $rname, and -u not specfied"
+			SKIPPED_REPOS="${SKIPPED_REPOS}${SKIPPED_REPOS:+ }$rname"
+		else
+			if [ "$OPTDRYRUN" -ne 0 ]; then
+				_verbose Dry-run: skipping git pull "$r"
+			elif ( cd $rname && _verbose $rname: && git pull ; ); then
+				# add to the list; ${PULLED_REPOS:+ }
+				# inserts a space after each repo (but nothing
+				# if PULLED_REPOS is empty)
+				PULLED_REPOS="${PULLED_REPOS}${PULLED_REPOS:+ }$rname"
+			else
+				# error; print message and remember.
+				_error "Can't pull $r to $rname"
+				NG_REPOS="${NG_REPOS}${NG_REPOS:+ }$rname"
+			fi
+		fi
 	#
 	# otherwise try to clone the repo.
 	#
@@ -153,10 +172,10 @@ for r in $LIBRARY_REPOS ; do
 		if [ "$OPTDRYRUN" -ne 0 ]; then
 			_verbose Dry-run: skipping git clone "$r"
 		elif git clone "$r" ; then
-			# add to the list; ${OK_REPOS:+ }
+			# add to the list; ${CLONED_REPOS:+ }
 			# inserts a space after each repo (but nothing
-			# if OK_REPOS is empty)
-			OK_REPOS="${OK_REPOS}${OK_REPOS:+ }$rname"
+			# if CLONED_REPOS is empty)
+			CLONED_REPOS="${CLONED_REPOS}${CLONED_REPOS:+ }$rname"
 		else
 			# error; print message and remember.
 			_error "Can't clone $r to $rname"
@@ -176,12 +195,17 @@ fi
 if [ -z "${SKIPPED_REPOS}" ]; then
 	echo "No repos skipped."
 else
-	echo "Repos already present: ${SKIPPED_REPOS}"
+	echo "Repos skipped:         ${SKIPPED_REPOS}"
 fi
-if [ -z "${OK_REPOS}" ]; then
-	echo "*** no repos were downloaded. ***"
+if [ -z "${PULLED_REPOS}" ]; then
+	echo "*** no repos were pulled ***"
 else
-	echo "Repos downloaded:      ${OK_REPOS}"
+	echo "Repos pulled:          ${PULLED_REPOS}"
+fi
+if [ -z "${CLONED_REPOS}" ]; then
+	echo "*** no repos were cloned. ***"
+else
+	echo "Repos downloaded:      ${CLONED_REPOS}"
 fi
 if [ -z "${NG_REPOS}" ]; then
 	exit 1
