@@ -299,22 +299,22 @@ void setup(void)
         gLed.Set(LedPattern::Joining);
 
         // unit testing for the scaling functions
-        gCatena.SafePrintf(
-                "dNdT_getFrac tests: "
-                "0/0: %04x 90/6m: %04x 89/6:00.1: %04x 1439/6m: %04x\n",
-                dNdT_getFrac(0, 0),
-                dNdT_getFrac(90, 6 * 60 * 1000),
-                dNdT_getFrac(89, 6 * 60 * 1000 + 100),
-                dNdT_getFrac(1439, 6 * 60 * 1000)
-                );
-        gCatena.SafePrintf(
-                "dNdT_getFrac tests: "
-                "1/6m: %04x 20/6m: %04x 1/60:00.1: %04x 1440/5:59.99: %04x\n",
-                dNdT_getFrac(1, 6 * 60 * 1000),
-                dNdT_getFrac(20, 6 * 60 * 1000),
-                dNdT_getFrac(1, 60 * 60 * 1000 + 100),
-                dNdT_getFrac(1440, 6 * 60 * 1000 - 10)
-                );
+        //gCatena.SafePrintf(
+        //        "dNdT_getFrac tests: "
+        //        "0/0: %04x 90/6m: %04x 89/6:00.1: %04x 1439/6m: %04x\n",
+        //        dNdT_getFrac(0, 0),
+        //        dNdT_getFrac(90, 6 * 60 * 1000),
+        //        dNdT_getFrac(89, 6 * 60 * 1000 + 100),
+        //        dNdT_getFrac(1439, 6 * 60 * 1000)
+        //        );
+        //gCatena.SafePrintf(
+        //        "dNdT_getFrac tests: "
+        //        "1/6m: %04x 20/6m: %04x 1/60:00.1: %04x 1440/5:59.99: %04x\n",
+        //        dNdT_getFrac(1, 6 * 60 * 1000),
+        //        dNdT_getFrac(20, 6 * 60 * 1000),
+        //        dNdT_getFrac(1, 60 * 60 * 1000 + 100),
+        //        dNdT_getFrac(1440, 6 * 60 * 1000 - 10)
+        //        );
 
         /* warm up the BME280 by discarding a measurement */
         if (fBme)
