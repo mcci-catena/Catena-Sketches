@@ -37,7 +37,7 @@ Revision history:
 #include <stdio.h>
 #include <stdarg.h>
 #include <Adafruit_FRAM_I2C.h>
-#include <Catena4410.h>
+#include <Catena4450.h>
 
 /****************************************************************************\
 |
@@ -80,7 +80,7 @@ static void displayLuxSensorDetails(void);
 
 // globals
 // the catena
-Catena4410 gCatena;
+Catena4450 gCatena;
 
 //   The temperature/humidity sensor
 Adafruit_BME280 bme; // The default initalizer creates an I2C connection
@@ -89,8 +89,6 @@ bool fBme;
 //   The LUX sensor
 BH1750 bh1750;
 bool fLux;
-Adafruit_FRAM_I2C fram;
-bool fFram;
 
 //   The contact sensors
 bool fHasPower1;
@@ -121,15 +119,26 @@ Returns:
 void setup() 
 {
     bool fNoGood;
+    bool fBeginOK;
 
     fNoGood = false;
     
-    gCatena.begin();
+    fBeginOK = gCatena.begin();
     
     while (! Serial)
       /* idle */;
 
     gCatena.SafePrintf("Basic Catena 4450 test %s %s\n", __DATE__, __TIME__);
+
+    if (! fBeginOK)
+        {
+        gCatena.SafePrintf("\n"
+                           "***************************\n"
+                           "* gCatena.begin() failed! *\n"
+                           "***************************\n"
+                           "\n"
+                           );
+        }
     CatenaSamd21::UniqueID_string_t CpuIDstring;
 
     gCatena.SafePrintf("CPU Unique ID: %s\n", 
@@ -207,20 +216,10 @@ void setup()
       fBme = true;
     }
 
-    /* initialize the FRAM */
+    /* check the FRAM flags */
     if (! (flags & CatenaSamd21::fHasFRAM))
       {
         gCatena.SafePrintf("flags say no FRAM!\n");
-        fFram = false;
-      }
-    else if (! fram.begin())
-      {
-        gCatena.SafePrintf("failed to init FRAM: check wiring\n");
-        fFram = false;
-      }
-    else
-      {
-        fFram = true;
       }
 
    /* is it modded? */
@@ -311,30 +310,30 @@ void loop()
     gCatena.SafePrintf("No Lux sensor\n");
   }
 
-  if (fFram)
-  {
-    uint32_t uCount;
-    uint16_t pCount;
-    size_t nRead;
+  //if (fFram)
+  //{
+  //  uint32_t uCount;
+  //  uint16_t pCount;
+  //  size_t nRead;
 
-    pCount = 0;
-    uCount = 0xDEADBEEF;
-    nRead = fram.read(pCount, (uint8_t *)&uCount, sizeof(uCount));
-    
-    if (nRead != sizeof(uCount))
-        {
-        gCatena.SafePrintf("too few bytes read: %zu\n", nRead);
-        }
+  //  pCount = 2048-4;
+  //  uCount = 0xDEADBEEF;
+  //  nRead = fram.read(pCount, (uint8_t *)&uCount, sizeof(uCount));
+  //  
+  //  if (nRead != sizeof(uCount))
+  //      {
+  //      gCatena.SafePrintf("too few bytes read: %zu\n", nRead);
+  //      }
 
-    if (Serial) Serial.print(uCount, HEX); if (Serial) Serial.println(" cycles");
-    if (uCount == 0 || (uCount & -uCount) != uCount)
-    {
-      if (Serial) Serial.println("** not a power of 2, resetting **");
-      uCount = 1;
-    }
-    uCount = uCount << 1;
-    fram.write(pCount, (uint8_t *)&uCount, sizeof(uCount));
-  }
+  //  if (Serial) Serial.print(uCount, HEX); if (Serial) Serial.println(" cycles");
+  //  if (uCount == 0 || (uCount & -uCount) != uCount)
+  //  {
+  //    if (Serial) Serial.println("** not a power of 2, resetting **");
+  //    uCount = 1;
+  //  }
+  //  uCount = uCount << 1;
+  //  fram.write(pCount, (uint8_t *)&uCount, sizeof(uCount));
+  //}
 
   if (fHasPower1)
     {
