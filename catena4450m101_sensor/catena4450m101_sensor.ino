@@ -49,6 +49,7 @@ Revision history:
 #include <lmic.h>
 #include <hal/hal.h>
 #include <mcciadk_baselib.h>
+#include <delay.h>
 
 #include <cmath>
 #include <type_traits>
@@ -77,12 +78,6 @@ enum    {
                                                 CATCFG_T_SETTLE),
         };
 
-/* the mask of inputs that need pullups */
-enum    {
-        // which ports need pullup enabled?
-        CATCFG_PULLUP_BITS = 0x284c34,  // bits 2, 4, 5, 10, 11, 14, 19, 21
-        };
-
 // forwards
 static void settleDoneCb(osjob_t *pSendJob);
 static void warmupDoneCb(osjob_t *pSendJob);
@@ -99,7 +94,7 @@ static Arduino_LoRaWAN::SendBufferCbFn sendBufferDoneCb;
 |
 \****************************************************************************/
 
-static const char sVersion[] = "0.1.4";
+static const char sVersion[] = "0.1.5";
 
 /****************************************************************************\
 |
@@ -524,8 +519,6 @@ txFailedDoneCb(
         gLoRaWAN.Shutdown();
         gLed.Set(LedPattern::NotProvisioned);
         }
-
-#include <delay.h>
 
 static void settleDoneCb(
     osjob_t *pSendJob
