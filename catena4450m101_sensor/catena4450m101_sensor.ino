@@ -482,6 +482,9 @@ void startSendingUplink(void)
   else
           gLed.Set(LedPattern::Joining);
 
+  // for HOLT insstallation, need more power and slower TX
+  LMIC_setDrTxpow(DR_SF9, 20);
+
   gLoRaWAN.SendBuffer(b.getbase(), b.getn(), sendBufferDoneCb, NULL);
 }
 
