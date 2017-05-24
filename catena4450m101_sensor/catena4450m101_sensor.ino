@@ -94,7 +94,7 @@ static Arduino_LoRaWAN::SendBufferCbFn sendBufferDoneCb;
 |
 \****************************************************************************/
 
-static const char sVersion[] = "0.1.5";
+static const char sVersion[] = "0.1.7";
 
 /****************************************************************************\
 |
