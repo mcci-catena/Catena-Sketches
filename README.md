@@ -3,14 +3,17 @@ This repository contains top-level Arduino sketches for the Catena 4xxx family o
 
 ![Picture of Catena 4410](extra/assets/MCCI-Catena-4410-1080x620.jpg)
 
-This repository is the top-level repository for the software. In order to build, you will have to download a number of additional repositories from the [MCCI Catena github page](https://github.com/mcci-catena); the repositories needed vary depending on the node image you want to build.
+This repository is the top-level repository for the software. In order to build, you will have to download a number of additional repositories from the [MCCI Catena github page](https://github.com/mcci-catena); the repositories needed vary depending on the node image you want to build. A bash script is provided to simplify this process.
 
-There are two kinds of apps here: test programs (catena4410_test1, catene4410_test2, catena4410_test3), and full sensor programs (catena4410_sensor1, catena4420_test1).
+There are two kinds of apps here: test programs (catena4410_test1, catene4410_test2, catena4410_test3, catena4450_test1), and full sensor programs (catena4410_sensor1, catena4420_test1, catena4450_sensor1).
 
 Most of the apps take advantage of the [MCCI](http://www.mcci.com) [arduino-lorawan](https://github.com/mcci-catena/arduino-lorawan) library to cleanly separate the application from the network transport. The application also uses the RTCZero library to sleep the CPU, and how to use a variety of sensors. It's also a worked example of handling OTAA provisioning without putting keys in your primary repository. 
 
+## catena4450m101_sensor1
+This is the application written for the Catena 4450 power monitoring node used in the [Ithaca Power Project](https://ithaca-power.mcci.com). It uses FRAM-based provisioning (so there is no need to edit code to change LoRaWAN keys or other settings).
+
 ## catena4410_sensor1
-This is the application written for the Tzu Chi University / Asolar Hualian research farm project. One firmware image is used for a variety of sensors. You can configure a given sensor as a general purpose device or as a specific subset, referencing back to the Atmel SAMD21 CPU's unique identifier.
+This is the application written for the Tzu Chi University / Asolar Hualian research farm project. One firmware image is used for a variety of sensors. You can configure a given sensor as a general purpose device or as a specific subset, referencing back to the Atmel SAMD21 CPU's unique identifier.  All provisioning is done at compile time, but the network keys and other sensitive information is placed in a special library that is outside the normal set of repositories.
 
 ## catena4410_test3
 This is the primary test app used when bringing up and provisioning Catena 4410 units for use with The Things Network.
@@ -20,6 +23,7 @@ These are simpler test programs. They were rarely used after test3 was ready, bu
 with different sensor configurations.
 
 # Required Libraries
+A number of libraries are required by this code. `catena4450m101_sensor1` contains a Bash script [`git-boot.sh`](https://github.com/mcci-catena/Catena4410-Sketches/blob/master/catena4450m101_sensor/git-boot.sh) that can be used to download all the libraries, using a simple database stored in [`git-repos.dat`](https://github.com/mcci-catena/Catena4410-Sketches/blob/master/catena4450m101_sensor/git-repos.dat).
 * [MCCI's Fork of Adafruit's ArduinoCore-SAMD](https://github.com/mcci-catena/ArduinoCore-samd) has the minor changes needed to update the millisecond clock after resuming from deep sleep. These changes are important because some softawre depends on this to track real time.
 * [MCCI's Fork of the RTCZero library](https://github.com/mcci-catena/RTCZero) has the somewhat more substantial changes needed to allow the various processor sleep modes to be accessed, and to allow for some debuggging of the sleep mode chosen.
 * [MCCI's Catena 4410 (and other) library](https://github.com/mcci-catena/Catena4410-Arduino-Library) has a hierarchical way of representing the hardware we're running on. It starts with a SAMD21, then adds successively more-specific objects.
