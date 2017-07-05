@@ -25,9 +25,6 @@ PNAME=$(basename "$0")
 PDIR=$(dirname "$0")
 OPTDEBUG=0
 OPTVERBOSE=0
-#### LIBRARY_ROOT_DEFAULT: the path to the Arduino libraries on your
-#### system.
-LIBRARY_ROOT_DEFAULT=~/Documents/Arduino/libraries
 
 ##############################################################################
 # verbose output
@@ -49,6 +46,29 @@ function _error {
 function _fatal {
 	_error "$@" ; exit 1
 }
+
+##############################################################################
+# LIBRARY_ROOT_DEFAULT: the path to the Arduino libraries on your
+# system. If set in the environment, we use that; otherwise we set it
+# according to the OS in use.
+##############################################################################
+UNAME=$(uname)
+if [ X"$LIBRARY_ROOT_DEFAULT" != X ]; then
+  if [ ! -d "$LIBRARY_ROOT_DEFAULT" ]; then
+    _error "LIBRARY_ROOT_DEFAULT not a directory: ${LIBRARY_ROOT_DEFAULT}"
+  elif [ ! -x "$LIBRARY_ROOT_DEFAULT" ]; then
+    _error "LIBRARY_ROOT_DEFAULT not searchable: ${LIBRARY_ROOT_DEFAULT}"
+  elif [ ! -w "$LIBRARY_ROOT_DEFAULT" ]; then
+    _error "LIBRARY_ROOT_DEFAULT not writable: ${LIBRARY_ROOT_DEFAULT}"
+  fi
+elif [ "$UNAME" = "Linux" ]; then
+  LIBRARY_ROOT_DEFAULT=~/Arduino/libraries
+elif [ "${UNAME:0:5}" = "MINGW" ]; then
+  LIBRARY_ROOT_DEFAULT=~/Documents/Arduino/libraries
+else
+  echo "Can't detect OS: set LIBRARY_ROOT_DEFAULT to path to Arduino libraries" 1>&2
+  exit 1
+fi
 
 ##############################################################################
 # load the list of repos
