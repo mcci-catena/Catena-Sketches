@@ -556,8 +556,8 @@ static void settleDoneCb(
     startTime = millis();
     gRtc.SetAlarm(CATCFG_T_INTERVAL);
     gRtc.SleepForAlarm(
-        CatenaRTC::MATCH_HHMMSS,
-        CatenaRTC::SleepMode::IdleCpuAhbApb
+        gRtc.MATCH_HHMMSS,
+        gRtc.SleepMode::IdleCpuAhbApb
         );
 
     // add the number of ms that we were asleep to the millisecond timer.
