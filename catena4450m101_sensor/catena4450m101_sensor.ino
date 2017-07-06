@@ -520,6 +520,17 @@ txFailedDoneCb(
         gLed.Set(LedPattern::NotProvisioned);
         }
 
+
+//
+// the following API is added to delay.c, .h in the BSP. It adjust millis()
+// forward after a deep sleep.
+//
+// extern "C" { void adjust_millis_forward(unsigned); };
+//
+// If you don't have it, check the following commit at github:
+// https://github.com/mcci-catena/ArduinoCore-samd/commit/78d8440dbcd29bf5ac659fd65514268c1334f683
+//
+
 static void settleDoneCb(
     osjob_t *pSendJob
     )
@@ -548,6 +559,9 @@ static void settleDoneCb(
         CatenaRTC::MATCH_HHMMSS,
         CatenaRTC::SleepMode::IdleCpuAhbApb
         );
+
+    // add the number of ms that we were asleep to the millisecond timer.
+    // we don't need extreme accuracy.
     adjust_millis_forward(CATCFG_T_INTERVAL  * 1000);
 
     /* and now... we're awake again. trigger another measurement */
