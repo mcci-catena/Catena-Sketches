@@ -18,5 +18,7 @@ After you've done that, you may also need to do the following:
 ```bash
 git remote add mcci-catena https://github.com/mcci-catena/ArduinoCore-samd.git
 git fetch mcci-catena --all
-git merge mcci-catena/TMM-Sleep
+git checkout TMM-Sleep
+git merge master
 ```
+The merge should succeed without conflicts.  If it does not, follow the instructions to abort the merge; the Arduino BSP version tagged by TMM-Sleep will be functional for you. (Meanwhile, if there's a problem, please open an issue at https://github.com/mcci-catena/ArduinoCore-samd.git, and we'll fix it as soon as we can.)
