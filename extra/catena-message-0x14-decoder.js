@@ -1,6 +1,7 @@
 // JavaScript source code
-// this Node-RED decoding function decodes the record sent by the Catena 4450 M101 power monitor
-// written in a big hurry, so no points for style
+// This Node-RED decoding function decodes the record sent by the Catena 4450
+// M101 power monitor application.
+// Written in a big hurry, so no points for style
 
 var b = msg.payload;  // pick up data for convenience; just saves typing.
 
@@ -17,9 +18,9 @@ var b = msg.payload;  // pick up data for convenience; just saves typing.
 // result.lux: light level, in lux
 // result.powerUsed: pulses from the WH pulse meter (consumption)
 // result.powerRev: pulese from the WH pulse meter (sourced to the grid)
-// result.powerUsedDeriv: derivative of total power used over the last 
+// result.powerUsedDeriv: derivative of total power used over the last
 //    sample period, normalised to kWh / hour (in other words, kW).
-// result.powerRevDeriv: derivative of total power sourced over the 
+// result.powerRevDeriv: derivative of total power sourced over the
 //    last sample period, normalized to kWh/hour.
 var result = {};
 
