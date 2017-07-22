@@ -19,8 +19,8 @@ bit | length of field| encoding | description
 2 | 1 | uint8 | counter of number of recorded system reboots, modulo 256.
 3 | 5 | int16, uint16, uint8 | Temperature (divide by 256 to get degrees C); pressure (divide by 25 to get millibars); relative humidity (divide by 2.56 to get percent).
 4 | 2 | uint16 | Lux, from 0 to 65536.
-5 | 4 | uint16, uint16 | Watt-hour pulses since reset, modulo 65,536. First value is for power consumed from the grid, second for power sourced to the grid.
-6 | 4 | uflt16, uflt16 | Instantaneous power over this measurement period. First value is for power consumed, second is for power produced.
+5 | 4 | uint16, uint16 | Watt-hour pulses since reset, modulo 65,536. First value is for power consumed from the grid, second for power sourced to the grid. This must be scaled according to the CT and watt-hour meter used in order to convert to engineering units. Test vectors assume multiply by 10 to get watt-hours.
+6 | 4 | uflt16, uflt16 | Instantaneous power over this measurement period. First value is for power consumed, second is for power produced.  This must be scaled according to the CT and watt-hour meter used in order to convert to engineering units. Test vectors assume multiply by 10 to get watts.
 7 | n/a | n/a | reserved, must always be zero.
 
 ## Data Formats
@@ -57,6 +57,19 @@ Floating point mavens will immediately recognize:
 * Numbers do not need to be normalized (although in practice they always are).
 * The format is somewhat wasteful, because it explicitly transmits the most-significant bit of the fraction. (Most binary floating-point formats assume that `f` is is normalized, which means by definition that the exponent `b` is adjusted and `f` is shifted left until the most-significant bit of `f` is one. Most formats then choose to delete the most-significant bit from the encoding. If we were to do that, we would insist that the actual value of `f` be in the range 2048.. 4095, and then transmit only `f - 2048`, saving a bit. However, this complicated the handling of gradual underflow; see next point.)
 * Gradual underflow at the bottom of the range is automatic and simple with this encoding; the more sophisticated schemes need extra logic (and extra testing) in order to provide the same feature.
+
+## Test Vectors
+
+The following input data can be used to test decoders.
+
+|Input | vBat | vBus | Boot | Temp (deg C) | P (mBar) | RH % | Lux | wH in | wH out | w In | w Out |
+|:-----|-----:|-----:|-----:|-------------:|---------:|-----:|----:|------:|-------:|-----:|------:|
+|`14 01 18 00` | +1.5 | | |  |            |           |      |     |       |        |      |     |
+|`14 01 F8 00` | -0.5 | | |  |            |           |      |     |       |        |      |      |
+|`14 05 F8 00 42` | -0.5 |  | 66 |            |           |      |     |       |        |      |    |
+|`14 7D 43 A7 2B 19 8D 5F 88 8E 00 2E 00 00 00 00 00 00 00 00` | 4.229 | |  43 | 25.550 | 978.24 | 55.5 | 46 | 0 | 0 | 0 | 0 |
+|`14 7D 43 23 11 19 52 5F 97 AE 00 00 C5 3F 00 00 BF 9E 00 00` | 4.196 | |  17 | 25.320 | 978.84 | 68.0 | 0 | 50,495 | 0 | 878.47 | 0 |
+|`14 7F 43 23 4F 01 11 19 52 5F 97 AE 03 01 C5 50 31 24 BF 54 D8 39` | 4.196 | 4.938 | 17 | 25.320 | 978.84 | 68.0 | 769 | 50,512 | 12,580 | 862.21 | 1850.1 |
 
 ## Node-RED Decoding Script
 The following Node-RED script will decode this data. It can trivially be adapted to do similar decoding in [The Things Network console](https://console.thethingsnetwork.org). You can download the latest version from github [in raw form](https://raw.githubusercontent.com/mcci-catena/Catena4410-Sketches/master/extra/catena-message-0x14-decoder.js) or [view it](https://github.com/mcci-catena/Catena4410-Sketches/blob/master/extra/catena-message-0x14-decoder.js) on github.
