@@ -75,10 +75,8 @@ The following input data can be used to test decoders.
 The following Node-RED script will decode this data. You can download the latest version from github [in raw form](https://raw.githubusercontent.com/mcci-catena/Catena4410-Sketches/master/extra/catena-message-0x14-decoder.js) or [view it](https://github.com/mcci-catena/Catena4410-Sketches/blob/master/extra/catena-message-0x14-decoder.js) on github.
 
 ```javascript
-// JavaScript source code
-// This Node-RED decoding function decodes the record sent by the Catena 4450
-// M101 power monitor application.
-// Written in a big hurry, so no points for style
+// This Node-RED function decodes the record (port 1, format 0x14) sent by the
+// MCCI Catena 4450 power monitor application.
 
 var b = msg.payload;  // pick up data for convenience; just saves typing.
 
@@ -203,10 +201,11 @@ msg.local =
 return msg;
 ```
 ## Tne Things Network Console decoding script
-The following script does similar decoding for [The Things Network console](https://console.thethingsnetwork.org). 
+The following script does similar decoding for [The Things Network console](https://console.thethingsnetwork.org).
 ```javascript
-// Updated 2017-04-20 22:58 EDT tmm@mcci.com -- add Catena decoder.
-//         2017-04-20 23:08 EDT tmm@mcci.com -- fix typos in comments
+// This function decodes the record (port 1, format 0x14) sent by the
+// MCCI Catena 4450 power monitor application.
+// For use with console.thethingsnetwork.org
 
 function Decoder(bytes, port) {
   // Decode an uplink message from a buffer
@@ -276,7 +275,7 @@ function Decoder(bytes, port) {
             i += 2;
             decoded.lux = luxRaw;
         }
-        
+
         if (flags & 0x20) {
           // watthour
           var powerIn = (bytes[i] << 8) + bytes[i + 1];
