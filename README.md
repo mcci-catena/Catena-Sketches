@@ -24,7 +24,7 @@ with different sensor configurations.
 
 # Required Libraries
 A number of libraries are required by this code. `catena4450m101_sensor1` contains a Bash script [`git-boot.sh`](https://github.com/mcci-catena/Catena4410-Sketches/blob/master/catena4450m101_sensor/git-boot.sh) that can be used to download all the libraries, using a simple database stored in [`git-repos.dat`](https://github.com/mcci-catena/Catena4410-Sketches/blob/master/catena4450m101_sensor/git-repos.dat).
-* [MCCI's Fork of Adafruit's ArduinoCore-SAMD](https://github.com/mcci-catena/ArduinoCore-samd) has the minor changes needed to update the millisecond clock after resuming from deep sleep. These changes are important because some softawre depends on this to track real time.
+* [MCCI's Fork of Adafruit's ArduinoCore-SAMD](https://github.com/mcci-catena/ArduinoCore-samd) has the minor changes needed to update the millisecond clock after resuming from deep sleep. These changes are important because some softawre depends on this to track real time.  Instructions for installation are given in the [README for the Catena 4450M101 Sensor app](catena4450m101_sensor/README.md).
 * [MCCI's Fork of the RTCZero library](https://github.com/mcci-catena/RTCZero) has the somewhat more substantial changes needed to allow the various processor sleep modes to be accessed, and to allow for some debuggging of the sleep mode chosen.
 * [MCCI's Catena 4410 (and other) library](https://github.com/mcci-catena/Catena4410-Arduino-Library) has a hierarchical way of representing the hardware we're running on. It starts with a SAMD21, then adds successively more-specific objects.
 * [MCCI's Arduino-LoRaWAN library](https://github.com/mcci-catena/arduino-lorawan) is a structured wrapper for the Arduino LMIC library.
