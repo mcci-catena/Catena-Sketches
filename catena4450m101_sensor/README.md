@@ -13,11 +13,26 @@ It needs the following repos to build:
 
 The script 'git-boot.sh' in this directory will get all the things you need.
 
-After you've done that, you may also need to do the following:
+After you've done that, with current (July 2017) BSP packages, you have one extra manual step.
+
+To support low-power sleep, we need to add an extra API to the Arduino BSP. If you don't do that, you'll get the following erorr when you try to compile ("verify" or "verify and download") your sketch.
+
+```
+Users/example/Documents/Arduino/catena4410_sensor1/catena4410_sensor1.ino: In function 'void settleDoneCb(osjob_t*)':
+catena4410_sensor1:664: error: 'adjust_millis_forward' was not declared in this scope
+     adjust_millis_forward(CATCFG_T_INTERVAL  * 1000);
+                                                    ^
+exit status 1
+'adjust_millis_forward' was not declared in this scope
+```
+
+To update your BSP, you need to enter the following commands in git bash (on Windows) or your shell (on macOS or Linux):
 
 ```shell
-# on Windows, this takes you to the BSP; version at end might be
-# different:
+# Get to the right directory for updating the BSP.
+# On Windows, the following command works, although the version number at end might be
+# different.  On macOS and Linux, you need to change ~/AppData/Local to
+# the actual path to your BSP.
 cd ~/AppData/Local/arduino15/packages/adafruit/hardware/samd/1.0.13/ 
 
 # add an upstream repository reference for the MCCI patches
