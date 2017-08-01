@@ -63,6 +63,8 @@ if [ X"$LIBRARY_ROOT_DEFAULT" != X ]; then
   fi
 elif [ "$UNAME" = "Linux" ]; then
   LIBRARY_ROOT_DEFAULT=~/Arduino/libraries
+elif [ "$UNAME" = "Darwin" ]; then
+  LIBRARY_ROOT_DEFAULT=~/Documents/Arduino/libraries
 elif [ "${UNAME:0:5}" = "MINGW" ]; then
   LIBRARY_ROOT_DEFAULT=~/Documents/Arduino/libraries
 else

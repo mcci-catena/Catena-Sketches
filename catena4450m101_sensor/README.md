@@ -30,16 +30,21 @@ To update your BSP, you need to enter the following commands in git bash (on Win
 
 ```shell
 # Get to the right directory for updating the BSP.
-# On Windows, the following command works, although the version number at end might be
-# different.  On macOS and Linux, you need to change ~/AppData/Local to
-# the actual path to your BSP.
-cd ~/AppData/Local/arduino15/packages/adafruit/hardware/samd/1.0.13/ 
+# You will need to change 1.0.18 to whaever version you have.
+# With git bash on Windows:
+cd ~/AppData/Local/arduino15/packages/adafruit/hardware/samd/1.0.18
+
+# With bash on macOS
+cd ~/Library/Arduino15/packages/adafruit/hardware/samd/1.0.18
+
+# With bash on Linux
+# TBD
 
 # add an upstream repository reference for the MCCI patches
 git remote add mcci-catena https://github.com/mcci-catena/ArduinoCore-samd.git
 
 # update the repository with the MCCI patches.
-git fetch mcci-catena --all
+git fetch mcci-catena
 
 # get the patched (but older branch)
 git checkout TMM-Sleep
