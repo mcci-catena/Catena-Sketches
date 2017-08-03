@@ -68,7 +68,8 @@ Before you build this sketch, you must also install the following libraries.
 
 The script `git-boot.sh` in this directory will get all the things you need.
 
-It's easy to run:
+It's easy to run, provided you're on Windows, macOS, or Linux, and provided you have `git` installed. We tested on Windows with git bash from https://git-scm.org, on macOS 10.11.3 with the git and bash shipped by Apple, and on Ubuntu 16.0.4 LTS (64-bit) with the built-in bash and git from `apt-get install git`.
+
 ```shell
 $ cd Catena4410-Sketches/catena4450m101_sensor
 $ ./git-boot.sh
