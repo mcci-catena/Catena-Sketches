@@ -74,6 +74,8 @@ $ cd Catena4410-Sketches/catena4450m101_sensor
 $ ./git-boot.sh
 ```
 
+It has a number of advanced options; use `./git-boot.sh -h` to get help, or look at the source code [here](gitboot.sh).
+
 ## Build and Download
 Follow normal Arduino IDE procedures to build and download the sketch to the Catena 4450.
 
@@ -128,3 +130,7 @@ Unfortunately, the Atmel USB drivers for the Feather M0 do not distinguish betwe
 
 ### Deep sleep and USB
 When the Catena 4450 is in deep sleep, the USB port will not respond to cable attaches. However, the PC may see that a device is attached, and complain that it is malfunctioning. This sketch does not normally use deep sleep, so you might not see this problem. But if you do, unplug the cable, unplug the battery, then plug in the cable.
+
+### gitboot.sh and the other sketches
+The sketches in other directories in this tree are for engineering use at MCCI. `git-boot.sh` does not necessarily install all the required libraries needed for building them. However, all the libraries should be available from https://github.com/mcci-catena/.
+
