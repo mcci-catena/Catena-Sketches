@@ -119,7 +119,7 @@ Then reboot your Catena (using the reset button on the upper board).
 ## Notes
 
 ### Data Format
-Refer to the [Protocol Description](../extras/Catena4410-Sketches/blob/master/extra/catena-message-0x14-format.md) in the `extras` directory for information on how data is encoded.
+Refer to the [Protocol Description](../extra/catena-message-0x14-format.md) in the `extras` directory for information on how data is encoded.
 
 ### Unplugging the USB Cable while running on batteries
 The Catena 4450 comes with a rechargable LiPo battery. This allows you to unplug the USB cable after booting the Catena 4450 without causing the Catena 4450 to restart.
