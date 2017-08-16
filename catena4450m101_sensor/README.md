@@ -37,7 +37,7 @@ cd ~/AppData/Local/arduino15/packages/adafruit/hardware/samd/1.0.18
 cd ~/Library/Arduino15/packages/adafruit/hardware/samd/1.0.18
 
 # With bash on Linux
-# TBD
+cd ~/.arduino15/packages/adafruit/hardware/samd/*
 
 # add an upstream repository reference for the MCCI patches
 git remote add mcci-catena https://github.com/mcci-catena/ArduinoCore-samd.git
