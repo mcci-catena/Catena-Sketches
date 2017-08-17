@@ -91,15 +91,44 @@ Ensure selected board is 'Adafruit Feather M0'
 
 Follow normal Arduino IDE procedures to build and download the sketch to the Catena 4450.
 
+## Post Sketch Upload
+
+In order to keep the Catena from falling asleep while connected to USB.
+
+Search for
+```
+if (Serial.dtr() || fHasPower1)
+```
+and change it to
+```
+if (Serial.dtr() | fHasPower1 || true)
+```
+![USB Sleep Fix](./code-for-sleep-usb-adjustment.png)
+
+Upload the sketch and move on to provisioning.
+
 ## Provision your Catena 4450
 This can be done with any terminal emulator, but it's easiest to do it with the serial monitor built into the Arduino IDE or with the equivalent monitor that's part of the Visual Micro IDE.
 
 ### Check platform provisioning
+
+![Newline](./serial-monitor-newline.png)
+
+At the bottom righ side of the serial monitor window, set the dropdown to `Newline` and `115200 baud`.
+
 Enter the following command, and press enter:
-    system configure platformguid
+```
+system configure platformguid
+```
 If the Catena is functioning at all, you'll either get an error message, or you'll get a long number like:
-    82BF2661-70CB-45AE-B620-CAF695478BC1
+```
+82BF2661-70CB-45AE-B620-CAF695478BC1
+```
 (Several numbers are possible.)
+
+![platformguid](./system-configure-platformguid.png)
+
+![platform number](./platform-number.png)
 
 If you get an error message, please follow the **Platform Provisioning** instructions. Othewise, skip to **LoRAWAN Provisioning**.
 
@@ -127,6 +156,10 @@ Then enter the following commands in the serial monitor, substituting your _`Dev
 `lorawan configure appeui` _`AppEUI`_  
 `lorawan configure appkey` _`AppKey`_  
 `lorawan configure join 1`
+
+After each command you will see an `OK`.
+
+![provisioned](./provisioned.png)
 
 Then reboot your Catena (using the reset button on the upper board).
 
