@@ -10,6 +10,12 @@ It is designed for use with the [Catena 4450](https://github.com/mcci-catena/HW-
 4. Build and download.
 5. "Provision" your Catena 4450 -- this involves entering USB commands via the Arduino serial monitor to program essential identity information into the Catena 4450, so it can join the targetd network.
 
+### Prereqs
+
+![Boards Manager](./arduino-boards-manager.png)
+
+Install the Arduino SAMD boards (32-bit ARM Cortex-M0+) library via the Arduino Boards Manager.
+
 ## Installing the Adafruit BSP
 Follow the instructions given under [Arduino IDE Setup](https://learn.adafruit.com/adafruit-feather-m0-radio-with-lora-radio-module/setup) in Feather M0 Tutorial on the Adafruit website.
 
@@ -78,6 +84,11 @@ $ ./git-boot.sh
 It has a number of advanced options; use `./git-boot.sh -h` to get help, or look at the source code [here](gitboot.sh).
 
 ## Build and Download
+
+Shutdown the Arduino IDE and restart it, just in case.
+
+Ensure selected board is 'Adafruit Feather M0'
+
 Follow normal Arduino IDE procedures to build and download the sketch to the Catena 4450.
 
 ## Provision your Catena 4450
