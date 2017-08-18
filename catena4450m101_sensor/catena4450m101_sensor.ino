@@ -540,7 +540,6 @@ static void settleDoneCb(
     // if connected to USB, don't sleep
     // ditto if we're monitoring pulses.
     if (Serial.dtr() || fHasPower1)
-    // if (Serial.dtr() | fHasPower1 || true)
         {
         gLed.Set(LedPattern::Sleeping);
         os_setTimedCallback(
