@@ -93,6 +93,9 @@ static void warmupDoneCb(osjob_t *pSendJob);
 static void txFailedDoneCb(osjob_t *pSendJob);
 static void sleepDoneCb(osjob_t *pSendJob);
 static Arduino_LoRaWAN::SendBufferCbFn sendBufferDoneCb;
+void fillBuffer(TxBuffer_t &b);
+void startSendingUplink(void);
+
 
 /****************************************************************************\
 |
@@ -348,7 +351,9 @@ void setup(void)
                 (void)bme.readTemperature();
 
         /* trigger a join by sending the first packet */
-        startSendingUplink();
+        if (! (gCatena.GetOperatingFlags() & 
+                        static_cast<uint32_t>(gCatena.OPERATING_FLAGS::fManufacturingTest)))
+                startSendingUplink();
         }
 
 // The Arduino loop routine -- in our case, we just drive the other loops.
@@ -357,6 +362,12 @@ void setup(void)
 void loop()
         {
         gCatena.poll();
+        if (gCatena.GetOperatingFlags() &
+                static_cast<uint32_t>(gCatena.OPERATING_FLAGS::fManufacturingTest))
+                {
+                TxBuffer_t b;
+                fillBuffer(b);
+                }
         }
 
 static uint16_t dNdT_getFrac(
@@ -393,11 +404,8 @@ static uint16_t dNdT_getFrac(
                 }
         }
 
-void startSendingUplink(void)
+void fillBuffer(TxBuffer_t &b)
 {
-  TxBuffer_t b;
-  LedPattern savedLed = gLed.Set(LedPattern::Measuring);
-
   b.begin();
   FlagsSensor3 flag;
 
@@ -502,6 +510,14 @@ void startSendingUplink(void)
         }
 
   *pFlag = uint8_t(flag);
+}
+
+void startSendingUplink(void)
+{
+  TxBuffer_t b;
+  LedPattern savedLed = gLed.Set(LedPattern::Measuring);
+
+  fillBuffer(b);
   if (savedLed != LedPattern::Joining)
           gLed.Set(LedPattern::Sending);
   else
