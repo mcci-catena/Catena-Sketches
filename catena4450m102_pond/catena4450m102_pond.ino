@@ -1,4 +1,4 @@
-/* catena4450m102_pond.ino	Tue Mar 28 2017 19:52:20 tmm */
+/* catena4450m102_pond.ino	Sat Nov 11 2017 18:58:23 tmm */
 
 /*
 
@@ -8,7 +8,7 @@ Function:
 	Code for the electric sensor with Catena 4450-M101.
 
 Version:
-	V0.1.1	Tue Mar 28 2017 19:52:20 tmm	Edit level 1
+	V0.1.8	Sat Nov 11 2017 18:58:23 tmm	Edit level 3
 
 Copyright notice:
 	This file copyright (C) 2017 by
@@ -32,6 +32,9 @@ Revision history:
    0.1.1  Tue Mar 28 2017 19:52:20  tmm
 	Fix bug: not reading current lux value because sensor was not in
 	continuous mode. Add 150uA of current draw.
+
+   0.1.8  Sat Nov 11 2017 18:58:23  tmm
+        Rebuild with latest libraries to fix T < 0 deg C encoding problem.
 
 */
 
@@ -106,7 +109,7 @@ void startSendingUplink(void);
 |
 \****************************************************************************/
 
-static const char sVersion[] = "0.1.7";
+static const char sVersion[] = "0.1.8";
 
 /****************************************************************************\
 |
