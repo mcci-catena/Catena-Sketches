@@ -35,8 +35,9 @@ Revision history:
 
 */
 
-#include <Catena4450.h>
-#include <CatenaRTC.h>
+#include "ThisCatena.h"
+
+
 #include <Catena_Led.h>
 #include <Catena_TxBuffer.h>
 #include <Catena_CommandStream.h>
@@ -49,7 +50,6 @@ Revision history:
 #include <lmic.h>
 #include <hal/hal.h>
 #include <mcciadk_baselib.h>
-#include <delay.h>
 
 #include <cmath>
 #include <type_traits>
@@ -64,7 +64,7 @@ Revision history:
 \****************************************************************************/
 
 using namespace McciCatena;
-using ThisCatena = Catena4450;
+//using ThisCatena = Catena4450;
 
 /* how long do we wait between measurements (in seconds) */
 enum    {
@@ -125,7 +125,11 @@ ThisCatena::LoRaWAN gLoRaWAN;
 StatusLed gLed (ThisCatena::PIN_STATUS_LED);
 
 // the RTC instance, used for sleeping
+#ifdef ARDUINO_ARCH_SAMD
 CatenaRTC gRtc;
+#elif defined(ARDUINO_ARCH_STM32)
+CatenaStm32L0Rtc gRtc;
+#endif
 
 //   The temperature/humidity sensor
 Adafruit_BME280 bme; // The default initalizer creates an I2C connection
@@ -240,7 +244,7 @@ void setup(void)
 
 
         /* initialize the lux sensor */
-        if (flags & CatenaSamd21::fHasLuxRohm)
+        if (flags & ThisCatena::fHasLuxRohm)
                 {
                 bh1750.begin();
                 fLux = true;
@@ -536,10 +540,15 @@ static void settleDoneCb(
     )
     {
     uint32_t startTime;
+#if defined(ARDUINO_ARCH_SAMD)
+    const bool fNoSleep = Serial.dtr() || fHasPower1;
+#else
+    const bool fNoSleep = true;
+#endif
 
     // if connected to USB, don't sleep
     // ditto if we're monitoring pulses.
-    if (Serial.dtr() || fHasPower1)
+    if (fNoSleep)
         {
         gLed.Set(LedPattern::Sleeping);
         os_setTimedCallback(
@@ -550,6 +559,7 @@ static void settleDoneCb(
         return;
         }
 
+#if defined(ARDUINO_ARCH_SAMD)
     /* ok... now it's time for a deep sleep */
     gLed.Set(LedPattern::Off);
 
@@ -566,6 +576,7 @@ static void settleDoneCb(
 
     /* and now... we're awake again. trigger another measurement */
     sleepDoneCb(pSendJob);
+#endif // ARDUINO_ARCH_SAMD
     }
 
 static void sleepDoneCb(
