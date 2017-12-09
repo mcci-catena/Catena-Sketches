@@ -42,3 +42,6 @@ __vm
 *.vcxproj.filters
 *.vcxproj.user
 *.sln
+
+# VS Code things
+.vscode
