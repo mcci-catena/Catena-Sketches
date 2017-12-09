@@ -1,5 +1,24 @@
 # Catena 4450 M101 Sensor Sketch
+<!-- TOC depthFrom:2 -->
 
+- [Install the MCCI SAMD board support library](#install-the-mcci-samd-board-support-library)
+    - [Additional board packages required](#additional-board-packages-required)
+- [Installing the required libraries](#installing-the-required-libraries)
+    - [List of required libraries](#list-of-required-libraries)
+- [Build and Download](#build-and-download)
+- [Disabling USB Sleep (Optional)](#disabling-usb-sleep-optional)
+- [Load the sketch into the Catena](#load-the-sketch-into-the-catena)
+- [Provision your Catena 4450](#provision-your-catena-4450)
+    - [Check platform provisioning](#check-platform-provisioning)
+    - [Platform Provisioning](#platform-provisioning)
+    - [LoRaWAN Provisioning](#lorawan-provisioning)
+- [Notes](#notes)
+    - [Data Format](#data-format)
+    - [Unplugging the USB Cable while running on batteries](#unplugging-the-usb-cable-while-running-on-batteries)
+    - [Deep sleep and USB](#deep-sleep-and-usb)
+    - [gitboot.sh and the other sketches](#gitbootsh-and-the-other-sketches)
+
+<!-- /TOC -->
 This sketch is used for the Ithaca power project and other AC power management applications. It's also a great starting point for doing Catena 4450 work.
 
 It is designed for use with the [Catena 4450](https://github.com/mcci-catena/HW-Designs/tree/master/kicad/Catena-4450) in conjunction with the [Adafruit Feather M0 LoRa](https://www.adafruit.com/product/3178). In order to use this code, you must do several things:
@@ -13,21 +32,21 @@ It is designed for use with the [Catena 4450](https://github.com/mcci-catena/HW-
 
 Go to `File>Preferences>Settings` in the Arduino IDE and add `https://github.com/mcci-catena/arduino-boards/raw/master/BoardManagerFiles/package_mcci_index.json` to the list in `Additional Boards Manager URLs`. Use a comma (`,`) to separate multiple entries if needed.
 
+Next, open the board manager. `Tools>Board:...`, and get up to the top of the menu that pops out -- it will say d
 
-Then go to `File>Tools>Board:...` and scroll to the bottom. You should see `Catena 4450`; select that.
+Then go to `Tools>Board:...` and scroll to the bottom. You should see `Catena 4450`; select that.
+
+### Additional board packages required
+
+Due to a bug, you must install two additonal packages in order to be able to download code.
+
+Go to Boards Manager (`Tools>Board:...>Boards Manager...`) and search for `SAM`. Install:
+
+- **Arduino SAM Boards (32-bits ARM Cortex M3)** by **Arduino**
+- **Arduino SAMD Boards (32-bits ARM Cortex M0+)** by **Arduino**
 
 
 ## Installing the required libraries
-Before you build this sketch, you must also install the following libraries.
-*  https://github.com/mcci-catena/Adafruit_FRAM_I2C
-*  https://github.com/mcci-catena/Catena4410-Arduino-Library
-*  https://github.com/mcci-catena/arduino-lorawan
-*  https://github.com/mcci-catena/Catena-mcciadk
-*  https://github.com/mcci-catena/arduino-lmic
-*  https://github.com/mcci-catena/Adafruit_BME280_Library
-*  https://github.com/mcci-catena/Adafruit_Sensor
-*  https://github.com/mcci-catena/RTCZero
-*  https://github.com/mcci-catena/BH1750
 
 The script `git-boot.sh` in this directory will get all the things you need.
 
@@ -40,13 +59,28 @@ $ ./git-boot.sh
 
 It has a number of advanced options; use `./git-boot.sh -h` to get help, or look at the source code [here](gitboot.sh).
 
-**Beware of issue #18**.  If you happen to already have libraries installed with the same names as any of the libraries in `git-repos.dat`, `git-boot.sh` will silently use the versions of the library that you already have installed. (We hope to soon fix thisto at least tell you that you have a problem.)
+**Beware of issue #18**.  If you happen to already have libraries installed with the same names as any of the libraries in `git-repos.dat`, `git-boot.sh` will silently use the versions of the library that you already have installed. (We hope to soon fix this to at least tell you that you have a problem.)
+
+### List of required libraries
+
+This sketch depends on the following libraries.
+
+*  https://github.com/mcci-catena/Adafruit_FRAM_I2C
+*  https://github.com/mcci-catena/Catena4410-Arduino-Library
+*  https://github.com/mcci-catena/arduino-lorawan
+*  https://github.com/mcci-catena/Catena-mcciadk
+*  https://github.com/mcci-catena/arduino-lmic
+*  https://github.com/mcci-catena/Adafruit_BME280_Library
+*  https://github.com/mcci-catena/Adafruit_Sensor
+*  https://github.com/mcci-catena/RTCZero
+*  https://github.com/mcci-catena/BH1750
+
 
 ## Build and Download
 
 Shutdown the Arduino IDE and restart it, just in case.
 
-Ensure selected board is 'Adafruit Feather M0' (in the GUI, check that `Tools`>`Board "..."` says `"Adafruit Feather M0"`.
+Ensure selected board is 'Catena 4450' (in the GUI, check that `Tools`>`Board "..."` says `"Catena 4450"`.
 
 Follow normal Arduino IDE procedures to build the sketch: `Sketch`>`Verify/Compile`. If there are no errors, go to the next step.
 
@@ -135,7 +169,7 @@ Refer to the [Protocol Description](../extra/catena-message-0x14-format.md) in t
 ### Unplugging the USB Cable while running on batteries
 The Catena 4450 comes with a rechargable LiPo battery. This allows you to unplug the USB cable after booting the Catena 4450 without causing the Catena 4450 to restart.
 
-Unfortunately, the Atmel USB drivers for the Feather M0 do not distinguish between cable unplug and USB suspend. Any `Serial.print()` operation referring to the USB port will hang if the cable is unplugged after being used during a boot. The easiest work-around is to reboot the Catena after unplugging the USB cable. You can avoid this by using the Arduino UI to turn off DTR before unplugging the cable... but then you must remember to turn DTR back on. This is very fragile in practice.
+Unfortunately, the Arudino USB drivers for the Catena 4450 do not distinguish between cable unplug and USB suspend. Any `Serial.print()` operation referring to the USB port will hang if the cable is unplugged after being used during a boot. The easiest work-around is to reboot the Catena after unplugging the USB cable. You can avoid this by using the Arduino UI to turn off DTR before unplugging the cable... but then you must remember to turn DTR back on. This is very fragile in practice.
 
 ### Deep sleep and USB
 When the Catena 4450 is in deep sleep, the USB port will not respond to cable attaches. However, the PC may see that a device is attached, and complain that it is malfunctioning. This sketch does not normally use deep sleep, so you might not see this problem. But if you do, unplug the cable, unplug the battery, then plug in the cable.  A simple change (described above as **Disabling USB Sleep (Optional)**) will disable deep sleep altogether, which may make things easier.
@@ -144,4 +178,3 @@ As with any Feather M0, double-pressing the RESET button will put the Feather in
 
 ### gitboot.sh and the other sketches
 The sketches in other directories in this tree are for engineering use at MCCI. `git-boot.sh` does not necessarily install all the required libraries needed for building them. However, all the libraries should be available from https://github.com/mcci-catena/.
-
