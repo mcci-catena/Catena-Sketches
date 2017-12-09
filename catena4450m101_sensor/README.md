@@ -1,68 +1,21 @@
 # Catena 4450 M101 Sensor Sketch
 
-This sketch is used for the Ithaca power project and other AC power management applications.
+This sketch is used for the Ithaca power project and other AC power management applications. It's also a great starting point for doing Catena 4450 work.
 
 It is designed for use with the [Catena 4450](https://github.com/mcci-catena/HW-Designs/tree/master/kicad/Catena-4450) in conjunction with the [Adafruit Feather M0 LoRa](https://www.adafruit.com/product/3178). In order to use this code, you must do several things:
 
-1. Install the Adafruit BSP package.
-2. Patch the Adafruit BSP package to add a required API for low-power operation.
+1. Install the MCCI BSP package.
 3. Install the required Arduino libraries using `git`.
 4. Build and download.
-5. "Provision" your Catena 4450 -- this involves entering USB commands via the Arduino serial monitor to program essential identity information into the Catena 4450, so it can join the targetd network.
+5. "Provision" your Catena 4450 -- this involves entering USB commands via the Arduino serial monitor to program essential identity information into the Catena 4450, so it can join the targeted network.
 
-## Install the Arduino SAMD board support library
+## Install the MCCI SAMD board support library
 
-This is a little confusing. Before you install the *Adafruit* board support package (BSP), you need to install the *Arduino* SAMD board support package.
+Go to `File>Preferences>Settings` in the Arduino IDE and add `https://github.com/mcci-catena/arduino-boards/raw/master/BoardManagerFiles/package_mcci_index.json` to the list in `Additional Boards Manager URLs`. Use a comma (`,`) to separate multiple entries if needed.
 
-You do this through the board manager.
 
-![Boards Manager](./arduino-boards-manager.png)
+Then go to `File>Tools>Board:...` and scroll to the bottom. You should see `Catena 4450`; select that.
 
-You can type **Arduino SAMD** in the search bar of the Boards Manager, then when you see the entry for **Arduino SAMD boards (32-bit ARM Cortex-M0+)** by **Arduino**, click install.
-
-## Installing the Adafruit BSP
-Follow the instructions given under [Arduino IDE Setup](https://learn.adafruit.com/adafruit-feather-m0-radio-with-lora-radio-module/setup) in Feather M0 Tutorial on the Adafruit website. **TL;DR**: go to `File>Preferences>Settings` in the Arduino IDE and add `https://adafruit.github.io/arduino-board-index/package_adafruit_index.json` to the list in `Additional Boards Manager URLs`. Use a semicolon (`;`) to separate multiple entries if needed.
-
-## Patch the Adafruit BSP package
-To support low-power sleep, we need to add an extra API to the Arduino BSP. If you don't do that, you'll get the following error when you try to compile ("verify" or "verify and download") your sketch.
-
-```
-Users/example/Documents/Arduino/catena4410_sensor1/catena4410_sensor1.ino: In function 'void settleDoneCb(osjob_t*)':
-catena4410_sensor1:664: error: 'adjust_millis_forward' was not declared in this scope
-     adjust_millis_forward(CATCFG_T_INTERVAL  * 1000);
-                                                    ^
-exit status 1
-'adjust_millis_forward' was not declared in this scope
-```
-
-To update your BSP, you need to enter the following commands in git bash (on Windows) or your shell (on macOS or Linux):
-
-```shell
-# Get to the right directory for updating the BSP.
-# You will need to change 1.0.18 to whaever version you have.
-# With git bash on Windows:
-cd ~/AppData/Local/arduino15/packages/adafruit/hardware/samd/1.0.18
-
-# With bash on macOS
-cd ~/Library/Arduino15/packages/adafruit/hardware/samd/1.0.18
-
-# With bash on Linux
-cd ~/.arduino15/packages/adafruit/hardware/samd/*
-
-# add an upstream repository reference for the MCCI patches
-git remote add mcci-catena https://github.com/mcci-catena/ArduinoCore-samd.git
-
-# update the repository with the MCCI patches.
-git fetch mcci-catena
-
-# get the patched (but older branch)
-git checkout TMM-Sleep
-
-# now slide any patches that were subsequent to our snapshot 
-# into your current repo
-git rebase master
-```
-The rebase should succeed without conflicts.  If it does not, most likely it's because you've modified your BSP image (either on purpose or accidentally). In that case, we strongly recommend that you reinstall the BSP. The above procedure works for us as long as the BSP is as distributed by Adafruit. (If there's a problem, please open an issue at https://github.com/mcci-catena/ArduinoCore-samd.git, and we'll fix it as soon as we can.)
 
 ## Installing the required libraries
 Before you build this sketch, you must also install the following libraries.
