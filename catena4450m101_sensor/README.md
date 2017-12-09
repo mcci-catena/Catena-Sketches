@@ -32,7 +32,7 @@ It is designed for use with the [Catena 4450](https://github.com/mcci-catena/HW-
 
 Go to `File>Preferences>Settings` in the Arduino IDE and add `https://github.com/mcci-catena/arduino-boards/raw/master/BoardManagerFiles/package_mcci_index.json` to the list in `Additional Boards Manager URLs`. Use a comma (`,`) to separate multiple entries if needed.
 
-Next, open the board manager. `Tools>Board:...`, and get up to the top of the menu that pops out -- it will say d
+Next, open the board manager. `Tools>Board:...`, and get up to the top of the menu that pops out -- it will give you a list of boards. Search for `MCCI` in the search box and select `MCCI Catena SAMD Boards`. An `[Install]` button will appear to the right; click it.
 
 Then go to `Tools>Board:...` and scroll to the bottom. You should see `Catena 4450`; select that.
 
