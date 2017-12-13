@@ -53,6 +53,8 @@ if (flags & 0x20) {
   var tempRaw = (bytes[i] << 8) + bytes[i + 1];
   // onewire temperature
   i += 2;
+  if (tempRaw & 0x8000)
+	  tempRaw = -0x10000 + tempRaw;
   decoded.tWater = tempRaw / 256;
 }
 
@@ -60,6 +62,8 @@ if (flags & 0x40) {
   // temperature followed by RH
   var tempRaw = (bytes[i] << 8) + bytes[i + 1];
   i += 2;
+  if (tempRaw & 0x8000)
+	  tempRaw = -0x10000 + tempRaw;
   var tempRH = bytes[i];
   i += 1;
   decoded.tSoil = tempRaw / 256;
