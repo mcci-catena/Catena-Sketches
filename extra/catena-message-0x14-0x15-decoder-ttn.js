@@ -216,6 +216,8 @@ function Decoder(bytes, port) {
                 // onewire temperature
                 var tempRaw = (bytes[i] << 8) + bytes[i + 1];
                 i += 2;
+                if (tempRaw & 0x8000)
+                    tempRaw = -0x10000 + tempRaw;
                 decoded.tWater = tempRaw / 256;
             }
 
@@ -223,6 +225,8 @@ function Decoder(bytes, port) {
                 // temperature followed by RH
                 var tempRaw = (bytes[i] << 8) + bytes[i + 1];
                 i += 2;
+                if (tempRaw & 0x8000)
+                    tempRaw = -0x10000 + tempRaw;
                 var tempRH = bytes[i];
                 i += 1;
                 decoded.tSoil = tempRaw / 256;
