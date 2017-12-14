@@ -1,3 +1,26 @@
+// 2017-12-13 fix negative temperature handling.
+
+var bytes;
+if ("payload_raw" in msg)
+    {
+    // the console already decoded this
+    bytes = msg.payload_raw;    // pick up data for convenience
+    // msg.payload_fields still has the decoded data
+    }
+else
+    {
+    bytes = msg.payload;        // pick up data for convenience
+    }
+
+var decoded = { };
+
+if (bytes[0] != 0x15)
+    {
+    // not one of ours
+    node.error("not ours! " + bytes[0].toString());
+    return;
+    }
+
 var i = 1;
 // fetch the bitmap.
 var flags = bytes[i++];
@@ -69,3 +92,14 @@ if (flags & 0x40) {
   decoded.tSoil = tempRaw / 256;
   decoded.rhSoil = tempRH / 256 * 100;
 }
+
+msg.payload = decoded;
+msg.local =
+    {
+    nodeType: "Catena 4450-M102",
+    platformType: "Feather M0 LoRa",
+    radioType: "RF95",
+    applicationName: "Soil/Water monitoring"
+    };
+
+return msg;
