@@ -1,4 +1,19 @@
-// 2017-12-13 fix negative temperature handling.
+// 2017-12-13 fix negative temperature handling, and
+//            complete the example.
+
+// Node-RED calls this with msg set to the inbound message,
+// and requires that we return an object using a `return`
+// statement.
+
+// TTN's decoder gives us one of two cases: either:
+//    msg.payload_raw  is a byte array of the raw payload
+// or
+//    msg.payload is a byte array of the raw payload.
+//
+// This code assumes that if you're using this, you don't want to
+// depend on the TTN dashboard decoder. We start by finding
+// the raw payload and storing it in `bytes[]`; then we decode
+// it field by field.
 
 var bytes;
 if ("payload_raw" in msg)
