@@ -1,7 +1,8 @@
-// This function decodes the record (port 1, format 0x15) sent by the
-// MCCI Catena 4450 soil/water application.
+// This function decodes the record (port 1, format 0x14 or 0x15) sent by the
+// MCCI Catena 4450 power sensor or soil/water application.
 // For use with console.thethingsnetwork.org
 // 2017-09-19 add dewpoints.
+// 2017-12-13 fix commments, fix negative soil/water temp, add test vectors.
 
 // calculate dewpoint (degrees C) given temperature (C) and relative humidity (0..100)
 // from http://andrew.rsmas.miami.edu/bmcnoldy/Humidity.html
@@ -157,7 +158,22 @@ function Decoder(bytes, port) {
             //    "tWater": 28.00390625,
             //    "tempC": 23.640625,
             //    "vBat": 4.21533203125
-            //    }	  
+            //    }
+            // 15 7D 42 D4 21 F5 9B 5E 5F C1 00 00 01 C1 F9 1B EC
+            //    {
+            //    "boot": 33,
+            //    "error": "none",
+            //    "lux": 0,
+            //    "p": 966.36,
+            //    "rh": 75.390625,
+            //    "rhSoil": 92.1875,
+            //    "tDewC": -13.909882718758952,
+            //    "tSoil": -6.89453125,
+            //    "tSoilDew": -7.948780789914008,
+            //    "tWater": 1.75390625,
+            //    "tempC": -10.39453125,
+            //    "vBat": 4.1767578125
+            //    }
             // i is used as the index into the message. Start with the flag byte.
             var i = 1;
             // fetch the bitmap.
