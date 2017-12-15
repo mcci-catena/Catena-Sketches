@@ -42,3 +42,4 @@ __vm
 *.vcxproj.filters
 *.vcxproj.user
 *.sln
+.vscode
