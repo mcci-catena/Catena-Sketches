@@ -40,6 +40,8 @@ Revision history:
 #include <DallasTemperature.h>
 #include <SHT1x.h>
 #include <Arduino_LoRaWAN.h>
+
+using namespace McciCatena;
 
 /****************************************************************************\
 |
@@ -84,7 +86,7 @@ static bool displayTempSensorDetails(void);
 \****************************************************************************/
 
 // globals
-Catena4410 gCatena4410;
+Catena4410 gCatena;
 
 //
 // the LoRaWAN backhaul.  Note that we use the
@@ -136,46 +138,46 @@ Returns:
 
 void setup(void) 
 {
-    gCatena4410.begin();
+    gCatena.begin();
 
-    gCatena4410.SafePrintf("Catena 4410 test03 %s %s\n", __DATE__, __TIME__);
+    gCatena.SafePrintf("Catena 4410 test03 %s %s\n", __DATE__, __TIME__);
 
     Catena4410::UniqueID_string_t CpuIDstring;
 
-    gCatena4410.SafePrintf("CPU Unique ID: %s\n",
-        gCatena4410.GetUniqueIDstring(&CpuIDstring)
+    gCatena.SafePrintf("CPU Unique ID: %s\n",
+        gCatena.GetUniqueIDstring(&CpuIDstring)
         );
 
     /* find the platform */
-    const Catena4410::EUI64_buffer_t *pSysEUI = gCatena4410.GetSysEUI();
+    const Catena4410::EUI64_buffer_t *pSysEUI = gCatena.GetSysEUI();
 
-    const CATENA_PLATFORM * const pPlatform = gCatena4410.GetPlatform();
+    const CATENA_PLATFORM * const pPlatform = gCatena.GetPlatform();
 
     if (pPlatform)
     {
-      gCatena4410.SafePrintf("EUI64: ");
+      gCatena.SafePrintf("EUI64: ");
       for (unsigned i = 0; i < sizeof(pSysEUI->b); ++i)
       {
-        gCatena4410.SafePrintf("%s%02x", i == 0 ? "" : "-", pSysEUI->b[i]);
+        gCatena.SafePrintf("%s%02x", i == 0 ? "" : "-", pSysEUI->b[i]);
       }
-      gCatena4410.SafePrintf("\n");
-      gCatena4410.SafePrintf(
+      gCatena.SafePrintf("\n");
+      gCatena.SafePrintf(
             "Platform Flags:  %#010x\n",
-            gCatena4410.GetPlatformFlags()
+            gCatena.GetPlatformFlags()
             );
-      gCatena4410.SafePrintf(
+      gCatena.SafePrintf(
             "Operating Flags:  %#010x\n",
-            gCatena4410.GetOperatingFlags()
+            gCatena.GetOperatingFlags()
             );
     }
 
-    if (! gLoRaWAN.begin(&gCatena4410))
-      gCatena4410.SafePrintf("LoRaWAN init failed\n");
+    if (! gLoRaWAN.begin(&gCatena))
+      gCatena.SafePrintf("LoRaWAN init failed\n");
 
     /* initialize the lux sensor */
     if (! tsl.begin())
     {
-      gCatena4410.SafePrintf("No TSL2561 detected: check wiring\n");
+      gCatena.SafePrintf("No TSL2561 detected: check wiring\n");
       fTsl = false;
     }
     else
@@ -188,7 +190,7 @@ void setup(void)
     /* initialize the BME280 */
     if (! bme.begin(BME280_ADDRESS, Adafruit_BME280::OPERATING_MODE::Sleep))
     {
-      gCatena4410.SafePrintf("No BME280 found: check wiring\n");
+      gCatena.SafePrintf("No BME280 found: check wiring\n");
       fBme = false;
     }
     else
@@ -201,7 +203,7 @@ void setup(void)
 
      if (! displayTempSensorDetails())
     {
-      gCatena4410.SafePrintf("water temperature not found: is it connected?\n");
+      gCatena.SafePrintf("water temperature not found: is it connected?\n");
       fWaterTemp = false;
     }
     else
@@ -227,7 +229,7 @@ void loop()
     }
 
 
-  Serial.print("Vbat = "); Serial.print(gCatena4410.ReadVbat()); Serial.println(" V");
+  Serial.print("Vbat = "); Serial.print(gCatena.ReadVbat()); Serial.println(" V");
   if (fBme)
   {
      Serial.print("Temperature = ");
@@ -249,7 +251,7 @@ void loop()
   }
   else
   {
-    gCatena4410.SafePrintf("No BME280 sensor\n");
+    gCatena.SafePrintf("No BME280 sensor\n");
   }
   if (fTsl)
   {
@@ -271,7 +273,7 @@ void loop()
   }
   else
   {
-    gCatena4410.SafePrintf("No Lux sensor\n");
+    gCatena.SafePrintf("No Lux sensor\n");
   }
 
   if (fWaterTemp)
@@ -282,7 +284,7 @@ void loop()
   }
   else
   {
-    gCatena4410.SafePrintf("No water temperature\n");
+    gCatena.SafePrintf("No water temperature\n");
   }
 
   if (fSoilSensor)
@@ -337,7 +339,7 @@ static bool displayTempSensorDetails(void)
   if (nDevices == 0)
     return false;
 
-  gCatena4410.SafePrintf("found %u devices\n", nDevices);
+  gCatena.SafePrintf("found %u devices\n", nDevices);
   for (unsigned iDevice = 0; iDevice < nDevices; ++iDevice)
   {
     // print interesting info
