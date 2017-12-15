@@ -18,10 +18,10 @@ Copyright notice:
                 Ithaca, NY  14850
 
 	An unpublished work.  All rights reserved.
-	
+
 	This file is proprietary information, and may not be disclosed or
 	copied without the prior permission of MCCI Corporation.
- 
+
 Author:
 	Terry Moore, MCCI Corporation	November 2016
 
@@ -58,7 +58,7 @@ using namespace McciCatena;
 |
 |		Manifest constants & typedefs.
 |
-|	This is strictly for private types and constants which will not 
+|	This is strictly for private types and constants which will not
 |	be exported.
 |
 \****************************************************************************/
@@ -95,7 +95,7 @@ static Arduino_LoRaWAN::SendBufferCbFn sendBufferDoneCb;
 |
 |	Read-only data.
 |
-|	If program is to be ROM-able, these must all be tagged read-only 
+|	If program is to be ROM-able, these must all be tagged read-only
 |	using the ROM storage class; they may be global.
 |
 \****************************************************************************/
@@ -108,7 +108,7 @@ static const char sVersion[] = "0.1.0";
 |
 |	If program is to be ROM-able, these must be initialized
 |	using the BSS keyword.  (This allows for compilers that require
-|	every variable to have an initializer.)  Note that only those 
+|	every variable to have an initializer.)  Note that only those
 |	variables owned by this module should be declared here, using the BSS
 |	keyword; this allows for linkers that dislike multiple declarations
 |	of objects.
@@ -168,14 +168,14 @@ Description:
 	This function is called by the Arduino framework after
 	basic framework has been initialized. We initialize the sensors
 	that are present on the platform, set up the LoRaWAN connection,
-        and (ultimately) return to the 
+        and (ultimately) return to the
 
 Returns:
 	No explicit result.
 
 */
 
-void setup(void) 
+void setup(void)
 {
     gCatena.begin();
 
@@ -283,7 +283,7 @@ void setup(void)
 // The Arduino loop routine -- in our case, we just drive the other loops.
 // If we try to do too much, we can break the LMIC radio. So the work is
 // done by outcalls scheduled from the LMIC os loop.
-void loop() 
+void loop()
 {
   gLoRaWAN.loop();
 
@@ -326,7 +326,7 @@ void startSendingUplink(void)
 
   if (fTsl)
   {
-    /* Get a new sensor event */ 
+    /* Get a new sensor event */
     sensors_event_t event;
     tsl.getEvent(&event);
 
@@ -340,8 +340,8 @@ void startSendingUplink(void)
     }
   }
 
-  /* 
-  || Measure and transmit the "water temperature" (OneWire) 
+  /*
+  || Measure and transmit the "water temperature" (OneWire)
   || tranducer value. This is complicated because we want
   || to support plug/unplug and the sw interface is not
   || really hot-pluggable.
@@ -357,7 +357,7 @@ void startSendingUplink(void)
         gCatena.SafePrintf("Water:   T: %d\n", (int) waterTempC);
         if (waterTempC <= -40.0)
                 {
-                // discard data and reset flag 
+                // discard data and reset flag
                 // so we'll check again next time
                 fWaterTemp = false;
                 }
@@ -428,14 +428,14 @@ static void settleDoneCb(
     startTime = millis();
     gRtc.SetAlarm(CATCFG_T_INTERVAL);
     gRtc.SleepForAlarm(
-        CatenaRTC::MATCH_HHMMSS, 
+        CatenaRTC::MATCH_HHMMSS,
         CatenaRTC::SleepMode::IdleCpuAhbApb
         );
     adjust_millis_forward(CATCFG_T_INTERVAL  * 1000);
 
     /* and now... we're awake again. trigger another measurement */
     gLed.Set(LedPattern::WarmingUp);
-    
+
     os_setTimedCallback(
             &sensorJob,
             os_getTime()+sec2osticks(CATCFG_T_WARMUP),
@@ -461,7 +461,7 @@ static void displayLuxSensorDetails(void)
   Serial.print  ("Unique ID:    "); Serial.println(sensor.sensor_id);
   Serial.print  ("Max Value:    "); Serial.print(sensor.max_value); Serial.println(" lux");
   Serial.print  ("Min Value:    "); Serial.print(sensor.min_value); Serial.println(" lux");
-  Serial.print  ("Resolution:   "); Serial.print(sensor.resolution); Serial.println(" lux");  
+  Serial.print  ("Resolution:   "); Serial.print(sensor.resolution); Serial.println(" lux");
   Serial.println("------------------------------------");
   Serial.println("");
   delay(500);
@@ -473,13 +473,13 @@ static void configureLuxSensor(void)
   // tsl.setGain(TSL2561_GAIN_1X);      /* No gain ... use in bright light to avoid sensor saturation */
   // tsl.setGain(TSL2561_GAIN_16X);     /* 16x gain ... use in low light to boost sensitivity */
   tsl.enableAutoRange(true);            /* Auto-gain ... switches automatically between 1x and 16x */
-  
+
   /* Changing the integration time gives you better sensor resolution (402ms = 16-bit data) */
   tsl.setIntegrationTime(TSL2561_INTEGRATIONTIME_13MS);      /* fast but low resolution */
   // tsl.setIntegrationTime(TSL2561_INTEGRATIONTIME_101MS);  /* medium resolution and speed   */
   // tsl.setIntegrationTime(TSL2561_INTEGRATIONTIME_402MS);  /* 16-bit data but slowest conversions */
 
-  /* Update these values depending on what you've set above! */  
+  /* Update these values depending on what you've set above! */
   Serial.println("------------------------------------");
   Serial.print  ("Gain:         "); Serial.println("Auto");
   Serial.print  ("Timing:       "); Serial.println("13 ms");
