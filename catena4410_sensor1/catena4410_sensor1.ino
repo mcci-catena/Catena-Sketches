@@ -33,6 +33,10 @@ Revision history:
 
 
 #include <Catena4410.h>
+#include <Catena_LED.h>
+#include <Catena_TxBuffer.h>
+#include <Catena_CommandStream.h>
+
 #include <CatenaRTC.h>
 #include <Wire.h>
 #include <Adafruit_Sensor.h>
@@ -48,6 +52,8 @@ Revision history:
 
 #include <type_traits>
 
+using namespace McciCatena;
+
 /****************************************************************************\
 |
 |		Manifest constants & typedefs.
@@ -57,242 +63,6 @@ Revision history:
 |
 \****************************************************************************/
 
-// each bit is 128 ms
-enum class LedPattern:uint64_t
-        {
-        Off = 0,
-        On = 1,
-
-        OneEigth = 0b100000001,
-        OneSixteenth = 0b10000000000000001,
-        FastFlash = 0b1010101,
-        TwoShort = 0b10000000000000001001,
-        FiftyFiftySlow = 0b100000000000000001111111111111111,
-
-        Joining = TwoShort,
-        Measuring = FastFlash,
-        Sending = FiftyFiftySlow,
-        WarmingUp = OneEigth,
-        Settling = OneSixteenth,
-        };
-
-class StatusLed
-        {
-private:
-        typedef std::underlying_type<LedPattern>::type LedPatternInt;
-
-public:
-        StatusLed(uint8_t uPin) : m_Pin(uPin) {};
-        void begin(void)
-                {
-                pinMode(m_Pin, OUTPUT);
-                digitalWrite(m_Pin, LOW);
-                m_StartTime = millis();
-                m_Pattern = LedPattern::Off;
-                }
-        
-        void loop(void)
-                {
-                uint32_t delta;
-                uint32_t now;
-
-                now = millis();
-                delta = now ^ m_StartTime;
-                if (delta & (1 << 7))
-                        {
-                        // the 2^7 bit changes every 2^6 ms.
-                        m_StartTime = now;
-
-                        this->update();
-                        }
-                }
-
-        void update(void)
-                {
-                if (m_Pattern == LedPattern::Off)
-                        {
-                        digitalWrite(m_Pin, LOW);
-                        return;
-                        }
-
-                if (m_Current <= 1)
-                        m_Current = static_cast<LedPatternInt>(m_Pattern);
-
-                digitalWrite(m_Pin, m_Current & 1);
-                m_Current >>= 1;
-                }
-
-        LedPattern Set(LedPattern newPattern)
-                {
-                LedPattern const oldPattern = m_Pattern;
-
-                m_Pattern = newPattern;
-                m_Current = 0;
-                digitalWrite(m_Pin, LOW);
-                return oldPattern;
-                }
-
-private:
-        uint8_t         m_Pin;
-        LedPattern      m_Pattern;
-        LedPatternInt   m_Current;
-        uint32_t        m_StartTime;
-        };
-
-// build a transmit buffer
-class TxBuffer_t
-        {
-private:
-        uint8_t buf[32];   // this sets the largest buffer size
-        uint8_t *p;
-public:
-        TxBuffer_t() : p(buf) {};
-        void begin()
-                {
-                p = buf;
-                }
-        void put(uint8_t c)
-                {
-                if (p < buf + sizeof(buf))
-                        *p++ = c;
-                }
-        void put1u(int32_t v)
-                {
-                if (v > 0xFF)
-                        v = 0xFF;
-                else if (v < 0)
-                        v = 0;
-                put((uint8_t) v);
-                }
-        void put2(uint32_t v)
-                {
-                if (v > 0xFFFF)
-                        v = 0xFFFF;
-
-                put((uint8_t) (v >> 8));
-                put((uint8_t) v);
-                }
-        void put2(int32_t v)
-                {
-                if (v < -0x8000)
-                        v = -0x8000;
-                else if (v > 0x7FFF)
-                        v = 0x7FFF;
-
-                put2((uint32_t) v);
-                }
-        void put3(uint32_t v)
-                {
-                if (v > 0xFFFFFF)
-                        v = 0xFFFFFF;
-
-                put((uint8_t) (v >> 16));
-                put((uint8_t) (v >> 8));
-                put((uint8_t) v);
-                }
-        void put2u(int32_t v)
-                {
-                if (v < 0)
-                        v = 0;
-                else if (v > 0xFFFF)
-                        v = 0xFFFF;
-                put2((uint32_t) v);
-                }
-        void put3(int32_t v)
-                {
-                if (v < -0x800000)
-                        v = -0x800000;
-                else if (v > 0x7FFFFF)
-                        v = 0x7FFFFF;
-                put3((uint32_t) v);
-                }
-        uint8_t *getp(void)
-                {
-                return p;
-                }
-        size_t getn(void)
-                {
-                return p - buf;
-                }
-        uint8_t *getbase(void)
-                {
-                return buf;
-                }
-        void put2sf(float v)
-                {
-                int32_t iv;
-
-                if (v > 32766.5f)
-                        iv = 0x7fff;
-                else if (v < -32767.5f)
-                        iv = -0x8000;
-                else
-                        iv = (int32_t)(v + 0.5f);
-
-                put2(iv);
-                }
-        void put2uf(float v)
-                {
-                uint32_t iv;
-
-                if (v > 65535.5f)
-                        iv = 0xffff;
-                else if (v < 0.5f)
-                        iv = 0;
-                else
-                        iv = (uint32_t)(v + 0.5f);
-
-                put2(iv);
-                }
-        void put1uf(float v)
-                {
-                uint8_t c;
-
-                if (v > 254.5)
-                        c = 0xFF;
-                else if (v < 0.5)
-                        c = 0;
-                else
-                        c = (uint8_t) v;
-
-                put(c);
-                }
-        void putT(float T)
-                {
-                put2sf(T * 256.0f + 0.5f);                
-                }
-        void putRH(float RH)
-                {
-                put1uf((RH / 0.390625f) + 0.5f);
-                }
-        void putV(float V)
-                {
-                put2sf(V * 4096.0f + 0.5f);
-                }
-        void putP(float P)
-                {
-                put2uf(P / 4.0f + 0.5f);
-                }
-        void putLux(float Lux)
-                {
-                put2uf(Lux);
-                }
-        };
-
-/* the magic byte at the front of the buffer */
-enum    {
-        FormatSensor1 = 0x11,
-        };
-
-/* the flags for the second byte of the buffer */
-enum    {
-        FlagVbat = 1 << 0,
-        FlagVcc = 1 << 1,
-        FlagTPH = 1 << 2,
-        FlagLux = 1 << 3,
-        FlagWater = 1 << 4,
-        FlagSoilTH = 1 << 5,
-        };
 
 /* how long do we wait between measurements (in seconds) */
 enum    {
@@ -346,7 +116,7 @@ static const char sVersion[] = "0.1.0";
 \****************************************************************************/
 
 // globals
-Catena4410 gCatena4410;
+Catena4410 gCatena;
 
 //
 // the LoRaWAN backhaul.  Note that we use the
@@ -407,9 +177,9 @@ Returns:
 
 void setup(void) 
 {
-    gCatena4410.begin();
+    gCatena.begin();
 
-    gCatena4410.SafePrintf("Catena 4410 sensor1 V%s\n", sVersion);
+    gCatena.SafePrintf("Catena 4410 sensor1 V%s\n", sVersion);
 
     // set up the status led
     gLed.begin();
@@ -417,42 +187,42 @@ void setup(void)
     // set up the RTC object
     gRtc.begin();
 
-    if (! gLoRaWAN.begin(&gCatena4410))
-	gCatena4410.SafePrintf("LoRaWAN init failed\n");
+    if (! gLoRaWAN.begin(&gCatena))
+	    gCatena.SafePrintf("LoRaWAN init failed\n");
 
     Catena4410::UniqueID_string_t CpuIDstring;
 
-    gCatena4410.SafePrintf("CPU Unique ID: %s\n",
-        gCatena4410.GetUniqueIDstring(&CpuIDstring)
+    gCatena.SafePrintf("CPU Unique ID: %s\n",
+        gCatena.GetUniqueIDstring(&CpuIDstring)
         );
 
     /* find the platform */
-    const Catena4410::EUI64_buffer_t *pSysEUI = gCatena4410.GetSysEUI();
+    const Catena4410::EUI64_buffer_t *pSysEUI = gCatena.GetSysEUI();
 
-    const CATENA_PLATFORM * const pPlatform = gCatena4410.GetPlatform();
+    const CATENA_PLATFORM * const pPlatform = gCatena.GetPlatform();
 
     if (pPlatform)
     {
-      gCatena4410.SafePrintf("EUI64: ");
+      gCatena.SafePrintf("EUI64: ");
       for (unsigned i = 0; i < sizeof(pSysEUI->b); ++i)
       {
-        gCatena4410.SafePrintf("%s%02x", i == 0 ? "" : "-", pSysEUI->b[i]);
+        gCatena.SafePrintf("%s%02x", i == 0 ? "" : "-", pSysEUI->b[i]);
       }
-      gCatena4410.SafePrintf("\n");
-      gCatena4410.SafePrintf(
+      gCatena.SafePrintf("\n");
+      gCatena.SafePrintf(
             "Platform Flags:  %#010x\n",
-            gCatena4410.GetPlatformFlags()
+            gCatena.GetPlatformFlags()
             );
-      gCatena4410.SafePrintf(
+      gCatena.SafePrintf(
             "Operating Flags:  %#010x\n",
-            gCatena4410.GetOperatingFlags()
+            gCatena.GetOperatingFlags()
             );
     }
 
     /* initialize the lux sensor */
     if (! tsl.begin())
     {
-      gCatena4410.SafePrintf("No TSL2561 detected: check wiring\n");
+      gCatena.SafePrintf("No TSL2561 detected: check wiring\n");
       fTsl = false;
     }
     else
@@ -465,7 +235,7 @@ void setup(void)
     /* initialize the BME280 */
     if (! bme.begin(BME280_ADDRESS, Adafruit_BME280::OPERATING_MODE::Sleep))
     {
-      gCatena4410.SafePrintf("No BME280 found: check wiring\n");
+      gCatena.SafePrintf("No BME280 found: check wiring\n");
       fBme = false;
     }
     else
@@ -478,7 +248,7 @@ void setup(void)
 
     if (! displayTempSensorDetails())
     {
-      gCatena4410.SafePrintf("water temperature not found: is it connected?\n");
+      gCatena.SafePrintf("water temperature not found: is it connected?\n");
       fWaterTemp = false;
     }
     else
@@ -530,15 +300,15 @@ void startSendingUplink(void)
 
   flag = 0;
 
-  b.put(0x11); /* the flag for this record format */
+  b.put(FormatSensor1); /* the flag for this record format */
   uint8_t * const pFlag = b.getp();
   b.put(0x00); /* will be set to the flags */
 
   // vBat is sent as 5000 * v
-  float vBat = gCatena4410.ReadVbat();
-  gCatena4410.SafePrintf("vBat:    %d mV\n", (int) (vBat * 1000.0f));
+  float vBat = gCatena.ReadVbat();
+  gCatena.SafePrintf("vBat:    %d mV\n", (int) (vBat * 1000.0f));
   b.putV(vBat);
-  flag |= FlagVbat;
+  flag |= FlagsSensor1::FlagVbat;
 
   if (fBme)
        {
@@ -546,12 +316,12 @@ void startSendingUplink(void)
        // temperature is 2 bytes from -0x80.00 to +0x7F.FF degrees C
        // pressure is 2 bytes, hPa * 10.
        // humidity is one byte, where 0 == 0/256 and 0xFF == 255/256.
-       gCatena4410.SafePrintf("BME280:  T: %d P: %d RH: %d\n", (int) m.Temperature, (int) m.Pressure, (int)m.Humidity);
+       gCatena.SafePrintf("BME280:  T: %d P: %d RH: %d\n", (int) m.Temperature, (int) m.Pressure, (int)m.Humidity);
        b.putT(m.Temperature);
        b.putP(m.Pressure);
        b.putRH(m.Humidity);
 
-       flag |= FlagTPH;
+       flag |= FlagsSensor1::FlagTPH;
        }
 
   if (fTsl)
@@ -560,13 +330,13 @@ void startSendingUplink(void)
     sensors_event_t event;
     tsl.getEvent(&event);
 
-    gCatena4410.SafePrintf("TSL:     Lux: %d\n", (int) event.light);
+    gCatena.SafePrintf("TSL:     Lux: %d\n", (int) event.light);
 
     /* record the results (light is measured in lux) */
     if (event.light > 0 && event.light < 65536)
     {
       b.putLux(event.light);
-      flag |= FlagLux;
+      flag |= FlagsSensor1::FlagLux;
     }
   }
 
@@ -584,8 +354,8 @@ void startSendingUplink(void)
         sensor_WaterTemp.requestTemperatures();
         float waterTempC = sensor_WaterTemp.getTempCByIndex(0);
 
-        gCatena4410.SafePrintf("Water:   T: %d\n", (int) waterTempC);
-        if (waterTempC <= 0.0)
+        gCatena.SafePrintf("Water:   T: %d\n", (int) waterTempC);
+        if (waterTempC <= -40.0)
                 {
                 // discard data and reset flag 
                 // so we'll check again next time
@@ -595,7 +365,7 @@ void startSendingUplink(void)
                 {
                 // transmit the measurement
                 b.putT(waterTempC);
-                flag |= FlagWater;
+                flag |= FlagsSensor1::FlagWater;
                 }
         }
 
@@ -615,9 +385,9 @@ void startSendingUplink(void)
 
         b.putT(SoilT);
         b.putRH(SoilRH);
-        gCatena4410.SafePrintf("Soil:    T: %d RH: %d\n", (int) SoilT, (int) SoilRH);
+        gCatena.SafePrintf("Soil:    T: %d RH: %d\n", (int) SoilT, (int) SoilRH);
 
-        flag |= FlagSoilTH;
+        flag |= FlagsSensor1::FlagSoilTH;
         }
     }
 
@@ -730,7 +500,7 @@ static bool displayTempSensorDetails(void)
   if (nDevices == 0)
     return false;
 
-  gCatena4410.SafePrintf("found %u devices\n", nDevices);
+  gCatena.SafePrintf("found %u devices\n", nDevices);
   for (unsigned iDevice = 0; iDevice < nDevices; ++iDevice)
   {
     // print interesting info
