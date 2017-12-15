@@ -18,10 +18,10 @@ Copyright notice:
 		Ithaca, NY  14850
 
 	An unpublished work.  All rights reserved.
-	
+
 	This file is proprietary information, and may not be disclosed or
 	copied without the prior permission of MCCI Corporation.
- 
+
 Author:
 	Terry Moore, MCCI Corporation	October 2016
 
@@ -47,7 +47,7 @@ using namespace McciCatena;
 |
 |		Manifest constants & typedefs.
 |
-|	This is strictly for private types and constants which will not 
+|	This is strictly for private types and constants which will not
 |	be exported.
 |
 \****************************************************************************/
@@ -67,7 +67,7 @@ static bool displayTempSensorDetails(void);
 |
 |	Read-only data.
 |
-|	If program is to be ROM-able, these must all be tagged read-only 
+|	If program is to be ROM-able, these must all be tagged read-only
 |	using the ROM storage class; they may be global.
 |
 \****************************************************************************/
@@ -79,7 +79,7 @@ static bool displayTempSensorDetails(void);
 |
 |	If program is to be ROM-able, these must be initialized
 |	using the BSS keyword.  (This allows for compilers that require
-|	every variable to have an initializer.)  Note that only those 
+|	every variable to have an initializer.)  Note that only those
 |	variables owned by this module should be declared here, using the BSS
 |	keyword; this allows for linkers that dislike multiple declarations
 |	of objects.
@@ -130,14 +130,15 @@ Description:
 	This function is called by the Arduino framework after
 	basic framework has been initialized. We initialize the sensors
 	that are present on the platform, set up the LoRaWAN connection,
-        and (ultimately) return to the 
+	and (ultimately) return to the Arduino core, which calls loop()
+	forever.
 
 Returns:
 	No explicit result.
 
 */
 
-void setup(void) 
+void setup(void)
 {
     gCatena.begin();
 
@@ -217,7 +218,7 @@ void setup(void)
     fSoilSensor = true;
 }
 
-void loop() 
+void loop()
 {
   gLoRaWAN.loop();
 
@@ -226,7 +227,7 @@ void loop()
   if (gLoRaWAN.GetTxReady())
     {
 //  const static uint8_t msg[] = "hello world";
-//  gLoRaWAN.SendBuffer(msg, sizeof(msg) - 1); 
+//  gLoRaWAN.SendBuffer(msg, sizeof(msg) - 1);
     }
 
 
@@ -256,10 +257,10 @@ void loop()
   }
   if (fTsl)
   {
-    /* Get a new sensor event */ 
+    /* Get a new sensor event */
     sensors_event_t event;
     tsl.getEvent(&event);
-   
+
     /* Display the results (light is measured in lux) */
     if (event.light)
     {
@@ -316,7 +317,7 @@ static void displayLuxSensorDetails(void)
   Serial.print  ("Unique ID:    "); Serial.println(sensor.sensor_id);
   Serial.print  ("Max Value:    "); Serial.print(sensor.max_value); Serial.println(" lux");
   Serial.print  ("Min Value:    "); Serial.print(sensor.min_value); Serial.println(" lux");
-  Serial.print  ("Resolution:   "); Serial.print(sensor.resolution); Serial.println(" lux");  
+  Serial.print  ("Resolution:   "); Serial.print(sensor.resolution); Serial.println(" lux");
   Serial.println("------------------------------------");
   Serial.println("");
   delay(500);
