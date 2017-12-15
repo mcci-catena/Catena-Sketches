@@ -58,6 +58,7 @@ using namespace McciCatena;
 #define SEALEVELPRESSURE_HPA (1027.087F)
 
 // forwards
+static bool checkWaterSensorPresent(void);
 static void configureLuxSensor(void);
 static void displayLuxSensorDetails(void);
 static bool displayTempSensorDetails(void);
@@ -276,6 +277,14 @@ void loop()
     gCatena.SafePrintf("No Lux sensor\n");
   }
 
+  /*
+  || Measure and transmit the "water temperature" (OneWire)
+  || tranducer value. This is complicated because we want
+  || to support plug/unplug and the sw interface is not
+  || really hot-pluggable.
+  */
+  fWaterTemp = checkWaterSensorPresent();
+
   if (fWaterTemp)
   {
     sensor_WaterTemp.requestTemperatures();
@@ -319,19 +328,26 @@ static void configureLuxSensor(void)
   // tsl.setGain(TSL2561_GAIN_1X);      /* No gain ... use in bright light to avoid sensor saturation */
   // tsl.setGain(TSL2561_GAIN_16X);     /* 16x gain ... use in low light to boost sensitivity */
   tsl.enableAutoRange(true);            /* Auto-gain ... switches automatically between 1x and 16x */
-  
+
   /* Changing the integration time gives you better sensor resolution (402ms = 16-bit data) */
   tsl.setIntegrationTime(TSL2561_INTEGRATIONTIME_13MS);      /* fast but low resolution */
   // tsl.setIntegrationTime(TSL2561_INTEGRATIONTIME_101MS);  /* medium resolution and speed   */
   // tsl.setIntegrationTime(TSL2561_INTEGRATIONTIME_402MS);  /* 16-bit data but slowest conversions */
 
-  /* Update these values depending on what you've set above! */  
+  /* Update these values depending on what you've set above! */
   Serial.println("------------------------------------");
   Serial.print  ("Gain:         "); Serial.println("Auto");
   Serial.print  ("Timing:       "); Serial.println("13 ms");
   Serial.println("------------------------------------");
 }
 
+static bool checkWaterSensorPresent(void)
+{
+  // this is unpleasant. But the way to deal with plugging is to call
+  // begin again.
+  sensor_WaterTemp.begin();
+  return sensor_WaterTemp.getDeviceCount() != 0;
+}
 
 static bool displayTempSensorDetails(void)
 {
