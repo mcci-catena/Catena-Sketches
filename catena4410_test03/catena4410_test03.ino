@@ -18,10 +18,10 @@ Copyright notice:
 		Ithaca, NY  14850
 
 	An unpublished work.  All rights reserved.
-	
+
 	This file is proprietary information, and may not be disclosed or
 	copied without the prior permission of MCCI Corporation.
- 
+
 Author:
 	Terry Moore, MCCI Corporation	October 2016
 
@@ -40,12 +40,14 @@ Revision history:
 #include <DallasTemperature.h>
 #include <SHT1x.h>
 #include <Arduino_LoRaWAN.h>
+
+using namespace McciCatena;
 
 /****************************************************************************\
 |
 |		Manifest constants & typedefs.
 |
-|	This is strictly for private types and constants which will not 
+|	This is strictly for private types and constants which will not
 |	be exported.
 |
 \****************************************************************************/
@@ -56,6 +58,7 @@ Revision history:
 #define SEALEVELPRESSURE_HPA (1027.087F)
 
 // forwards
+static bool checkWaterSensorPresent(void);
 static void configureLuxSensor(void);
 static void displayLuxSensorDetails(void);
 static bool displayTempSensorDetails(void);
@@ -64,7 +67,7 @@ static bool displayTempSensorDetails(void);
 |
 |	Read-only data.
 |
-|	If program is to be ROM-able, these must all be tagged read-only 
+|	If program is to be ROM-able, these must all be tagged read-only
 |	using the ROM storage class; they may be global.
 |
 \****************************************************************************/
@@ -76,7 +79,7 @@ static bool displayTempSensorDetails(void);
 |
 |	If program is to be ROM-able, these must be initialized
 |	using the BSS keyword.  (This allows for compilers that require
-|	every variable to have an initializer.)  Note that only those 
+|	every variable to have an initializer.)  Note that only those
 |	variables owned by this module should be declared here, using the BSS
 |	keyword; this allows for linkers that dislike multiple declarations
 |	of objects.
@@ -84,7 +87,7 @@ static bool displayTempSensorDetails(void);
 \****************************************************************************/
 
 // globals
-Catena4410 gCatena4410;
+Catena4410 gCatena;
 
 //
 // the LoRaWAN backhaul.  Note that we use the
@@ -127,55 +130,56 @@ Description:
 	This function is called by the Arduino framework after
 	basic framework has been initialized. We initialize the sensors
 	that are present on the platform, set up the LoRaWAN connection,
-        and (ultimately) return to the 
+	and (ultimately) return to the Arduino core, which calls loop()
+	forever.
 
 Returns:
 	No explicit result.
 
 */
 
-void setup(void) 
+void setup(void)
 {
-    gCatena4410.begin();
+    gCatena.begin();
 
-    gCatena4410.SafePrintf("Catena 4410 test03 %s %s\n", __DATE__, __TIME__);
+    gCatena.SafePrintf("Catena 4410 test03 %s %s\n", __DATE__, __TIME__);
 
     Catena4410::UniqueID_string_t CpuIDstring;
 
-    gCatena4410.SafePrintf("CPU Unique ID: %s\n",
-        gCatena4410.GetUniqueIDstring(&CpuIDstring)
+    gCatena.SafePrintf("CPU Unique ID: %s\n",
+        gCatena.GetUniqueIDstring(&CpuIDstring)
         );
 
     /* find the platform */
-    const Catena4410::EUI64_buffer_t *pSysEUI = gCatena4410.GetSysEUI();
+    const Catena4410::EUI64_buffer_t *pSysEUI = gCatena.GetSysEUI();
 
-    const CATENA_PLATFORM * const pPlatform = gCatena4410.GetPlatform();
+    const CATENA_PLATFORM * const pPlatform = gCatena.GetPlatform();
 
     if (pPlatform)
     {
-      gCatena4410.SafePrintf("EUI64: ");
+      gCatena.SafePrintf("EUI64: ");
       for (unsigned i = 0; i < sizeof(pSysEUI->b); ++i)
       {
-        gCatena4410.SafePrintf("%s%02x", i == 0 ? "" : "-", pSysEUI->b[i]);
+        gCatena.SafePrintf("%s%02x", i == 0 ? "" : "-", pSysEUI->b[i]);
       }
-      gCatena4410.SafePrintf("\n");
-      gCatena4410.SafePrintf(
+      gCatena.SafePrintf("\n");
+      gCatena.SafePrintf(
             "Platform Flags:  %#010x\n",
-            gCatena4410.GetPlatformFlags()
+            gCatena.GetPlatformFlags()
             );
-      gCatena4410.SafePrintf(
+      gCatena.SafePrintf(
             "Operating Flags:  %#010x\n",
-            gCatena4410.GetOperatingFlags()
+            gCatena.GetOperatingFlags()
             );
     }
 
-    if (! gLoRaWAN.begin(&gCatena4410))
-      gCatena4410.SafePrintf("LoRaWAN init failed\n");
+    if (! gLoRaWAN.begin(&gCatena))
+      gCatena.SafePrintf("LoRaWAN init failed\n");
 
     /* initialize the lux sensor */
     if (! tsl.begin())
     {
-      gCatena4410.SafePrintf("No TSL2561 detected: check wiring\n");
+      gCatena.SafePrintf("No TSL2561 detected: check wiring\n");
       fTsl = false;
     }
     else
@@ -188,7 +192,7 @@ void setup(void)
     /* initialize the BME280 */
     if (! bme.begin(BME280_ADDRESS, Adafruit_BME280::OPERATING_MODE::Sleep))
     {
-      gCatena4410.SafePrintf("No BME280 found: check wiring\n");
+      gCatena.SafePrintf("No BME280 found: check wiring\n");
       fBme = false;
     }
     else
@@ -201,7 +205,7 @@ void setup(void)
 
      if (! displayTempSensorDetails())
     {
-      gCatena4410.SafePrintf("water temperature not found: is it connected?\n");
+      gCatena.SafePrintf("water temperature not found: is it connected?\n");
       fWaterTemp = false;
     }
     else
@@ -214,7 +218,7 @@ void setup(void)
     fSoilSensor = true;
 }
 
-void loop() 
+void loop()
 {
   gLoRaWAN.loop();
 
@@ -223,11 +227,11 @@ void loop()
   if (gLoRaWAN.GetTxReady())
     {
 //  const static uint8_t msg[] = "hello world";
-//  gLoRaWAN.SendBuffer(msg, sizeof(msg) - 1); 
+//  gLoRaWAN.SendBuffer(msg, sizeof(msg) - 1);
     }
 
 
-  Serial.print("Vbat = "); Serial.print(gCatena4410.ReadVbat()); Serial.println(" V");
+  Serial.print("Vbat = "); Serial.print(gCatena.ReadVbat()); Serial.println(" V");
   if (fBme)
   {
      Serial.print("Temperature = ");
@@ -249,14 +253,14 @@ void loop()
   }
   else
   {
-    gCatena4410.SafePrintf("No BME280 sensor\n");
+    gCatena.SafePrintf("No BME280 sensor\n");
   }
   if (fTsl)
   {
-    /* Get a new sensor event */ 
+    /* Get a new sensor event */
     sensors_event_t event;
     tsl.getEvent(&event);
-   
+
     /* Display the results (light is measured in lux) */
     if (event.light)
     {
@@ -271,8 +275,16 @@ void loop()
   }
   else
   {
-    gCatena4410.SafePrintf("No Lux sensor\n");
+    gCatena.SafePrintf("No Lux sensor\n");
   }
+
+  /*
+  || Measure and transmit the "water temperature" (OneWire)
+  || tranducer value. This is complicated because we want
+  || to support plug/unplug and the sw interface is not
+  || really hot-pluggable.
+  */
+  fWaterTemp = checkWaterSensorPresent();
 
   if (fWaterTemp)
   {
@@ -282,7 +294,7 @@ void loop()
   }
   else
   {
-    gCatena4410.SafePrintf("No water temperature\n");
+    gCatena.SafePrintf("No water temperature\n");
   }
 
   if (fSoilSensor)
@@ -305,7 +317,7 @@ static void displayLuxSensorDetails(void)
   Serial.print  ("Unique ID:    "); Serial.println(sensor.sensor_id);
   Serial.print  ("Max Value:    "); Serial.print(sensor.max_value); Serial.println(" lux");
   Serial.print  ("Min Value:    "); Serial.print(sensor.min_value); Serial.println(" lux");
-  Serial.print  ("Resolution:   "); Serial.print(sensor.resolution); Serial.println(" lux");  
+  Serial.print  ("Resolution:   "); Serial.print(sensor.resolution); Serial.println(" lux");
   Serial.println("------------------------------------");
   Serial.println("");
   delay(500);
@@ -317,19 +329,26 @@ static void configureLuxSensor(void)
   // tsl.setGain(TSL2561_GAIN_1X);      /* No gain ... use in bright light to avoid sensor saturation */
   // tsl.setGain(TSL2561_GAIN_16X);     /* 16x gain ... use in low light to boost sensitivity */
   tsl.enableAutoRange(true);            /* Auto-gain ... switches automatically between 1x and 16x */
-  
+
   /* Changing the integration time gives you better sensor resolution (402ms = 16-bit data) */
   tsl.setIntegrationTime(TSL2561_INTEGRATIONTIME_13MS);      /* fast but low resolution */
   // tsl.setIntegrationTime(TSL2561_INTEGRATIONTIME_101MS);  /* medium resolution and speed   */
   // tsl.setIntegrationTime(TSL2561_INTEGRATIONTIME_402MS);  /* 16-bit data but slowest conversions */
 
-  /* Update these values depending on what you've set above! */  
+  /* Update these values depending on what you've set above! */
   Serial.println("------------------------------------");
   Serial.print  ("Gain:         "); Serial.println("Auto");
   Serial.print  ("Timing:       "); Serial.println("13 ms");
   Serial.println("------------------------------------");
 }
 
+static bool checkWaterSensorPresent(void)
+{
+  // this is unpleasant. But the way to deal with plugging is to call
+  // begin again.
+  sensor_WaterTemp.begin();
+  return sensor_WaterTemp.getDeviceCount() != 0;
+}
 
 static bool displayTempSensorDetails(void)
 {
@@ -337,7 +356,7 @@ static bool displayTempSensorDetails(void)
   if (nDevices == 0)
     return false;
 
-  gCatena4410.SafePrintf("found %u devices\n", nDevices);
+  gCatena.SafePrintf("found %u devices\n", nDevices);
   for (unsigned iDevice = 0; iDevice < nDevices; ++iDevice)
   {
     // print interesting info
