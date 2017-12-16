@@ -284,7 +284,7 @@ function Decoder(bytes, port) {
             //    "tWater": 28.00390625,
             //    "tempC": 23.640625,
             //    "vBat": 4.21533203125
-            //    }	  
+            //    }
             // i is used as the index into the message. Start with the flag byte.
             var i = 1;
             // fetch the bitmap.
