@@ -1,5 +1,5 @@
 // JavaScript source code
-// This Node-RED decoding function decodes the record sent by the 
+// This Node-RED decoding function decodes the record sent by the
 // Catena 4410 or 4450 sensor application, port 1, format 0x11 or 0x15.
 //
 // 2017-12-13 add proper header, temp decoding.
@@ -43,13 +43,13 @@ var flags = bytes[i++];
 // validate format code and adjust flags value
 if (bytes[0] == 0x11)
     {
-    // 0x11 is almost the same as 0x15, but no boot count bit.  
+    // 0x11 is almost the same as 0x15, but no boot count bit.
     // Simply insert a zero in the value of flags and pretend
     // this was format 0x15
     flags = ((flags & ~3) << 1) | (flags & 3);
 
     // set up additional metadata.
-    msg.local = 
+    msg.local =
         {
         nodeType: "Catena 4410",
         platformType: "Feather M0 LoRa",
@@ -60,7 +60,7 @@ if (bytes[0] == 0x11)
 else if (bytes[0] == 0x15)
     {
     // native 0x15 format. Set up metadata.
-    msg.local = 
+    msg.local =
         {
         nodeType: "Catena 4450-M102",
         platformType: "Feather M0 LoRa",
