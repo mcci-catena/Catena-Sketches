@@ -39,6 +39,8 @@ Revision history:
 #include <OneWire.h>
 #include <DallasTemperature.h>
 #include <SHT1x.h>
+
+using namespace McciCatena;
 
 /****************************************************************************\
 |
