@@ -87,7 +87,7 @@ enum    {
 enum    {
         PIN_ONE_WIRE =  A2,        // XSDA1 == A2
         PIN_SHT10_CLK = A1,        // XSCL0 == A1
-        PIN_SHT10_DATA = A0,       // XSDA0 == A0 
+        PIN_SHT10_DATA = A0,       // XSDA0 == A0
         };
 
 // forwards
@@ -354,7 +354,7 @@ void setup(void)
                 (void)bme.readTemperature();
 
         /* trigger a join by sending the first packet */
-        if (! (gCatena.GetOperatingFlags() & 
+        if (! (gCatena.GetOperatingFlags() &
                         static_cast<uint32_t>(gCatena.OPERATING_FLAGS::fManufacturingTest)))
                 startSendingUplink();
         }
@@ -477,7 +477,7 @@ void fillBuffer(TxBuffer_t &b)
                 gCatena.SafePrintf("Water:   T: %d\n", (int) waterTempC);
                 if (waterTempC <= 0.0)
                         {
-                        // discard data and reset flag 
+                        // discard data and reset flag
                         // so we'll check again next time
                         fFoundWaterTemp = false;
                         }
