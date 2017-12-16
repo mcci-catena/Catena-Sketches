@@ -8,7 +8,7 @@
 var bytes;
 if ("payload_raw" in msg)
     {
-    // the console already decoded this
+    // the things network console already decoded this
     bytes = msg.payload_raw;    // pick up data for convenience
     // msg.payload_fields still has the decoded data
     }
