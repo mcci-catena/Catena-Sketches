@@ -1,4 +1,4 @@
-/* catena4551_test01.ino	Wed Dec 06 2017 15:35:20 chwon */
+/* catena4551_test01.ino	Wed Jan 03 2018 11:09:13 chwon */
 
 /*
 
@@ -8,7 +8,7 @@ Function:
 	Test program for Catena 4551 and variants.
 
 Version:
-	V0.6.0	Wed Dec 06 2017 15:35:20 chwon	Edit level 2
+	V0.7.0	Wed Jan 03 2018 11:09:14 chwon	Edit level 3
 
 Copyright notice:
 	This file copyright (C) 2017 by
@@ -31,6 +31,9 @@ Revision history:
 
    0.6.0  Wed Dec 06 2017 15:35:20  chwon
 	Improve power management.
+
+   0.7.0  Wed Jan 03 2018 11:09:14  chwon
+	Add USB power check.
 
 */
 
@@ -151,6 +154,9 @@ SPIClass gSPI2(
 //   The flash
 Catena_Mx25v8035f gFlash;
 bool fFlash;
+
+//  USB power
+bool fUsbPower;
 
 //  the job that's used to synchronize us with the LMIC code
 static osjob_t sensorJob;
@@ -440,6 +446,11 @@ void startSendingUplink(void)
 	b.putV(vBat);
 	flag |= FlagsSensor2::FlagVbat;
 
+	// vBus is sent as 5000 * v
+	float vBus = gCatena.ReadVbus();
+	gCatena.SafePrintf("vBus:    %d mV\n", (int) (vBus * 1000.0f));
+	fUsbPower = (vBus > 2.0) ? true : false;
+
 	uint32_t bootCount;
 	if (gCatena.getBootCount(bootCount))
 		{
@@ -588,7 +599,7 @@ static void settleDoneCb(
 
 	// if connected to USB, don't sleep
 	// ditto if we're monitoring pulses.
-	if (/* Serial.dtr() || */fHasPower1)
+	if (fUsbPower || fHasPower1)
 		{
 		gLed.Set(LedPattern::Sleeping);
 		os_setTimedCallback(
