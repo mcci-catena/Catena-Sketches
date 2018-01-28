@@ -38,8 +38,12 @@ Revision history:
 
 */
 
-#include <Catena4450.h>
-#include <CatenaRTC.h>
+#include <Catena.h>
+
+#ifdef ARDUINO_ARCH_SAMD
+# include <CatenaRTC.h>
+#endif
+
 #include <Catena_Led.h>
 #include <Catena_TxBuffer.h>
 #include <Catena_CommandStream.h>
@@ -52,7 +56,11 @@ Revision history:
 #include <lmic.h>
 #include <hal/hal.h>
 #include <mcciadk_baselib.h>
-#include <delay.h>
+
+#ifdef ARDUINO_ARCH_SAMD
+# include <delay.h>
+#endif
+
 #include <OneWire.h>
 #include <DallasTemperature.h>
 #include <SHT1x.h>
@@ -70,7 +78,7 @@ Revision history:
 \****************************************************************************/
 
 using namespace McciCatena;
-using ThisCatena = Catena4450;
+using ThisCatena = Catena;
 
 /* how long do we wait between measurements (in seconds) */
 enum    {
@@ -139,8 +147,10 @@ ThisCatena::LoRaWAN gLoRaWAN;
 //
 StatusLed gLed (ThisCatena::PIN_STATUS_LED);
 
+#ifdef ARDUINO_ARCH_SAMD
 // the RTC instance, used for sleeping
 CatenaRTC gRtc;
+#endif /* ARDUINO_ARCH_SAMD*/
 
 //   The temperature/humidity sensor
 Adafruit_BME280 bme; // The default initalizer creates an I2C connection
@@ -212,8 +222,10 @@ void setup(void)
         gLed.begin();
         gCatena.registerObject(&gLed);
 
+#ifdef ARDUINO_ARCH_SAMD
         // set up the RTC object
         gRtc.begin();
+#endif
 
         gCatena.SafePrintf("LoRaWAN init: ");
         if (!gLoRaWAN.begin(&gCatena))
@@ -265,7 +277,7 @@ void setup(void)
 
 
         /* initialize the lux sensor */
-        if (flags & CatenaSamd21::fHasLuxRohm)
+        if (flags & CatenaBase::fHasLuxRohm)
                 {
                 bh1750.begin();
                 fLux = true;
@@ -301,10 +313,10 @@ void setup(void)
                         kPinPower1P1 = A0;
                         kPinPower1P2 = A1;
                         }
-                else if (modnumber == 102)
+                else if (modnumber == 102 || modnumber == 103 || modnumber == 104)
                         {
-                        fHasWaterTemp = true;
-                        fSoilSensor = true;
+                        fHasWaterTemp = flags & CatenaBase::fHasWaterOneWire;
+                        fSoilSensor = flags & CatenaBase::fHasSoilProbe;
                         }
                 else
                         {
@@ -314,6 +326,8 @@ void setup(void)
         else
                 {
                 gCatena.SafePrintf("No mods detected\n");
+                fHasWaterTemp = flags & CatenaBase::fHasWaterOneWire;
+                fSoilSensor = flags & CatenaBase::fHasSoilProbe;
                 }
 
         if (fHasWaterTemp)
@@ -580,10 +594,15 @@ static void settleDoneCb(
     )
     {
     uint32_t startTime;
+#ifdef ARDUINO_ARCH_SAMD
+    const bool fDontSleep = true;
+#else 
+    const bool fDontSleep = Serial.dtr() || fHasPower1;
+#endif /* ARDUINO_ARCH_SAMD */
 
     // if connected to USB, don't sleep
     // ditto if we're monitoring pulses.
-    if (Serial.dtr() || fHasPower1)
+    if (fDontSleep)
         {
         gLed.Set(LedPattern::Sleeping);
         os_setTimedCallback(
@@ -594,6 +613,7 @@ static void settleDoneCb(
         return;
         }
 
+#ifdef ARDUINO_ARCH_SAMD
     /* ok... now it's time for a deep sleep */
     gLed.Set(LedPattern::Off);
 
@@ -610,6 +630,8 @@ static void settleDoneCb(
 
     /* and now... we're awake again. trigger another measurement */
     sleepDoneCb(pSendJob);
+#endif /* ARDUINO_ARCH_SAMD */
+
     }
 
 static void sleepDoneCb(
