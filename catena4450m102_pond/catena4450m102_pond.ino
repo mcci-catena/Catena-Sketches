@@ -367,6 +367,11 @@ void setup(void)
         if (fBme)
                 (void)bme.readTemperature();
 
+        /* for 4551, we need wider tolerances, it seems */
+#if defined(ARDUINO_ARCH_STM32)
+        LMIC_setClockError(10 * 65536 / 100);
+#endif
+
         /* trigger a join by sending the first packet */
         if (! (gCatena.GetOperatingFlags() &
                         static_cast<uint32_t>(gCatena.OPERATING_FLAGS::fManufacturingTest)))
