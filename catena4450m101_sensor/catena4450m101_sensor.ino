@@ -82,7 +82,6 @@ static void sleepDoneCb(osjob_t *pSendJob);
 static Arduino_LoRaWAN::SendBufferCbFn sendBufferDoneCb;
 void fillBuffer(TxBuffer_t &b);
 void startSendingUplink(void);
-void sensorJob_cb(osjob_t *pJob);
 void setTxCycleTime(unsigned txCycle, unsigned txCount);
 
 // function for scaling power
@@ -150,6 +149,28 @@ static Arduino_LoRaWAN::ReceivePortBufferCbFn receiveMessage;
 
 /****************************************************************************\
 |
+|	The command table
+|
+\****************************************************************************/
+
+extern cCommandStream::CommandFn setTransmitPeriod;
+
+static const cCommandStream::cEntry sApplicationCommmands[] =
+	{
+	{ "tx-period", setTransmitPeriod },
+        // other commands go here....
+	};
+
+/* create the top level structure for the command dispatch table */
+static cCommandStream::cDispatch
+sApplicationCommandDispatch(
+        sApplicationCommmands,          /* this is the pointer to the table */
+        sizeof(sApplicationCommmands),  /* this is the size of the table */
+        "application"                   /* this is the "first word" for all the commands in this table*/
+        );
+
+/****************************************************************************\
+|
 |       Code.
 |
 \****************************************************************************/
@@ -189,6 +210,18 @@ void setup(void)
 #if defined(ARDUINO_ARCH_STM32)
         LMIC_setClockError(10 * 65536 / 100);
 #endif
+
+        /* add our application-specific commands */
+        gCatena.addCommands(
+                /* name of app dispatch table, passed by reference */
+                sApplicationCommandDispatch,
+                /*
+                || optionally a context pointer using static_cast<void *>().
+                || normally only libraries (needing to be reentrant) need
+                || to use the context pointer.
+                */
+                nullptr
+                );
 
         /* trigger a join by sending the first packet */
         if (!(gCatena.GetOperatingFlags() &
@@ -823,3 +856,15 @@ void setTxCycleTime(
         gTxCycle = txCycle;
         gTxCycleCount = txCount;
         }
+
+//
+// at least with Visual Micro, it's necessary to hide these function bodies
+// from the Arduino environment. Arduino tries to insert prototypes for these
+// functions at the start of the file, and doesn't handle the return type
+// properly.
+//
+// By putting them in a #included CPP file, we avoid the deep scan, and thereby
+// avoid the problem.
+//
+
+// #include "application_commands.cpp"
