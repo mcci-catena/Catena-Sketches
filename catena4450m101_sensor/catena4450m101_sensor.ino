@@ -52,6 +52,7 @@ Revision history:
 #include <mcciadk_baselib.h>
 
 #include <cmath>
+#include <cstring>
 #include <type_traits>
 
 /****************************************************************************\
@@ -94,7 +95,7 @@ static Arduino_LoRaWAN::SendBufferCbFn sendBufferDoneCb;
 |
 \****************************************************************************/
 
-static const char sVersion[] = "0.1.7";
+static const char sVersion[] = "0.2.0";
 
 /****************************************************************************\
 |
@@ -118,6 +119,9 @@ ThisCatena gCatena;
 // information to the base class.
 //
 ThisCatena::LoRaWAN gLoRaWAN;
+
+// the transmit period
+uint32_t txPeriodSeconds = CATCFG_T_INTERVAL;
 
 //
 // the LED
@@ -157,6 +161,28 @@ dNdT_getFrac(
         uint32_t deltaC,
         uint32_t delta_ms
         );
+
+/****************************************************************************\
+|
+|	The command table
+|
+\****************************************************************************/
+
+extern cCommandStream::CommandFn setTransmitPeriod;
+
+static const cCommandStream::cEntry sApplicationCommmands[] =
+	{
+	{ "tx-period", setTransmitPeriod },
+        // other commands go here....
+	};
+
+/* create the top level structure for the command dispatch table */
+static cCommandStream::cDispatch
+sApplicationCommandDispatch(
+        sApplicationCommmands,          /* this is the pointer to the table */
+        sizeof(sApplicationCommmands),  /* this is the size of the table */
+        "application"                   /* this is the "first word" for all the commands in this table*/
+        );
 
 /*
 
@@ -188,6 +214,19 @@ void setup(void)
 
         gCatena.SafePrintf("Catena 4450 sensor1 V%s\n", sVersion);
 
+        /* add our application-specific commands */
+        gCatena.addCommands(
+                /* name of app dispatch table, passed by reference */
+                sApplicationCommandDispatch,
+                /*
+                || optionally a context pointer using static_cast<void *>().
+                || normally only libraries (needing to be reentrant) need
+                || to use the context pointer.
+                */
+                nullptr
+                );
+
+        // set up the LED
         gLed.begin();
         gCatena.registerObject(&gLed);
 
@@ -553,7 +592,7 @@ static void settleDoneCb(
         gLed.Set(LedPattern::Sleeping);
         os_setTimedCallback(
                 &sensorJob,
-                os_getTime() + sec2osticks(CATCFG_T_INTERVAL),
+                os_getTime() + sec2osticks(txPeriodSeconds),
                 sleepDoneCb
                 );
         return;
@@ -564,7 +603,7 @@ static void settleDoneCb(
     gLed.Set(LedPattern::Off);
 
     startTime = millis();
-    gRtc.SetAlarm(CATCFG_T_INTERVAL);
+    gRtc.SetAlarm(txPeriodSeconds);
     gRtc.SleepForAlarm(
         gRtc.MATCH_HHMMSS,
         gRtc.SleepMode::IdleCpuAhbApb
@@ -572,7 +611,7 @@ static void settleDoneCb(
 
     // add the number of ms that we were asleep to the millisecond timer.
     // we don't need extreme accuracy.
-    adjust_millis_forward(CATCFG_T_INTERVAL  * 1000);
+    adjust_millis_forward(txPeriodSeconds * 1000);
 
     /* and now... we're awake again. trigger another measurement */
     sleepDoneCb(pSendJob);
@@ -598,3 +637,15 @@ static void warmupDoneCb(
     {
     startSendingUplink();
     }
+
+//
+// at least with Visual Micro, it's necessary to hide these function bodies
+// from the Arduino environment. Arduino tries to insert prototypes for these
+// functions at the start of the file, and doesn't handle the return type
+// properly.
+//
+// By putting them in a #included CPP file, we avoid the deep scan, and thereby
+// avoid the problem.
+//
+
+#include "application_commands.cpp"
