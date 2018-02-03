@@ -4,7 +4,7 @@ Catena 4450 format 0x16 messages are always sent on LoRaWAN port 1, and have the
 
 byte | description
 :---:|:---
-0 | Format code (always 0x16, decimal 20).
+0 | Format code (always 0x16, decimal 22).
 1 | bitmap encoding the fields that follow
 2..n | data bytes; use bitmap to decode.
 
