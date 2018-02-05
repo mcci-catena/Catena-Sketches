@@ -58,7 +58,7 @@ Floating point mavens will immediately recognize:
 * Gradual underflow at the bottom of the range is automatic and simple with this encoding; the more sophisticated schemes need extra logic (and extra testing) in order to provide the same feature.
 ## The Things Network Console decoding script
 
-The following script does similar decoding for [The Things Network console](https://console.thethingsnetwork.org). This script also supports formacs 0x11 and 0x15.
+The following script does similar decoding for [The Things Network console](https://console.thethingsnetwork.org). This script also supports formacs 0x11, 0x14 and 0x15.
 
 ```javascript
 // This function decodes the records (port 1, format 0x11, 0x14, 0x15, 0x16)
@@ -350,6 +350,7 @@ function Decoder(bytes, port) {
 			//	"tDewC": 15.88317398219834,
 			//	"tempC": 30.79296875,
 			//	"vBat": 4.4345703125,
+			//  "wLevel": 10.805708460754332,
 			//	"wp": 106.00399999999999
 			//	}
             
