@@ -342,17 +342,17 @@ function Decoder(bytes, port) {
             //  16 0D F8 00 42 17 80 59 35 80 ==> adds one temp of 23.5, rh = 50, p = 913.48, tDewC = 12.5
             //  16 3D 46 F4 59 1E CB 62 9F 68 00 F7 67 85 ==>
             //	{
-			//	"boot": 89,
-			//	"error": "none",
-			//	"lux": 247,
-			//	"p": 1009.88,
-			//	"rh": 40.625,
-			//	"tDewC": 15.88317398219834,
-			//	"tempC": 30.79296875,
-			//	"vBat": 4.4345703125,
-			//	"wLevel": 10.805708460754332,
-			//	"wp": 106.00399999999999
-			//	}
+            //	"boot": 89,
+            //	"error": "none",
+            //	"lux": 247,
+            //	"p": 1009.88,
+            //	"rh": 40.625,
+            //	"tDewC": 15.88317398219834,
+            //	"tempC": 30.79296875,
+            //	"vBat": 4.4345703125,
+            //	"wLevel": 10.805708460754332,
+            //	"wp": 106.00399999999999
+            //	}
             
             // i is used as the index into the message. Start with the flag byte.
             var i = 1;
