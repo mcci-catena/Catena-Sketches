@@ -408,15 +408,15 @@ function Decoder(bytes, port) {
                 decoded.lux = luxRaw;
             }
 
-			if (flags & 0x20) { //Decode Rayco Sensor Data.
-               
-				var wpRaw;
-				wpRaw  = (bytes[i] << 8) + bytes[i + 1];
-				i += 2;
-				//Convert pressure from hPa to kPa. And display payload.
-				decoded.wPressure = (wpRaw* 4 / 100.0) / 10;
-				decoded.wLevel = waterlevel(decoded.wPressure);
-				}
+            if (flags & 0x20) { 
+			    //Decode Rayco Sensor Data.
+                var wpRaw;
+                wpRaw  = (bytes[i] << 8) + bytes[i + 1];
+                i += 2;
+                //Convert pressure from hPa to kPa. And display payload.
+                decoded.wPressure = (wpRaw* 4 / 100.0) / 10;
+                decoded.wLevel = waterlevel(decoded.wPressure);
+            }
 			} else if (cmd == 0x11) {
             // decode Catena 4410 sensor data
 
