@@ -169,21 +169,28 @@ Shutdown the Arduino IDE and restart it, just in case.
 
 Ensure selected board is 'Catena 4450' (in the GUI, check that `Tools`>`Board "..."` says `"Catena 4450"`.
 
+In the IDE, use File>Open to load the `Catena4450m101_sensor.ino` sketch. (Remember, in step 1 you cloned `Catena-Sketches` -- find that, and navigate to `{somewhere}/Catena-Sketches/catena4450_m101/`)
+
 Follow normal Arduino IDE procedures to build the sketch: `Sketch`>`Verify/Compile`. If there are no errors, go to the next step.
 
 ## Disabling USB Sleep (Optional)
+
 The `catena4450m101_sensor` sketch uses the SAMD "deep sleep" mode in order to reduce power. This works, but it's inconvenient in development. See **Deep Sleep and USB** under **Notes**, below, for a technical explanation. 
 
 In order to keep the Catena from falling asleep while connected to USB, make the following change.
 
 Search for
-```
+
+```c++
 if (Serial.dtr() || fHasPower1)
 ```
+
 and change it to
-```
+
+```c++
 if (Serial.dtr() | fHasPower1 || true)
 ```
+
 ![USB Sleep Fix](./code-for-sleep-usb-adjustment.png)
 
 ## Load the sketch into the Catena
@@ -199,25 +206,30 @@ This can be done with any terminal emulator, but it's easiest to do it with the 
 
 ![Newline](./serial-monitor-newline.png)
 
-At the bottom righ side of the serial monitor window, set the dropdown to `Newline` and `115200 baud`.
+At the bottom right side of the serial monitor window, set the dropdown to `Newline` and `115200 baud`.
 
 Enter the following command, and press enter:
+
 ```
 system configure platformguid
 ```
+
 If the Catena is functioning at all, you'll either get an error message, or you'll get a long number like:
+
 ```
 82BF2661-70CB-45AE-B620-CAF695478BC1
 ```
+
 (Several numbers are possible.)
 
 ![platformguid](./system-configure-platformguid.png)
 
 ![platform number](./platform-number.png)
 
-If you get an error message, please follow the **Platform Provisioning** instructions. Othewise, skip to **LoRAWAN Provisioning**.
+If you get an error message, please follow the **Platform Provisioning** instructions. Otherwise, skip to **LoRAWAN Provisioning**.
 
 ### Platform Provisioning
+
 The Catena 4450 has a number of build options. We have a single firmware image to support the various options. The firmware figures out the build options by reading data stored in the FRAM, so if the factory settings are not present or have been lost, you need to do the following.
 
 If your Catena 4450 is fresh from the factory, you will need to enter the following commands.
@@ -233,6 +245,7 @@ system configure platformguid 82BF2661-70CB-45AE-B620-CAF695478BC1
 ```
 
 ### LoRaWAN Provisioning
+
 If you're using The Things Network, go to https://console.thethingsnetwork.org and follow the instructions to add a device to your application. This will let you input the devEUI (we suggest using the serial number), and get the AppEUI and the Application Key. For other networks, follow their instructions for determining the devEUI and getting the AppEUI and AppKey.
 
 Then enter the following commands in the serial monitor, substituting your _`DevEUI`_, _`AppEUI`_, and _`AppKey`_, one at a time.
@@ -251,14 +264,17 @@ Then reboot your Catena (using the reset button on the upper board).
 ## Notes
 
 ### Data Format
+
 Refer to the [Protocol Description](../extra/catena-message-0x14-format.md) in the `extras` directory for information on how data is encoded.
 
 ### Unplugging the USB Cable while running on batteries
+
 The Catena 4450 comes with a rechargable LiPo battery. This allows you to unplug the USB cable after booting the Catena 4450 without causing the Catena 4450 to restart.
 
 Unfortunately, the Arudino USB drivers for the Catena 4450 do not distinguish between cable unplug and USB suspend. Any `Serial.print()` operation referring to the USB port will hang if the cable is unplugged after being used during a boot. The easiest work-around is to reboot the Catena after unplugging the USB cable. You can avoid this by using the Arduino UI to turn off DTR before unplugging the cable... but then you must remember to turn DTR back on. This is very fragile in practice.
 
 ### Deep sleep and USB
+
 When the Catena 4450 is in deep sleep, the USB port will not respond to cable attaches. However, the PC may see that a device is attached, and complain that it is malfunctioning. This sketch does not normally use deep sleep, so you might not see this problem. But if you do, unplug the cable, unplug the battery, then plug in the cable.  A simple change (described above as **Disabling USB Sleep (Optional)**) will disable deep sleep altogether, which may make things easier.
 
 As with any Feather M0, double-pressing the RESET button will put the Feather into download mode. To confirm this, the red light will flicker rapidly. You may have to temporarily change the download port using `Tools`>`Port`, but once the port setting is correct, you should be able to download no matter what state the board was in. 
