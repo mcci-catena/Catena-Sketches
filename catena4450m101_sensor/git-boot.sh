@@ -91,14 +91,15 @@ LIBRARY_REPOS=$(sed -e 's/#.*$//' ${PDIR}/git-repos.dat)
 ##############################################################################
 
 LIBRARY_ROOT="${LIBRARY_ROOT_DEFAULT}"
-USAGE="${PNAME} -[D H l* T u v]"
+USAGE="${PNAME} -[D l* T u v]; ${PNAME} -H for help"
 
 #OPTDEBUG and OPTVERBOS are above
 OPTDRYRUN=0
 OPTUPDATE=0
+OPTSKIPBLOCKING=0
 
 NEXTBOOL=1
-while getopts DHl:nTuv c
+while getopts DHl:nSTuv c
 do
 	# postcondition: NEXTBOOL=0 iff previous option was -n
 	# in all other cases, NEXTBOOL=1
@@ -112,6 +113,7 @@ do
 	D)	OPTDEBUG=$NEXTBOOL;;
 	l)	LIBRARY_ROOT="$OPTARG";;
 	n)	NEXTBOOL=-1;;
+	S)	OPTSKIPBLOCKING=$NEXTBOOL;;
 	T)	OPTDRYRUN=$NEXTBOOL;;
 	u)	OPTUPDATE=$NEXTBOOL;;
 	v)	OPTVERBOSE=$NEXTBOOL;;
@@ -122,13 +124,21 @@ Usage:
 	$USAGE
 
 Switches:
+	-n		negates the following option.
 	-D		turn on debug mode; -nD is the default.
 	-l {path} 	sets the target "arduino library path".
 			Default is $LIBRARY_ROOT_DEFAULT.
-	-T		Do a trial run (go through the motions).
+	-S		Skip repos that already exist; -nS means
+			don't run if any repo already exist.
+			Only consulted if -nu. 
+	-T		Do a trial run (go through the motions 
+			but don't do anything).
 	-u		Do a git pull if repo already is found.
+			-nu just skips the repository if it already
+			exists. -nu is the default.
 	-v		turns on verbose mode; -nv is the default.
 	-H		prints this help message.
+
 .
 		exit 0;;
 	\?)	echo "$USAGE" 1>&2
@@ -158,6 +168,31 @@ NG_REPOS=	#empty
 SKIPPED_REPOS=	#empty
 PULLED_REPOS=	#empty
 
+#### if OPTUPDATE is zero, refuse to run if there are already any libraries
+#### with the target names
+if [ $OPTUPDATE -eq 0 -a $OPTSKIPBLOCKING -eq 0 ]; then
+	BLOCKING_REPOS=
+	for r in $LIBRARY_REPOS ; do
+
+		# given "https://github.com/something/somerepo.git",
+		# set rname to "somerepo"
+		rname=$(basename $r .git)
+
+		#
+		# if there already is a target Arduino library of that name, add to the
+		# list of blocking libraries
+		#
+		if [ -d $rname ]; then
+			BLOCKING_REPOS="${BLOCKING_REPOS}${BLOCKING_REPOS:+ }$rname"
+		fi
+	done
+	if [ X"$BLOCKING_REPOS" != X ]; then
+		_fatal  "The following repos already exist in $LIBRARY_ROOT:" \
+			"${BLOCKING_REPOS}" \
+			"Check for conficts, or use -u to update or -S to skip blocking repos"
+	fi
+fi
+
 #### scan through each of the libraries. Don't quote LIBRARY_REPOS
 #### because we want bash to split it into words.
 for r in $LIBRARY_REPOS ; do
@@ -166,7 +201,7 @@ for r in $LIBRARY_REPOS ; do
 
 	#
 	# if there already is a target Arduino library of that name,
-	# skip the download.
+	# skip the download, or pull
 	#
 	if [ -d $rname ]; then
 		if [ $OPTUPDATE -eq 0 ]; then

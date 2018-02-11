@@ -1,36 +1,73 @@
 # Catena 4450 M101 Sensor Sketch
 <!-- TOC depthFrom:2 -->
 
+- [Clone this repository into a suitable directory on your system](#clone-this-repository-into-a-suitable-directory-on-your-system)
 - [Install the MCCI SAMD board support library](#install-the-mcci-samd-board-support-library)
-    - [Additional board packages required](#additional-board-packages-required)
+	- [Additional board packages required](#additional-board-packages-required)
 - [Installing the required libraries](#installing-the-required-libraries)
-    - [List of required libraries](#list-of-required-libraries)
+	- [List of required libraries](#list-of-required-libraries)
 - [Build and Download](#build-and-download)
 - [Disabling USB Sleep (Optional)](#disabling-usb-sleep-optional)
 - [Load the sketch into the Catena](#load-the-sketch-into-the-catena)
 - [Provision your Catena 4450](#provision-your-catena-4450)
-    - [Check platform provisioning](#check-platform-provisioning)
-    - [Platform Provisioning](#platform-provisioning)
-    - [LoRaWAN Provisioning](#lorawan-provisioning)
+	- [Check platform provisioning](#check-platform-provisioning)
+	- [Platform Provisioning](#platform-provisioning)
+	- [LoRaWAN Provisioning](#lorawan-provisioning)
 - [Notes](#notes)
-    - [Data Format](#data-format)
-    - [Unplugging the USB Cable while running on batteries](#unplugging-the-usb-cable-while-running-on-batteries)
-    - [Deep sleep and USB](#deep-sleep-and-usb)
-    - [gitboot.sh and the other sketches](#gitbootsh-and-the-other-sketches)
+	- [Data Format](#data-format)
+	- [Unplugging the USB Cable while running on batteries](#unplugging-the-usb-cable-while-running-on-batteries)
+	- [Deep sleep and USB](#deep-sleep-and-usb)
+	- [gitboot.sh and the other sketches](#gitbootsh-and-the-other-sketches)
 
 <!-- /TOC -->
 This sketch is used for the Ithaca power project and other AC power management applications. It's also a great starting point for doing Catena 4450 work.
 
 It is designed for use with the [Catena 4450](https://github.com/mcci-catena/HW-Designs/tree/master/kicad/Catena-4450) in conjunction with the [Adafruit Feather M0 LoRa](https://www.adafruit.com/product/3178). In order to use this code, you must do several things:
 
-1. Install the MCCI BSP package.
+1. Clone this repository into a suitable directory on your system.
+2. Install the MCCI BSP package.
 3. Install the required Arduino libraries using `git`.
 4. Build and download.
 5. "Provision" your Catena 4450 -- this involves entering USB commands via the Arduino serial monitor to program essential identity information into the Catena 4450, so it can join the targeted network.
 
+## Clone this repository into a suitable directory on your system
+
+This is best done from a command line. You can use a number of techniques, but since you'll need a working git shell, we recommend using the command line.
+
+On Windows, we strongly recommend use of "git bash", available from [git-scm.org](https://git-scm.com/download/win). Then use the "git bash" command line system that's installed by the download.
+
+At the end of this process, you'll have a directory called `{somewhere}/Catena-Sketches`. You get to choose `{somewhere}`. Everyone has their own convention; the author typically has a directory in his home directory called `sandbox`, and then puts projects there.
+
+Once you have a suitable command line open, you can enter the following commands. In the following, change `{somewhere}` to the directory path where you want to put `Catena-Sketches`.
+
+```console
+$ cd {somewhere}
+$ git clone https://github.com/mcci-catena/Catena-Sketches
+Cloning into 'Catena-Sketches'...
+remote: Counting objects: 729, done.
+remote: Compressing objects: 100% (17/17), done.
+remote: Total 729 (delta 15), reused 20 (delta 9), pack-reused 703
+Receiving objects: 100% (729/729), 714.26 KiB | 1.25 MiB/s, done.
+Resolving deltas: 100% (396/396), done.
+
+$ # get to the right subdirectory
+$ cd Catena-Sketches/catena4450m101_sensor
+
+$ # confirm that you're in the right place.
+$ ls
+arduino-boards-manager.png         provisioned.png
+catena4450m101_sensor.ino          README.md
+code-for-sleep-usb-adjustment.png  serial-monitor-newline.png
+git-boot.sh*                       system-configure-platformguid.png
+git-repos.dat                      ThisCatena.h
+platform-number.png                VERSION.txt
+```
+
 ## Install the MCCI SAMD board support library
 
-Go to `File>Preferences>Settings` in the Arduino IDE and add `https://github.com/mcci-catena/arduino-boards/raw/master/BoardManagerFiles/package_mcci_index.json` to the list in `Additional Boards Manager URLs`. Use a comma (`,`) to separate multiple entries if needed.
+Open the Arduino IDE. Go to `File>Preferences>Settings`. Add `https://github.com/mcci-catena/arduino-boards/raw/master/BoardManagerFiles/package_mcci_index.json` to the list in `Additional Boards Manager URLs`. 
+
+If you already have entries in that list, use a comma (`,`) to separate the entry you're adding from the entries that are already there.
 
 Next, open the board manager. `Tools>Board:...`, and get up to the top of the menu that pops out -- it will give you a list of boards. Search for `MCCI` in the search box and select `MCCI Catena SAMD Boards`. An `[Install]` button will appear to the right; click it.
 
@@ -45,16 +82,66 @@ Go to Boards Manager (`Tools>Board:...>Boards Manager...`) and search for `SAM`.
 - **Arduino SAM Boards (32-bits ARM Cortex M3)** by **Arduino**
 - **Arduino SAMD Boards (32-bits ARM Cortex M0+)** by **Arduino**
 
-
 ## Installing the required libraries
+
+This sketch uses several sensor libraries.
 
 The script `git-boot.sh` in this directory will get all the things you need.
 
 It's easy to run, provided you're on Windows, macOS, or Linux, and provided you have `git` installed. We tested on Windows with git bash from https://git-scm.org, on macOS 10.11.3 with the git and bash shipped by Apple, and on Ubuntu 16.0.4 LTS (64-bit) with the built-in bash and git from `apt-get install git`.
 
-```shell
+```console
 $ cd Catena4410-Sketches/catena4450m101_sensor
 $ ./git-boot.sh
+Cloning into 'Adafruit_FRAM_I2C'...
+remote: Counting objects: 96, done.
+remote: Total 96 (delta 0), reused 0 (delta 0), pack-reused 96
+Unpacking objects: 100% (96/96), done.
+Cloning into 'Catena-Arduino-Platform'...
+remote: Counting objects: 1201, done.
+remote: Compressing objects: 100% (36/36), done.
+remote: Total 1201 (delta 27), reused 24 (delta 14), pack-reused 1151
+Receiving objects: 100% (1201/1201), 275.99 KiB | 0 bytes/s, done.
+Resolving deltas: 100% (900/900), done.
+Cloning into 'arduino-lorawan'...
+remote: Counting objects: 228, done.
+Recremote: Total 228 (delta 0), reused 0 (delta 0), pack-reused 228
+Receiving objects: 100% (228/228), 50.30 KiB | 0 bytes/s, done.
+Resolving deltas: 100% (144/144), done.
+Cloning into 'Catena-mcciadk'...
+remote: Counting objects: 64, done.
+remote: Total 64 (delta 0), reused 0 (delta 0), pack-reused 64
+Unpacking objects: 100% (64/64), done.
+Cloning into 'arduino-lmic'...
+remote: Counting objects: 1742, done.
+remote: Compressing objects: 100% (88/88), done.
+remote: Total 1742 (delta 80), reused 88 (delta 45), pack-reused 1602
+Receiving objects: 100% (1742/1742), 10.27 MiB | 1.36 MiB/s, done.
+Resolving deltas: 100% (1024/1024), done.
+Cloning into 'Adafruit_BME280_Library'...
+remote: Counting objects: 134, done.
+remote: Total 134 (delta 0), reused 0 (delta 0), pack-reused 134
+Receiving objects: 100% (134/134), 39.31 KiB | 0 bytes/s, done.
+Resolving deltas: 100% (68/68), done.
+Cloning into 'Adafruit_Sensor'...
+remote: Counting objects: 98, done.
+remote: Total 98 (delta 0), reused 0 (delta 0), pack-reused 98
+Unpacking objects: 100% (98/98), done.
+Cloning into 'RTCZero'...
+remote: Counting objects: 273, done.
+Receiving remote: Total 273 (delta 0), reused 0 (delta 0), pack-reused 273
+Receiving objects: 100% (273/273), 46.00 KiB | 0 bytes/s, done.
+Resolving deltas: 100% (131/131), done.
+Cloning into 'BH1750'...
+remote: Counting objects: 58, done.
+remote: Total 58 (delta 0), reused 0 (delta 0), pack-reused 58
+Unpacking objects: 100% (58/58), done.
+
+==== Summary =====
+No repos with errors
+No repos skipped.
+*** no repos were pulled ***
+Repos downloaded:      Adafruit_FRAM_I2C Catena-Arduino-Platform arduino-lorawan Catena-mcciadk arduino-lmic Adafruit_BME280_Library Adafruit_Sensor RTCZero BH1750
 ```
 
 It has a number of advanced options; use `./git-boot.sh -h` to get help, or look at the source code [here](gitboot.sh).
