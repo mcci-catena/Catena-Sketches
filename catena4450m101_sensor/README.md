@@ -13,7 +13,13 @@
 	- [Check platform provisioning](#check-platform-provisioning)
 	- [Platform Provisioning](#platform-provisioning)
 	- [LoRaWAN Provisioning](#lorawan-provisioning)
+		- [Preparing the network for your device](#preparing-the-network-for-your-device)
+		- [Preparing your device for the network](#preparing-your-device-for-the-network)
 - [Notes](#notes)
+	- [Getting Started with The Things Network](#getting-started-with-the-things-network)
+		- [Create an account (if necessary)](#create-an-account-if-necessary)
+		- [Create an application](#create-an-application)
+		- [Add your device to the application](#add-your-device-to-the-application)
 	- [Data Format](#data-format)
 	- [Unplugging the USB Cable while running on batteries](#unplugging-the-usb-cable-while-running-on-batteries)
 	- [Deep sleep and USB](#deep-sleep-and-usb)
@@ -65,7 +71,7 @@ platform-number.png                VERSION.txt
 
 ## Install the MCCI SAMD board support library
 
-Open the Arduino IDE. Go to `File>Preferences>Settings`. Add `https://github.com/mcci-catena/arduino-boards/raw/master/BoardManagerFiles/package_mcci_index.json` to the list in `Additional Boards Manager URLs`. 
+Open the Arduino IDE. Go to `File>Preferences>Settings`. Add `https://github.com/mcci-catena/arduino-boards/raw/master/BoardManagerFiles/package_mcci_index.json` to the list in `Additional Boards Manager URLs`.
 
 If you already have entries in that list, use a comma (`,`) to separate the entry you're adding from the entries that are already there.
 
@@ -175,7 +181,7 @@ Follow normal Arduino IDE procedures to build the sketch: `Sketch`>`Verify/Compi
 
 ## Disabling USB Sleep (Optional)
 
-The `catena4450m101_sensor` sketch uses the SAMD "deep sleep" mode in order to reduce power. This works, but it's inconvenient in development. See **Deep Sleep and USB** under **Notes**, below, for a technical explanation. 
+The `catena4450m101_sensor` sketch uses the SAMD "deep sleep" mode in order to reduce power. This works, but it's inconvenient in development. See **Deep Sleep and USB** under **Notes**, below, for a technical explanation.
 
 In order to keep the Catena from falling asleep while connected to USB, make the following change.
 
@@ -195,11 +201,12 @@ if (Serial.dtr() | fHasPower1 || true)
 
 ## Load the sketch into the Catena
 
-Make sure the correct port is selected in `Tools`>`Port`. 
+Make sure the correct port is selected in `Tools`>`Port`.
 
 Load the sketch into the Catena using `Sketch`>`Upload` and move on to provisioning.
 
 ## Provision your Catena 4450
+
 This can be done with any terminal emulator, but it's easiest to do it with the serial monitor built into the Arduino IDE or with the equivalent monitor that's part of the Visual Micro IDE.
 
 ### Check platform provisioning
@@ -239,6 +246,7 @@ If your Catena 4450 is fresh from the factory, you will need to enter the follow
 You will find the serial number on the Catena 4450 assembly. If you can't find a serial number, please contact MCCI for assistance.
 
 Continue by entering the following commands.
+
 ```
 system configure operatingflags 1
 system configure platformguid 82BF2661-70CB-45AE-B620-CAF695478BC1
@@ -246,22 +254,107 @@ system configure platformguid 82BF2661-70CB-45AE-B620-CAF695478BC1
 
 ### LoRaWAN Provisioning
 
-If you're using The Things Network, go to https://console.thethingsnetwork.org and follow the instructions to add a device to your application. This will let you input the devEUI (we suggest using the serial number), and get the AppEUI and the Application Key. For other networks, follow their instructions for determining the devEUI and getting the AppEUI and AppKey.
+Some background: with LoRaWAN, you have to create a project on your target network, and then register your device with that project.
 
-Then enter the following commands in the serial monitor, substituting your _`DevEUI`_, _`AppEUI`_, and _`AppKey`_, one at a time.
+Somewhat confusingly, the LoRaWAN specification uses the word "application" to refer to the group of devices in a project. We will therefore follow that convention. It's likely that your network provider follows taht convention too.
 
-`lorawan configure deveui` _`DevEUI`_  
-`lorawan configure appeui` _`AppEUI`_  
-`lorawan configure appkey` _`AppKey`_  
+We'll be setting up the device for "over the air authentication" (or OTAA).
+
+#### Preparing the network for your device
+
+For OTAA, we'll need to load three items into the device. (We'll use USB to load them in -- you don't have to edit any code.)  These items are:
+
+1. *The device extended unique identifier, or "devEUI"*. This is a 8-byte number.
+
+   For convenience, MCCI assigns a unique identifier to each Catena; you should be able to find it on a printed label on your device. It will be a number of the form "00-02-cc-01-??-??-??-??".
+
+2. *The application extended unique identifier, or "AppEUI"*. This is also an 8-byte number.
+
+3. *The application key, or "AppKey"*. This is a 16-byte number.
+
+If you're using The Things Network as your network provider, see the note below: [Getting Started with The Things Network](#getting-started-with-the-things-network). This walks you through the process of creating an application and registering a device. During that process, you will input the DevEUI (we suggest using the serial number printed on the Caten  a). At the end of the process, The Things Network will supply you with the required AppEUI and Application Key.
+
+For other networks, follow their instructions for determining the DevEUI and getting the AppEUI and AppKey.
+
+#### Preparing your device for the network
+
+Make sure your device is still connected to the Arduino IDE, and make sure the serial monitor is still open. (If needed, open it using Tools>Serial Monitor.)
+
+Enter the following commands in the serial monitor, substituting your _`DevEUI`_, _`AppEUI`_, and _`AppKey`_, one at a time.
+
+`lorawan configure deveui` _`DevEUI`_
+`lorawan configure appeui` _`AppEUI`_
+`lorawan configure appkey` _`AppKey`_
 `lorawan configure join 1`
 
 After each command you will see an `OK`.
 
 ![provisioned](./provisioned.png)
 
-Then reboot your Catena (using the reset button on the upper board).
+Then reboot your Catena (using the reset button on the upper board). You may have to close and re-open the  serial monitor after resetting the Catena.
+
+You should then see a series of messages including:
+
+```
+EV_JOINED
+NetId ...
+```
 
 ## Notes
+
+### Getting Started with The Things Network
+
+#### Create an account (if necessary)
+
+Go to https://console.thethingsnetwork.org and follow the instructions to create an account.
+
+#### Create an application
+
+After you create an account, you'll see this screen.
+
+![Main Console Screen](./assets/console-mainscreen.png)
+
+You have two choices:
+
+- Applications
+- Gateways
+
+Click on Applications, and you'll see the following.
+
+![First Application Screen](./assets/console-application-first.png)
+
+Click on "Get started by adding one" (or "Create a new application" if you already have one).
+
+![Application creation form](./assets/console-application-create.png)
+
+The first entry ("Application ID") is the unique name for your application/project. This name is used in some APIs as part of URLs, so it must follow DNS rules: it may consist only of lower-case letters, digits, and the hyphen or dash (`-`) character. For example, `sensor-project-1` is valid, but `My great project!` is not.
+
+The second entry ("Description") is the description of your project.
+
+The third entry is not changed by you.
+
+The fourth entry (Handler registration) selects the router for your project. If you're in US, click in the box (left of the green check-mark), and scroll down to `ttn-handler-us-west`.
+
+Then click "Add application".
+
+#### Add your device to the application
+
+You should see the following screen.
+
+![Application screen no devices](./assets/console-application-nodevs.png)
+
+Click on "register device" (to the right of DEVICES), and you'll see the following:
+
+![Device registration screen](./assets/console-register-device.png)
+
+The first field ("Device ID") is again a DNS-like name. It consists of lower-case digits, numbers and dashes, and it must not begin or end with a dash.
+
+For the second field ("Device EUI") you have two choices.
+
+- you can use the EUI from the printed label on your Catena, or
+- you can ask console to generate an EUI for you.
+
+Ignore the final two fields, and click "Register" at the bottom.
 
 ### Data Format
 
@@ -277,7 +370,8 @@ Unfortunately, the Arudino USB drivers for the Catena 4450 do not distinguish be
 
 When the Catena 4450 is in deep sleep, the USB port will not respond to cable attaches. However, the PC may see that a device is attached, and complain that it is malfunctioning. This sketch does not normally use deep sleep, so you might not see this problem. But if you do, unplug the cable, unplug the battery, then plug in the cable.  A simple change (described above as **Disabling USB Sleep (Optional)**) will disable deep sleep altogether, which may make things easier.
 
-As with any Feather M0, double-pressing the RESET button will put the Feather into download mode. To confirm this, the red light will flicker rapidly. You may have to temporarily change the download port using `Tools`>`Port`, but once the port setting is correct, you should be able to download no matter what state the board was in. 
+As with any Feather M0, double-pressing the RESET button will put the Feather into download mode. To confirm this, the red light will flicker rapidly. You may have to temporarily change the download port using `Tools`>`Port`, but once the port setting is correct, you should be able to download no matter what state the board was in.
 
 ### gitboot.sh and the other sketches
+
 The sketches in other directories in this tree are for engineering use at MCCI. `git-boot.sh` does not necessarily install all the required libraries needed for building them. However, all the libraries should be available from https://github.com/mcci-catena/.
