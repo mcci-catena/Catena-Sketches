@@ -197,7 +197,7 @@ and change it to
 if (Serial.dtr() | fHasPower1 || true)
 ```
 
-![USB Sleep Fix](./code-for-sleep-usb-adjustment.png)
+![USB Sleep Fix](./assets/code-for-sleep-usb-adjustment.png)
 
 ## Load the sketch into the Catena
 
@@ -211,7 +211,7 @@ This can be done with any terminal emulator, but it's easiest to do it with the 
 
 ### Check platform provisioning
 
-![Newline](./serial-monitor-newline.png)
+![Newline](./assets/serial-monitor-newline.png)
 
 At the bottom right side of the serial monitor window, set the dropdown to `Newline` and `115200 baud`.
 
@@ -229,9 +229,9 @@ If the Catena is functioning at all, you'll either get an error message, or you'
 
 (Several numbers are possible.)
 
-![platformguid](./system-configure-platformguid.png)
+![platformguid](./assets/system-configure-platformguid.png)
 
-![platform number](./platform-number.png)
+![platform number](./assets/platform-number.png)
 
 If you get an error message, please follow the **Platform Provisioning** instructions. Otherwise, skip to **LoRAWAN Provisioning**.
 
@@ -289,7 +289,7 @@ Enter the following commands in the serial monitor, substituting your _`DevEUI`_
 
 After each command you will see an `OK`.
 
-![provisioned](./provisioned.png)
+![provisioned](./assets/provisioned.png)
 
 Then reboot your Catena (using the reset button on the upper board). You may have to close and re-open the  serial monitor after resetting the Catena.
 
