@@ -15,6 +15,8 @@
 	- [LoRaWAN Provisioning](#lorawan-provisioning)
 		- [Preparing the network for your device](#preparing-the-network-for-your-device)
 		- [Preparing your device for the network](#preparing-your-device-for-the-network)
+	- [Changing registration](#changing-registration)
+	- [Starting Over](#starting-over)
 - [Notes](#notes)
 	- [Getting Started with The Things Network](#getting-started-with-the-things-network)
 		- [Create an account (if necessary)](#create-an-account-if-necessary)
@@ -299,6 +301,34 @@ You should then see a series of messages including:
 EV_JOINED
 NetId ...
 ```
+
+### Changing registration
+
+Once your device has joined the network, it's somewhat painful to unjoin.
+
+You need to enter a number of commands:
+
+```
+lorawan configure appskey 0
+lorawan configure netskey 0
+lorawan configure fcntdown 0
+lorawan configure fcntup 0
+lorawan configure devaddr 0
+lorawan configure netid 0
+lorawan configure join 0
+```
+
+Then reset your device, and repeat [LoRaWAN Provisioning](#lorawan-provisioning) above.
+
+### Starting Over
+
+If all the typing in [Changing registration](#changing-registration) is too painful, or if you're in a real hurry, you can simply reset the Catena's non-volatile memory to it's initial state. The command for this is:
+
+```
+fram reset hard
+```
+
+Then reset your Catena, and return to [Provision your Catena 4450](#provision-your-catena-4450).
 
 ## Notes
 
