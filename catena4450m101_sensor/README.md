@@ -310,7 +310,7 @@ You need to enter a number of commands:
 
 ```
 lorawan configure appskey 0
-lorawan configure netskey 0
+lorawan configure nwkskey 0
 lorawan configure fcntdown 0
 lorawan configure fcntup 0
 lorawan configure devaddr 0
