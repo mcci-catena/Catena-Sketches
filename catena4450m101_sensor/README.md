@@ -284,10 +284,10 @@ Make sure your device is still connected to the Arduino IDE, and make sure the s
 
 Enter the following commands in the serial monitor, substituting your _`DevEUI`_, _`AppEUI`_, and _`AppKey`_, one at a time.
 
-`lorawan configure deveui` _`DevEUI`_
-`lorawan configure appeui` _`AppEUI`_
-`lorawan configure appkey` _`AppKey`_
-`lorawan configure join 1`
+<code>lorawan configure deveui <em>DevEUI</em><br/>
+lorawan configure appeui <em>AppEUI</em><br/>
+lorawan configure appkey <em>AppKey</em><br/>
+lorawan configure join 1</code>
 
 After each command you will see an `OK`.
 
