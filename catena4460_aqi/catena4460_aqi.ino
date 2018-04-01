@@ -352,11 +352,10 @@ void fillBuffer(TxBuffer_t &b)
        // humidity is one byte, where 0 == 0/256 and 0xFF == 255/256.
        bme.performReading();
        gCatena.SafePrintf(
-                "BME680:  T: %d P: %d RH: %d Gas-Resistance: %d\n",
-                (int) bme.temperature,
-                (int) bme.pressure,
-                (int) bme.humidity,
-                (int) bme.gas_resistance
+                "BME680:  T=%d P=%d RH=%d\n",
+                (int) (bme.temperature + 0.5),
+                (int) (bme.pressure + 0.5),
+                (int) (bme.humidity + 0.5)
                 );
        b.putT(bme.temperature);
        b.putP(bme.pressure);
@@ -378,15 +377,17 @@ void fillBuffer(TxBuffer_t &b)
 
   if (fBme)
         {
-        // compute the AQI (in 0..500/512)
-        constexpr float slope = 44.52282f / 512.0f;
+        // compute the AQI (in 0..500/512).
+        // see README.md for a description.
+        constexpr float slope = 44.52282f / 512.0f;     // constexpr moves calculation to compile-time
         float const AQIsimple = (-logf(bme.gas_resistance) + 16.3787f) * slope;
 
         uint16_t const encodedAQI = f2uflt16(AQIsimple);
 
         gCatena.SafePrintf(
-                "BME680:  AQI: %d\n",
-                (int) (AQIsimple * 512.0)
+                "BME680:   Gas-Resistance=%d AQI=%d\n",
+                (int) (bme.gas_resistance + 0.5),
+                (int) (AQIsimple * 512.0 + 0.5)
                 );
 
         b.put2u(encodedAQI);
