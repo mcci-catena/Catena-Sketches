@@ -17,7 +17,7 @@ Copyright notice:
 		3520 Krums Corners Road
 		Ithaca, NY  14850
 
-	An unpublished work.  All rights reserved.  All rights reserved. The license 
+	An unpublished work.  All rights reserved.  All rights reserved. The license
         file accompanying this file outlines the license granted.
 
 Author:
@@ -455,7 +455,7 @@ txFailedDoneCb(
 //
 // extern "C" { void adjust_millis_forward(unsigned); };
 //
-// If you don't have it, make sure you're running the MCCI Board Support 
+// If you don't have it, make sure you're running the MCCI Board Support
 // Package for the Catena 4460, https://github.com/mcci-catena/arduino-boards
 //
 
