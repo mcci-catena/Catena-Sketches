@@ -31,7 +31,7 @@ This repository is the top-level repository for the software. In order to build,
 
 ## Sketch Overview
 
-There are two kinds of sketches here: test programs (catena4410_test1, catene4410_test2, catena4410_test3, catena4450_test1), and full sensor programs (catena4410_sensor1, catena4420_test1, catena4450m101_sensor1, catena4460_aqi).
+There are two kinds of sketches here: test programs (catena4410_test1, catene4410_test2, catena4410_test3, catena4420_test1,catena4450_test1), and full sensor programs (catena4410_sensor1,  catena4450m101_sensor1, catena4450m102_pond, catena4460_aqi).
 
 The sketches that use LoRaWAN take advantage of the [MCCI](http://www.mcci.com) [arduino-lorawan](https://github.com/mcci-catena/arduino-lorawan) library to cleanly separate the application from the network transport.
 
