@@ -5,10 +5,10 @@
 # Module:	gitboot.sh
 #
 # Function:
-# 	Load the repositories for building this sketch
+# 	Install the libraries needed for building a given sketch.
 #
 # Copyright notice:
-# 	This file copyright (C) 2017 by
+# 	This file copyright (C) 2017-2018 by
 #
 #		MCCI Corporation
 #		3520 Krums Corners Road
@@ -73,25 +73,11 @@ else
 fi
 
 ##############################################################################
-# load the list of repos
-##############################################################################
-
-### use a long quoted string to get the repositories
-### into LIBRARY_REPOS.  Multiple lines for readabilty.
-LIBRARY_REPOS_DAT="${PDIR}/git-repos.dat"
-if [ ! -f "${LIBRARY_REPOS_DAT}" ]; then
-	_fatal "can't find suitable git-repos.dat:" "${LIBRARY_REPOS_DAT}"
-fi
-
-# parse the repo file, deleting comments
-LIBRARY_REPOS=$(sed -e 's/#.*$//' ${PDIR}/git-repos.dat)
-
-##############################################################################
 # Scan the options
 ##############################################################################
 
 LIBRARY_ROOT="${LIBRARY_ROOT_DEFAULT}"
-USAGE="${PNAME} -[D l* T u v]; ${PNAME} -H for help"
+USAGE="${PNAME} -[D l* T u v] [datafile...]; ${PNAME} -H for help"
 
 #OPTDEBUG and OPTVERBOS are above
 OPTDRYRUN=0
@@ -139,6 +125,11 @@ Switches:
 	-v		turns on verbose mode; -nv is the default.
 	-H		prints this help message.
 
+Data files:
+	The arguments specify repositories to be fetched, one repository
+	per line, in the form https://github.com/orgname/repo.git (or
+	similar). Blank lines and comments beginning with '#' are ignored.
+
 .
 		exit 0;;
 	\?)	echo "$USAGE" 1>&2
@@ -149,9 +140,30 @@ done
 #### get rid of scanned options ####
 shift `expr $OPTIND - 1`
 
-if [ $# -ne 0 ]; then
-	_error "extra arguments: $@"
+if [ $# -eq 0 ]; then
+	if [ -f "${PWD}/git-repos.dat" ]; then
+		LIBRARY_REPOS_DAT="${PWD}/git-repos.dat"
+	else
+		LIBRARY_REPOS_DAT="${PDIR}/git-repos.dat"
+	fi
+	_verbose "setting LIBRARY_REPOS_DAT to ${LIBRARY_REPOS_DAT}"
+	set -- "${LIBRARY_REPOS_DAT}"
 fi
+
+##############################################################################
+# load the list of repos
+##############################################################################
+
+### use a long quoted string to get the repositories
+### into LIBRARY_REPOS.  Multiple lines for readabilty.
+for LIBRARY_REPOS_DAT in "$@" ; do
+	if [ ! -f "${LIBRARY_REPOS_DAT}" ]; then
+		_fatal "can't find git-repos data file:" "${LIBRARY_REPOS_DAT}"
+	fi
+done
+
+# parse the repo file, deleting comments and eliminating duplicates
+LIBRARY_REPOS=$(sed -e 's/#.*$//' "$@" | LC_ALL=C sort -u)
 
 #### make sure LIBRARY_ROOT is really a directory
 if [ ! -d "$LIBRARY_ROOT" ]; then
