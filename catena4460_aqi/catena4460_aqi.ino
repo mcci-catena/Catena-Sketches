@@ -453,8 +453,8 @@ txFailedDoneCb(
 //
 // extern "C" { void adjust_millis_forward(unsigned); };
 //
-// If you don't have it, check the following commit at github:
-// https://github.com/mcci-catena/ArduinoCore-samd/commit/78d8440dbcd29bf5ac659fd65514268c1334f683
+// If you don't have it, make sure you're running the MCCI Board Support 
+// Package for the Catena 4460, https://github.com/mcci-catena/arduino-boards
 //
 
 static void settleDoneCb(
