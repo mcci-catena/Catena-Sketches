@@ -4,6 +4,7 @@
 // 2017-09-19 add dewpoints.
 // 2017-12-13 fix commments, fix negative soil/water temp, add test vectors.
 // 2017-12-15 add format 0x11.
+// 2018-04-01 add format 0x17.
 
 // calculate dewpoint (degrees C) given temperature (C) and relative humidity (0..100)
 // from http://andrew.rsmas.miami.edu/bmcnoldy/Humidity.html
