@@ -379,7 +379,7 @@ void fillBuffer(TxBuffer_t &b)
         {
         // compute the AQI (in 0..500/512)
         constexpr float slope = 44.52282f / 512.0f;
-        float const AQIsimple = (logf(bme.gas_resistance) + 16.3787f) * slope;
+        float const AQIsimple = (-logf(bme.gas_resistance) + 16.3787f) * slope;
 
         uint16_t const encodedAQI = f2uflt16(AQIsimple);
 
