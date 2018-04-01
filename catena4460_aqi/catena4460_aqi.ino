@@ -231,6 +231,7 @@ void setup(void)
                 }
         else
                 {
+                gCatena.SafePrintf("No Lux sensor found: check wiring and platform\n");
                 fLux = false;
                 }
 
@@ -239,7 +240,7 @@ void setup(void)
             /* ! bme.begin(BME680_ADDRESS, Adafruit_BME680::OPERATING_MODE::Sleep) */
             ! bme.begin()) // the Adafruit BME680 lib doesn't have the MCCI low-power hacks
                 {
-                gCatena.SafePrintf("No BME680 found: check wiring\n");
+                gCatena.SafePrintf("No BME680 found: check wiring and platform\n");
                 fBme = false;
                 }
         else
