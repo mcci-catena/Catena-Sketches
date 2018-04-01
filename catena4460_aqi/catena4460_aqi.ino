@@ -319,7 +319,7 @@ void fillBuffer(TxBuffer_t &b)
 
   flag = FlagsSensor5(0);
 
-  b.put(FormatSensor2); /* the flag for this record format */
+  b.put(FormatSensor5); /* the flag for this record format */
 
   /* capture the address of the flag byte */
   uint8_t * const pFlag = b.getp();
