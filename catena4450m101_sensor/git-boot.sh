@@ -116,8 +116,8 @@ Switches:
 			Default is $LIBRARY_ROOT_DEFAULT.
 	-S		Skip repos that already exist; -nS means
 			don't run if any repo already exist.
-			Only consulted if -nu. 
-	-T		Do a trial run (go through the motions 
+			Only consulted if -nu.
+	-T		Do a trial run (go through the motions
 			but don't do anything).
 	-u		Do a git pull if repo already is found.
 			-nu just skips the repository if it already
