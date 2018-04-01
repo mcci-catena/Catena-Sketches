@@ -462,12 +462,22 @@ static void settleDoneCb(
     )
     {
     uint32_t startTime;
+    bool fDeepSleep;
 
     // if connected to USB, don't sleep
     // ditto if we're monitoring pulses.
 
-    // enable/disable sleep when connected to USB
-    if (Serial.dtr())
+    // disable sleep if not unattended, or if USB active
+    if ((gCatena.GetOperatingFlags() &
+            static_cast<uint32_t>(gCatena.OPERATING_FLAGS::fUnattended)) != 0)
+        fDeepSleep = true;
+    else if (! Serial.dtr())
+        fDeepSleep = true;
+    else
+        fDeepSleep = false;
+
+    /* if we can't sleep deeply, then simply schedule the sleepDoneCb */
+    if (! fDeepSleep)
         {
         gLed.Set(LedPattern::Sleeping);
         os_setTimedCallback(
@@ -478,7 +488,11 @@ static void settleDoneCb(
         return;
         }
 
-    /* ok... now it's time for a deep sleep */
+    /*
+    || ok... now it's time for a deep sleep. do the sleep here, since
+    || the Arduino loop won't do it. Note that nothing will get polled
+    || while we sleep
+    */
     gLed.Set(LedPattern::Off);
 
     startTime = millis();
@@ -490,9 +504,9 @@ static void settleDoneCb(
 
     // add the number of ms that we were asleep to the millisecond timer.
     // we don't need extreme accuracy.
-    adjust_millis_forward(CATCFG_T_INTERVAL  * 1000);
+    adjust_millis_forward(CATCFG_T_INTERVAL * 1000);
 
-    /* and now... we're awake again. trigger another measurement */
+    /* and now... we're fully awake. trigger another measurement */
     sleepDoneCb(pSendJob);
     }
 
