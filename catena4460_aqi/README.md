@@ -9,6 +9,7 @@ This sketch captures a simple air-quality index, based on the gas resistance ret
 	- [Air Quality Index](#air-quality-index)
 		- [Known Unknowns](#known-unknowns)
 		- [Published Data about Air Conductivity and Pollution](#published-data-about-air-conductivity-and-pollution)
+		- [Published info about BME680](#published-info-about-bme680)
 	- [Data formats](#data-formats)
 - [Configuration](#configuration)
 	- [Unattended mode](#unattended-mode)
@@ -73,11 +74,13 @@ We hope to be able to research the actual response of the BME680 so that we can 
 
 We reviewed several papers, of which the following seemed the most important:
 
-1. Pawar et al, [Effect of relative humidity and sea level pressure on electrical conductivity of air over Indian Ocean][Pawar2009], [[Pawar2009]]".
+1. Pawar et al, [Effect of relative humidity and sea level pressure on electrical conductivity of air over Indian Ocean][Pawar2009], [[Pawar2009]].
 
 2. Kamalsi et al, [The Electrical Conductivity as an Index of Air Pollution in the Atmosphere][Kamalsi2011], [[Kamalsi2011]]
 
 3. US Environmental Protection Agency, [EPA-450/3-82-019: Measurement of Volatile Organic Compunds - Supplement 1][EPA1982], July 1982 [[EPA1982]].
+
+4. Wang, C., Yin, L., Zhang, L., Xiang, D., & Gao, R. (2010). [Metal Oxide Gas Sensors: Sensitivity and Influencing Factors][Wang2010],  Sensors (Basel, Switzerland), 10(3), 2088–2106. http://doi.org/10.3390/s100302088 [[Wang2010]].
 
 [[Pawar2009]] was peer-reviewed, [[Kamalsi2011]] was not, but the results looked consistent. [[EPA1982]] is a good overview of laboratory measurement techniques for VOCs and is useful background.
 
@@ -90,6 +93,17 @@ They also mention that small ion mobility decreases with increases in relative h
 [Pawar2009]: https://doi.org/10.1029/2007JD009716 "Effect of relative humidity and sea level pressure on electrical conductivity of air over Indian Ocean"
 [Kamalsi2011]: https://mts.intechopen.com/books/advanced-air-pollution/the-electrical-conductivity-as-an-index-of-air-pollution-in-the-atmosphere "The Electrical Conductivity as an Index of Air Pollution in the Atmosphere"
 [EPA1982]: https://nepis.epa.gov/Exe/ZyNET.exe/2000MHV5.txt?ZyActionD=ZyDocument&Client=EPA&Index=2011%20Thru%202015%7C1995%20Thru%201999%7C1981%20Thru%201985%7C2006%20Thru%202010%7C1991%20Thru%201994%7C1976%20Thru%201980%7C2000%20Thru%202005%7C1986%20Thru%201990%7CPrior%20to%201976%7CHardcopy%20Publications&Docs=&Query=450382019&Time=&EndTime=&SearchMethod=2&TocRestrict=n&Toc=&TocEntry=&QField=&QFieldYear=&QFieldMonth=&QFieldDay=&UseQField=&IntQFieldOp=0&ExtQFieldOp=0&XmlQuery=&File=D%3A%5CZYFILES%5CINDEX%20DATA%5C81THRU85%5CTXT%5C00000005%5C2000MHV5.txt&User=ANONYMOUS&Password=anonymous&SortMethod=h%7C-&MaximumDocuments=15&FuzzyDegree=0&ImageQuality=r85g16/r85g16/x150y150g16/i500&Display=hpfr&DefSeekPage=x&SearchBack=ZyActionL&Back=ZyActionS&BackDesc=Results%20page&MaximumPages=1&ZyEntry=1&SeekPage=x "Measurement of Volatile Organic Compunds - Supplement 1, search link for retrieval"
+[Wang2010]: http://doi.org/10.3390/s100302088 "Metal Oxide Gas Sensors: Sensitivity and Influencing Factors"
+
+#### Published info about BME680
+
+[uRADMonitor](https://www.uradmonitor.com/metal-oxide-voc-sensors/) has some interesting data about the BME680's response to humidity.
+
+They publish the following chart showing the sensitivity of the MP503, apparently.
+
+![Temperature and humidity sensitivity of MP503](https://www.uradmonitor.com/wordpress/wp-content/uploads/2018/03/MP503_temperature_humidity_characteristics-copy.jpg)
+
+Reverse engineering the chart shows that the RH effect is consistent over temperature; so the RH can be compensated first, followed by compensating for temperature. The temperature compensation at 30% RH has a very good linear fit (R^2 = 0.9916), suggesting that the temperature compensation from this data should be (Rs/R0)(t) = -.0138*T + 1.5541.
 
 ### Data formats
 
