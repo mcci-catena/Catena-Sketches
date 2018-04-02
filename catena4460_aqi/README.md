@@ -116,7 +116,7 @@ system configure operatingflags 1
 To disable:
 
 ```
-system configure operatingflags 1
+system configure operatingflags 0
 ```
 
 ### Test mode
@@ -132,7 +132,7 @@ system configure operatingflags 2
 To disable:
 
 ```
-system configure operatingflags 2
+system configure operatingflags 0
 ```
 
 ### Platform GUID
