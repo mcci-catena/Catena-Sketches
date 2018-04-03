@@ -45,7 +45,7 @@ Bitmap bit | Length of corresponding field (bytes) | Data format |Description
 3 | 5 | [int16](#int16), [uint16](#uint16), [uint8](#uint8) | [Temperature, pressure, humidity](environmental-readings-field-3)
 4 | 2 | [uint16](#uint16) | [Ambient Light](#lux-field-4)
 5 | 2 | [uflt16](#uflt16) | [Air Quality Index](#air-quality-index-field-5)
-6..7 | n/a | n/a | These two bits are reserved, and must always be zero.
+6..7 | n/a | n/a | These two bits are reserved. They must always be zero.
 
 ### Battery Voltage (field 0)
 
@@ -53,7 +53,7 @@ Field 0, if present, carries the current battery voltage. To get the voltage, ex
 
 ### Bus Voltage (field 1)
 
-Field 1, if present, carried the current Vbus voltage. Divide by 4096.0 to convert from counts to volts. (Thus, this field can represent values from -8.0 volts to 7.998 volts.)
+Field 1, if present, carries the current Vbus voltage. Divide by 4096.0 to convert from counts to volts. (Thus, this field can represent values from -8.0 volts to 7.998 volts.)
 
 _Note:_ this field is not transmitted by V1.1 of the `catena_aqi.ino` sketch.
 
@@ -97,13 +97,13 @@ No claims about this index are made in terms of how this maps to pollution. Howe
 
 This measurement does not take into account humidity and temperature. This is an area of ongoing investigation.
 
-Gas resistance can be recoverd by inverting the equation:
+Gas resistance can be recovered by inverting the equation:
 
 AQI = (-ln(R) + 16.3787) * 44.62282.
 
 or
 
--ln(R) = (AQI / 44.2282 + 16.3787)
+-ln(R) = (AQI / 44.2282 - 16.3787)
 
 Data in a published [paper][Wang2010] suggest that humidity affects the AQI as follows, using 60% RH as the base line.
 
