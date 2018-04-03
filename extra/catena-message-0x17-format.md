@@ -38,7 +38,7 @@ Each bit in byte 1 represent whether a corresponding field in bytes 2..n is pres
 The bitmap byte has the following interpretation. `int16`, `uint16`, etc. are defined after the table.
 
 Bitmap bit | Length of corresponding field (bytes) | Data format |Description
-:---:|:---:|:---:|:----:|:---
+:---:|:---:|:---:|:----
 0 | 2 | [int16](#int16) | [Battery voltage](#battery-voltage-field-0)
 1 | 2 | [int16](#int16) | [Bus voltage](#bus-voltage-field-1)
 2 | 1 | [uint8](#uint8) | [Boot counter](#boot-counter-field-2)
