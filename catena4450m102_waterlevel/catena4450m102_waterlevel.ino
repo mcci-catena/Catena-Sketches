@@ -89,7 +89,6 @@ enum    {
         // Actual time will be a little longer because have to
         // add measurement and broadcast time.
         CATCFG_T_CYCLE = 6 * 60, // ten messages/hour
-        //CATCFG_T_CYCLE = 30,
         CATCFG_T_WARMUP = 1,
         CATCFG_T_SETTLE = 5,
         CATCFG_T_INTERVAL = CATCFG_T_CYCLE - (CATCFG_T_WARMUP +
@@ -358,24 +357,6 @@ void setup(void)
         /* now, we kick off things by sending our first message */
         gLed.Set(LedPattern::Joining);
 
-        // unit testing for the scaling functions
-        //gCatena.SafePrintf(
-        //        "dNdT_getFrac tests: "
-        //        "0/0: %04x 90/6m: %04x 89/6:00.1: %04x 1439/6m: %04x\n",
-        //        dNdT_getFrac(0, 0),
-        //        dNdT_getFrac(90, 6 * 60 * 1000),
-        //        dNdT_getFrac(89, 6 * 60 * 1000 + 100),
-        //        dNdT_getFrac(1439, 6 * 60 * 1000)
-        //        );
-        //gCatena.SafePrintf(
-        //        "dNdT_getFrac tests: "
-        //        "1/6m: %04x 20/6m: %04x 1/60:00.1: %04x 1440/5:59.99: %04x\n",
-        //        dNdT_getFrac(1, 6 * 60 * 1000),
-        //        dNdT_getFrac(20, 6 * 60 * 1000),
-        //        dNdT_getFrac(1, 60 * 60 * 1000 + 100),
-        //        dNdT_getFrac(1440, 6 * 60 * 1000 - 10)
-        //        );
-
         /* warm up the BME280 by discarding a measurement */
         if (fBme)
                 (void)bme.readTemperature();
@@ -551,10 +532,8 @@ void fillBuffer(TxBuffer_t &b)
 		if (SenAD >= REFERENCE_VALUE) /* Check for negative value, If yes then print 0*/
 			{
 			SenPDat = (float)(SenAD - REFERENCE_VALUE) / CROSS_VALUE * RANGE;
-			Serial.print("SenPDat: ");
-			Serial.print(SenPDat);
-			Serial.println(" Kpa");
-
+			gCatena.SafePrintf("SenPDat: %d Kpa\n", (int)SenPDat);
+			
 			b.putP(SenPDat * 1000);
 			flag |= FlagsSensor4::FlagWaterPressure;
 			}
