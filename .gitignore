@@ -45,3 +45,6 @@ __vm
 
 # VS Code things
 .vscode
+
+# the build directory
+build
