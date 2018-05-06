@@ -53,6 +53,12 @@ function _fatal {
 	_error "$@" ; exit 1
 }
 
+function _report {
+	echo "$1:"
+	echo "$2" | tr ' ' '\n' | column
+}
+
+
 ##############################################################################
 # LIBRARY_ROOT_DEFAULT: the path to the Arduino libraries on your
 # system. If set in the environment, we use that; otherwise we set it
@@ -238,9 +244,11 @@ if [ $OPTUPDATE -eq 0 -a $OPTSKIPBLOCKING -eq 0 ]; then
 		fi
 	done
 	if [ X"$BLOCKING_REPOS" != X ]; then
-		_fatal  "The following repos already exist in $LIBRARY_ROOT:" \
-			"${BLOCKING_REPOS}" \
-			"Check for conficts, or use -u to update or -S to skip blocking repos"
+		echo
+		_report  "The following repos already exist in $LIBRARY_ROOT" \
+			"${BLOCKING_REPOS}"
+		echo
+		_fatal	"Check for conficts, or use -u to update or -S to skip blocking repos"
 	fi
 fi
 
@@ -293,37 +301,33 @@ for r in $LIBRARY_REPOS ; do
 done
 
 #### print final messages
-function _report {
-	echo "$1:"
-	echo "$2" | tr ' ' '\n' | column
-}
 echo
 echo "==== Summary ====="
 if [ -z "${NG_REPOS}" ]; then
-	echo "No repos with errors"
+	echo "*** No repos with errors ***"
 else
 	_report "Repos with errors" "${NG_REPOS}"
 fi
 echo
 
 if [ -z "${SKIPPED_REPOS}" ]; then
-	echo "No repos skipped."
+	echo "*** No existing repos skipped ***"
 else
-	_report "Repos skipped" "${SKIPPED_REPOS}"
+	_report "Existing repos skipped" "${SKIPPED_REPOS}"
 fi
 echo
 
 if [ -z "${PULLED_REPOS}" ]; then
-	echo "*** no repos were pulled ***"
+	echo "*** No existing repos were updated ***"
 else
-	_report "Repos pulled" "${PULLED_REPOS}"
+	_report "Existing repos updated" "${PULLED_REPOS}"
 fi
 echo
 
 if [ -z "${CLONED_REPOS}" ]; then
-	echo "*** no repos were cloned. ***"
+	echo "*** No new repos were cloned ***"
 else
-	_report "Repos cloned" "${CLONED_REPOS}"
+	_report "New repos cloned" "${CLONED_REPOS}"
 fi
 echo
 
