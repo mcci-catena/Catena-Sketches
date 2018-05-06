@@ -36,6 +36,12 @@ function _verbose {
 	fi
 }
 
+function _debug {
+	if [ "$OPTDEBUG" -ne 0 ]; then
+		echo "$@" 1>&2
+	fi
+}
+
 #### _error: define a function that will echo an error message to STDERR.
 #### using "$@" ensures proper handling of quoting.
 function _error {
@@ -77,15 +83,16 @@ fi
 ##############################################################################
 
 LIBRARY_ROOT="${LIBRARY_ROOT_DEFAULT}"
-USAGE="${PNAME} -[D l* T u v] [datafile...]; ${PNAME} -H for help"
+USAGE="${PNAME} -[D g l* S T u v] [datafile...]; ${PNAME} -H for help"
 
-#OPTDEBUG and OPTVERBOS are above
+#OPTDEBUG and OPTVERBOSE are above
 OPTDRYRUN=0
+OPTGITACCESS=0
 OPTUPDATE=0
 OPTSKIPBLOCKING=0
 
 NEXTBOOL=1
-while getopts DHl:nSTuv c
+while getopts DgHl:nSTuv c
 do
 	# postcondition: NEXTBOOL=0 iff previous option was -n
 	# in all other cases, NEXTBOOL=1
@@ -97,6 +104,7 @@ do
 
 	case "$c" in
 	D)	OPTDEBUG=$NEXTBOOL;;
+	g)	OPTGITACCESS=$NEXTBOOL;;
 	l)	LIBRARY_ROOT="$OPTARG";;
 	n)	NEXTBOOL=-1;;
 	S)	OPTSKIPBLOCKING=$NEXTBOOL;;
@@ -112,6 +120,8 @@ Usage:
 Switches:
 	-n		negates the following option.
 	-D		turn on debug mode; -nD is the default.
+	-g		use git access method. -ng requests
+			https access method. Default is -ng.
 	-l {path} 	sets the target "arduino library path".
 			Default is $LIBRARY_ROOT_DEFAULT.
 	-S		Skip repos that already exist; -nS means
@@ -127,8 +137,19 @@ Switches:
 
 Data files:
 	The arguments specify repositories to be fetched, one repository
-	per line, in the form https://github.com/orgname/repo.git (or
-	similar). Blank lines and comments beginning with '#' are ignored.
+	per line.
+
+	Repositories may be specified with access method in the form
+	https://github.com/orgname/repo.git (or similar).
+
+	Repositories may also be specified as
+
+		location	path
+
+	Where location and path are separated by whitespace. In tihs gase,
+	the access method (git or https) is controlled by the -g flag.
+
+	Blank lines and comments beginning with '#' are ignored.
 
 .
 		exit 0;;
@@ -163,7 +184,25 @@ for LIBRARY_REPOS_DAT in "$@" ; do
 done
 
 # parse the repo file, deleting comments and eliminating duplicates
-LIBRARY_REPOS=$(sed -e 's/#.*$//' "$@" | LC_ALL=C sort -u)
+# convert two-field lines to the appropriate method, using  https://$1/$2 or git@$1:$2,
+# as determined by template.
+LIBRARY_REPOS=$(sed -e 's/#.*$//' "$@" | LC_ALL=C sort -u |
+	awk -v OPTGITACCESS="$OPTGITACCESS" '
+		(NF == 0) { next; }
+		(NF == 1) {
+			gsub(/\.git$/, "");
+			printf("%s.git\n", $1);
+			}
+		(NF == 2) {
+			gsub(/\.git$/, "", $2);
+			if (OPTGITACCESS != 0)
+				printf("git@%s:%s.git\n", $1, $2);
+			else
+				printf("https://%s/%s.git\n", $1, $2);
+			}
+		' | LC_ALL=C sort -u )
+
+_debug "LIBRARY_REPOS: ${LIBRARY_REPOS}"
 
 #### make sure LIBRARY_ROOT is really a directory
 if [ ! -d "$LIBRARY_ROOT" ]; then
@@ -254,28 +293,40 @@ for r in $LIBRARY_REPOS ; do
 done
 
 #### print final messages
+function _report {
+	echo "$1:"
+	echo "$2" | tr ' ' '\n' | column
+}
 echo
 echo "==== Summary ====="
 if [ -z "${NG_REPOS}" ]; then
 	echo "No repos with errors"
 else
-	echo "Repos with errors:     ${NG_REPOS}"
+	_report "Repos with errors" "${NG_REPOS}"
 fi
+echo
+
 if [ -z "${SKIPPED_REPOS}" ]; then
 	echo "No repos skipped."
 else
-	echo "Repos skipped:         ${SKIPPED_REPOS}"
+	_report "Repos skipped" "${SKIPPED_REPOS}"
 fi
+echo
+
 if [ -z "${PULLED_REPOS}" ]; then
 	echo "*** no repos were pulled ***"
 else
-	echo "Repos pulled:          ${PULLED_REPOS}"
+	_report "Repos pulled" "${PULLED_REPOS}"
 fi
+echo
+
 if [ -z "${CLONED_REPOS}" ]; then
 	echo "*** no repos were cloned. ***"
 else
-	echo "Repos downloaded:      ${CLONED_REPOS}"
+	_report "Repos cloned" "${CLONED_REPOS}"
 fi
+echo
+
 if [ -z "${NG_REPOS}" ]; then
 	exit 1
 else
