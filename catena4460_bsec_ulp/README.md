@@ -2,22 +2,27 @@
 
 MCCI port of the Bosch Sensortec bsec library `bsec_config_state_ulp_plus.ino`example.
 
+## What we changed
+
+We save the calibration data in FRAM using MCCI's reliable storage library; and we use the Catena-Arduino-Platform library.
+
 ## Setup
 
 Kind of ugly.
 
-You can clone https://gitlab-x.mcci.com/client/milkweed/mcgraw/bsec.git if you have access. Outside MCCI, you'll have to do the following. (Note that the following insructions are for SAMD21 things like the Feather M0.)
+You can clone https://gitlab-x.mcci.com/client/milkweed/mcgraw/bsec.git if you have access. Outside MCCI, you'll have to do the following. (Note that the following instructions are for SAMD21 things like the Feather M0.)
 
-- [ ] get the Bosch BSEC distribution (accepting the license)
-- [ ] Unzip
-- [ ] Unzip the nested `Arduino/bsec.zip` file into your Arduino `libraries` directory as `libraries/bsec`.
-- [ ] Copy `algo/bin/Normal_version/gcc/Cortex_M0+/libalgobsec.a` to libraries/bsec/src/cortex-m0plus`.
-- [ ] Copy `config/gnereic_33v_300s_28d/*.{c,h}` to libraries/bsec/src.
+We have tried this procedure with Arduino IDE 1.8.5, and we were successful. However, this did not work with Visual Micro.
+
+- [ ] get the Bosch BSEC distribution (accepting the license) from [this page](https://www.bosch-sensortec.com/bst/products/all_products/bsec#). Scroll to the bottom to accept the license, and you'll get a download prompt.
+- [ ] Unzip to a work directory (outside the Arduino working area).
+- [ ] Unzip the nested `Arduino/bsec.zip` file into your user Arduino `libraries` directory as `libraries/bsec`.
+- [ ] Copy `algo/bin/Normal_version/gcc/Cortex_M0+/libalgobsec.a` to `libraries/bsec/src/cortex-m0plus`.
+- [ ] Copy `config/generic_33v_300s_28d/*.{c,h}` to `libraries/bsec/src`.
 - [ ] Edit `platform.txt` for your BSP. For SAMD21 in the MCCI BSP, change the `recipe.c.combine.pattern`:
 
    ```ini
    recipe.c.combine.pattern="{compiler.path}{compiler.c.elf.cmd}"  "-L{build.path}" {compiler.c.elf.flags} "-T{build.variant.path}/{build.ldscript}" "-Wl,-Map,{build.path}/{build.project_name}.map" --specs=nano.specs --specs=nosys.specs {compiler.ldflags} -o "{build.path}/{build.project_name}.elf" {object_files} -Wl,--start-group {compiler.arm.cmsis.ldflags} "-L{build.variant.path}" -lm {compiler.c.elf.extra_flags} "{build.path}/{archive_file}" -Wl,--end-group
-
    ```
 
 - [ ] Download a patched arduino-builder, [arduino-builder-219.zip](http://downloads.arduino.cc/PR/arduino-builder/arduino-builder-219.zip). Use the version of `arduino-builder` that's appropriate for your system to replace the file that's already in your Arduino program directory (Windows `c:\Program Files (x86)\Arduino`). Rename the old file first, for safety.
@@ -27,7 +32,7 @@ You can clone https://gitlab-x.mcci.com/client/milkweed/mcgraw/bsec.git if you h
 
 ## Expected output
 
-If it works, you'll see something like the following, and a fast flash frmo the LED:
+If it works, you'll see something like the following, and a fast flash from the LED:
 
 ```console
 +Catena4460::begin()
@@ -38,7 +43,7 @@ Catena4460::GetPlatformForID entered
 
 BSEC library version 1.4.6.0
 Zeroing state
-Timestamp [ms], raw temperature [°C], pressure [hPa], raw relative humidity [%], gas [Ohm], IAQ, IAQ accuracy, temperature [°C], relative humidity [%]
+Timestamp [ms], raw temperature [ï¿½C], pressure [hPa], raw relative humidity [%], gas [Ohm], IAQ, IAQ accuracy, temperature [ï¿½C], relative humidity [%]
 6103, 25.49, 98667.88, 32.42, 119765.79, 25.00, 0, 25.49, 32.42
 306101, 25.70, 98669.41, 32.05, 178382.66, 25.00, 0, 25.70, 32.05
 606101, 25.57, 98663.88, 31.91, 202627.42, 25.00, 0, 25.57, 31.91
@@ -59,6 +64,6 @@ Timestamp [ms], raw temperature [°C], pressure [hPa], raw relative humidity [%],
 
 ## Bugs
 
-The documnentation doesn't make it clear whether we should be using a different calibratin file. 
+The documentation doesn't make it clear whether we should be using a different calibration file.
 
 Adafruit and MCCI use a different default address for the BME680 than Bosch does.
