@@ -171,6 +171,9 @@ void loadState(void)
   }
 }
 
+// time stamp of last time we 
+uint32_t lastUpdate = 0;
+
 void updateState(void)
 {
   bool update = false;
@@ -182,13 +185,14 @@ void updateState(void)
     }
   } else {
     /* Update every STATE_SAVE_PERIOD minutes */
-    if ((stateUpdateCounter * STATE_SAVE_PERIOD) < millis()) {
+    if ((int32_t)(millis() - lastUpdate) >= STATE_SAVE_PERIOD) {
       update = true;
       stateUpdateCounter++;
     }
   }
 
   if (update) {
+    lastUpdate = millis();
     iaqSensor.getState(bsecState);
     checkIaqSensorStatus();
 
