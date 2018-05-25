@@ -608,8 +608,8 @@ static void settleDoneCb(
     uint32_t startTime;
 #ifndef ARDUINO_ARCH_SAMD
     const bool fDontSleep = true;
-#else 
-    const bool fDontSleep = 
+#else
+    const bool fDontSleep =
         (gCatena.GetOperatingFlags() & (1 << 17)) ||
          Serial.dtr() || fHasPower1;
 #endif /* ARDUINO_ARCH_SAMD */
