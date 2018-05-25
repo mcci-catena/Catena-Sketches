@@ -235,7 +235,7 @@ void setup(void)
                 }
         else
                 {
-                gCatena.SafePrintf("OK\n");
+                gCatena.SafePrintf("succeeded\n");
                 gCatena.registerObject(&gLoRaWAN);
                 }
 
@@ -545,7 +545,14 @@ void startSendingUplink(void)
   else
           gLed.Set(LedPattern::Joining);
 
-  gLoRaWAN.SendBuffer(b.getbase(), b.getn(), sendBufferDoneCb, NULL);
+  bool fConfirmed = false;
+  if (gCatena.GetOperatingFlags() & (1 << 16))
+        {
+        gCatena.SafePrintf("requesting confirmed tx");
+          fConfirmed = true;
+          }
+
+  gLoRaWAN.SendBuffer(b.getbase(), b.getn(), sendBufferDoneCb, NULL, fConfirmed);
 }
 
 static void
@@ -599,16 +606,23 @@ static void settleDoneCb(
     )
     {
     uint32_t startTime;
-#ifdef ARDUINO_ARCH_SAMD
+#ifndef ARDUINO_ARCH_SAMD
     const bool fDontSleep = true;
 #else 
-    const bool fDontSleep = Serial.dtr() || fHasPower1;
+    const bool fDontSleep = 
+        (gCatena.GetOperatingFlags() & (1 << 17)) ||
+         Serial.dtr() || fHasPower1;
 #endif /* ARDUINO_ARCH_SAMD */
 
     // if connected to USB, don't sleep
     // ditto if we're monitoring pulses.
     if (fDontSleep)
         {
+        uint32_t interval = sec2osticks(CATCFG_T_INTERVAL);
+
+        if (gCatena.GetOperatingFlags() & (1 << 18))
+                interval = 1;
+
         gLed.Set(LedPattern::Sleeping);
         os_setTimedCallback(
                 &sensorJob,
