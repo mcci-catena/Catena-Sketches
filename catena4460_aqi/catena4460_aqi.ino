@@ -21,7 +21,7 @@ Copyright notice:
         file accompanying this file outlines the license granted.
 
 Author:
-	Terry Moore, MCCI Corporation & Suzen Filke	December 201u
+	Terry Moore, MCCI Corporation & Suzen Filke	December 2017
 
 Revision history:
    0.1.1  Sat Mar 31 2018 21:06:03  tmm
