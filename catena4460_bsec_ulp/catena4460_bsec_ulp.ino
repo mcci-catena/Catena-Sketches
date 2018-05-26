@@ -3,13 +3,13 @@
 Module:  catena4450_bsec_ulp.ino
 
 Function:
-	Code for the air-quality sensor with Catena 4460 using BSEC.
+        Code for the air-quality sensor with Catena 4460 using BSEC.
 
 Copyright notice and License:
-	See LICENSE file accompanying this project.
+        See LICENSE file accompanying this project.
 
 Author:
-	Terry Moore, MCCI Corporation   March 2018
+        Terry Moore, MCCI Corporation   March 2018
 
         Based on Bosch BSEC sample code, but substantially modified.
 */
@@ -165,24 +165,24 @@ Definition:
             );
 
 Description:
-	This function is called by the Arduino framework after
-	basic framework has been initialized. We initialize the sensors
-	that are present on the platform, set up the LoRaWAN connection,
+        This function is called by the Arduino framework after
+        basic framework has been initialized. We initialize the sensors
+        that are present on the platform, set up the LoRaWAN connection,
         and (ultimately) return to the framework, which then calls loop()
         forever.
 
 Returns:
-	No explicit result.
+        No explicit result.
 
 */
 
 void setup(void)
-	{
-	gCatena.begin();
+        {
+        gCatena.begin();
 
-	setup_platform();
-	setup_bme680();
-	run_bme680();
+        setup_platform();
+        setup_bme680();
+        run_bme680();
 
         /* for 4551, we need wider tolerances, it seems */
 #if defined(ARDUINO_ARCH_STM32)
@@ -192,12 +192,12 @@ void setup(void)
         /* trigger a join by sending the first packet */
         if (! (gCatena.GetOperatingFlags() &
                         static_cast<uint32_t>(gCatena.OPERATING_FLAGS::fManufacturingTest)))
-		{
-		g_dataValid = false;
-		run_bme680();
+                {
+                g_dataValid = false;
+                run_bme680();
                 startSendingUplink();
-		}
-	}
+                }
+        }
 
 void setup_platform(void)
         {
@@ -234,7 +234,7 @@ void setup_platform(void)
                 gCatena.registerObject(&gLoRaWAN);
                 }
 
-	        /* find the platform */
+                /* find the platform */
         const Catena::EUI64_buffer_t *pSysEUI = gCatena.GetSysEUI();
 
         uint32_t flags;
@@ -272,11 +272,11 @@ void setup_bme680(void)
 {
   iaqSensor.begin(BME680_I2C_ADDR_SECONDARY, Wire);
   gCatena.SafePrintf("\nBSEC library version %d.%d.%d.%d\n",
-  			iaqSensor.version.major,
-			iaqSensor.version.minor,
-			iaqSensor.version.major_bugfix,
-			iaqSensor.version.minor_bugfix
-			);
+                          iaqSensor.version.major,
+                        iaqSensor.version.minor,
+                        iaqSensor.version.major_bugfix,
+                        iaqSensor.version.minor_bugfix
+                        );
   checkIaqSensorStatus();
 
   iaqSensor.setConfig(bsec_config_iaq);
@@ -299,48 +299,48 @@ void setup_bme680(void)
 }
 
 void run_bme680(void)
-	{
-	if (iaqSensor.run())
-		{ // If new data is available
-		g_dataValid = true;
-		g_temperature = iaqSensor.temperature;
-		g_pressure = iaqSensor.pressure;
-		g_humidity = iaqSensor.humidity;
-		g_iaq = iaqSensor.iaqEstimate;
-		g_gas_resistance = iaqSensor.gasResistance;
+        {
+        if (iaqSensor.run())
+                { // If new data is available
+                g_dataValid = true;
+                g_temperature = iaqSensor.temperature;
+                g_pressure = iaqSensor.pressure;
+                g_humidity = iaqSensor.humidity;
+                g_iaq = iaqSensor.iaqEstimate;
+                g_gas_resistance = iaqSensor.gasResistance;
 
-		output = String(millis());
-		output += ", " + String(iaqSensor.rawTemperature);
-		output += ", " + String(iaqSensor.pressure);
-		output += ", " + String(iaqSensor.rawHumidity);
-		output += ", " + String(iaqSensor.gasResistance);
-		output += ", " + String(iaqSensor.iaqEstimate);
-		output += ", " + String(iaqSensor.iaqAccuracy);
-		output += ", " + String(iaqSensor.temperature);
-		output += ", " + String(iaqSensor.humidity);
-		gCatena.SafePrintf("%s\n", output.c_str());
+                output = String(millis());
+                output += ", " + String(iaqSensor.rawTemperature);
+                output += ", " + String(iaqSensor.pressure);
+                output += ", " + String(iaqSensor.rawHumidity);
+                output += ", " + String(iaqSensor.gasResistance);
+                output += ", " + String(iaqSensor.iaqEstimate);
+                output += ", " + String(iaqSensor.iaqAccuracy);
+                output += ", " + String(iaqSensor.temperature);
+                output += ", " + String(iaqSensor.humidity);
+                gCatena.SafePrintf("%s\n", output.c_str());
 
-		possiblySaveCalibrationData();
-		}
-	else
-		{
-		checkIaqSensorStatus();
-		}
-	}
+                possiblySaveCalibrationData();
+                }
+        else
+                {
+                checkIaqSensorStatus();
+                }
+        }
 
 // Function that is looped forever
 void loop(void)
-	{
-	gCatena.poll();
+        {
+        gCatena.poll();
 
-	run_bme680();
-	if (gCatena.GetOperatingFlags() &
-		static_cast<uint32_t>(gCatena.OPERATING_FLAGS::fManufacturingTest))
-		{
-		TxBuffer_t b;
-		fillBuffer(b);
-		}
-	}
+        run_bme680();
+        if (gCatena.GetOperatingFlags() &
+                static_cast<uint32_t>(gCatena.OPERATING_FLAGS::fManufacturingTest))
+                {
+                TxBuffer_t b;
+                fillBuffer(b);
+                }
+        }
 
 // Helper function definitions
 void checkIaqSensorStatus(void)
@@ -382,25 +382,25 @@ void dumpCalibrationData(void)
 {
     for (auto here = 0, nLeft = BSEC_MAX_STATE_BLOB_SIZE;
          nLeft != 0;
-	)
-	{
-    	char line[80];
-    	size_t n;
+        )
+        {
+            char line[80];
+            size_t n;
 
-	n = 16;
-	if (n >= nLeft)
-		n = nLeft;
+        n = 16;
+        if (n >= nLeft)
+                n = nLeft;
 
-	McciAdkLib_FormatDumpLine(
-		line, sizeof(line), 0,
-		here,
-		bsecState + here, n
-		);
+        McciAdkLib_FormatDumpLine(
+                line, sizeof(line), 0,
+                here,
+                bsecState + here, n
+                );
 
-	Serial.println(line);
+        Serial.println(line);
 
-	here += n, nLeft -= n;
-	}
+        here += n, nLeft -= n;
+        }
 }
 
 void loadCalibrationData(void)
@@ -415,8 +415,8 @@ void loadCalibrationData(void)
     iaqSensor.setState(bsecState);
     if (iaqSensor.status != BSEC_OK) {
       gCatena.SafePrintf(
-	      "%s: BSEC error code: %d\n", __func__, iaqSensor.status
-	      );
+              "%s: BSEC error code: %d\n", __func__, iaqSensor.status
+              );
       fDataOk = false;
     } else {
       fDataOk = true;
@@ -455,13 +455,13 @@ void possiblySaveCalibrationData(void)
 
 void saveCalibrationData(void)
 {
-	lastCalibrationWriteMillis = millis();
-	iaqSensor.getState(bsecState);
-	checkIaqSensorStatus();
+        lastCalibrationWriteMillis = millis();
+        iaqSensor.getState(bsecState);
+        checkIaqSensorStatus();
 
-	Serial.println("Writing state to FRAM");
-	gCatena.getFram()->saveField(cFramStorage::kBme680Cal, bsecState);
-	dumpCalibrationData();
+        Serial.println("Writing state to FRAM");
+        gCatena.getFram()->saveField(cFramStorage::kBme680Cal, bsecState);
+        dumpCalibrationData();
 }
 
 static uint16_t f2uflt16(
@@ -543,7 +543,7 @@ void fillBuffer(TxBuffer_t &b)
         {
         /* Get a new sensor event */
         uint16_t light;
-        
+
         gBH1750.configure(BH1750_ONE_TIME_HIGH_RES_MODE);
         uint32_t const tBegin = millis();
         uint32_t const tMeas = gBH1750.getMeasurementMillis();
