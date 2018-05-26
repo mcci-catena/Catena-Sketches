@@ -1,28 +1,124 @@
+/*
+
+Module:  catena4450_bsec_ulp.ino
+
+Function:
+	Code for the air-quality sensor with Catena 4460 using BSEC.
+
+Copyright notice and License:
+	See LICENSE file accompanying this project.
+
+Author:
+	Terry Moore, MCCI Corporation   March 2018
+
+        Based on Bosch BSEC sample code, but substantially modified.
+*/
+
 #include <Catena4460.h>
 #include <Catena_Led.h>
+#include <Catena_TxBuffer.h>
+#include <Catena_CommandStream.h>
+
+#ifdef ARDUINO_ARCH_SAMD
+# include <CatenaRTC.h>
+#endif
+
 #include "bsec.h"
 #include <cstring>
 #include "mcciadk_baselib.h"
+#include <BH1750.h>
+#include <lmic.h>
+#include <hal/hal.h>
+
+
+#include <cmath>
+#include <type_traits>
+
+
+/****************************************************************************\
+|
+|		Manifest constants & typedefs.
+|
+|	This is strictly for private types and constants which will not
+|	be exported.
+|
+\****************************************************************************/
 
 using namespace McciCatena;
 
-extern const uint8_t bsec_config_iaq[];
-//#include "bsec_serialized_configurations_iaq.h"
+#define STATE_SAVE_PERIOD  UINT32_C(3 * 60 * 1000) // 3 minutes: basically any change.
 
-#define STATE_SAVE_PERIOD  UINT32_C(360 * 60 * 1000) // 360 minutes - 4 times a day
+/* how long do we wait between transmissions (in seconds) */
+enum    {
+        // set this to interval between transmissions, in seconds
+        // Actual time will be a little longer because have to
+        // add measurement and broadcast time.
+        CATCFG_T_CYCLE = 30,        // every 30 seconds
+        };
+
+/* Additional timing parameters */
+enum    {
+        CATCFG_T_WARMUP = 1,
+        CATCFG_T_SETTLE = 5,
+        CATCFG_T_INTERVAL = CATCFG_T_CYCLE - (CATCFG_T_WARMUP +
+                                                CATCFG_T_SETTLE),
+        };
+
 
 // Helper functions declarations
 void checkIaqSensorStatus(void);
 void errLeds(void);
-void loadState(void);
-void updateState(void);
+void loadCalibrationData(void);
+void possiblySaveCalibrationData(void);
 
 // the Catena object
 using Catena = Catena4460;
 
+// other forwards
+static void settleDoneCb(osjob_t *pSendJob);
+static void warmupDoneCb(osjob_t *pSendJob);
+static void txFailedDoneCb(osjob_t *pSendJob);
+static void sleepDoneCb(osjob_t *pSendJob);
+static Arduino_LoRaWAN::SendBufferCbFn sendBufferDoneCb;
+void fillBuffer(TxBuffer_t &b);
+void startSendingUplink(void);
+
+/****************************************************************************\
+|
+|	Read-only data.
+|
+\****************************************************************************/
+
+static const char sVersion[] = "0.2.0";
+
+extern const uint8_t bsec_config_iaq[];
+//#include "bsec_serialized_configurations_iaq.h"
+
+/****************************************************************************\
+|
+|	VARIABLES:
+|
+\****************************************************************************/
+
+
+// the Catena instance
 Catena gCatena;
-// declare the LED object
+
+//
+// the LoRaWAN backhaul.  Note that we use the
+// Catena version so it can provide hardware-specific
+// information to the base class.
+//
+Catena::LoRaWAN gLoRaWAN;
+
+// declare the LED object instance
 StatusLed gLed (Catena::PIN_STATUS_LED);
+
+// the RTC instance, used for sleeping
+CatenaRTC gRtc;
+
+// declare the Lux sensor instance
+BH1750 gBH1750;
 
 // Create an object of the class Bsec
 Bsec iaqSensor;
@@ -33,23 +129,160 @@ uint32_t lastTime = 0;
 
 String output;
 
-// Entry point for the example
-void setup(void)
-{
-  gCatena.begin();
-  gLed.begin();
-  gCatena.registerObject(&gLed);
-  gLed.Set(LedPattern::FastFlash);
+// time stamp of last time we saved the state.
+uint32_t lastCalibrationWriteMillis = 0;
 
+//  the LMIC job that's used to synchronize us with the LMIC code
+static osjob_t sensorJob;
+void sensorJob_cb(osjob_t *pJob);
+
+bool g_dataValid;
+float g_temperature = 0.0;
+float g_pressure = 0.0;
+float g_humidity = 0.0;
+float g_iaq = 0.0;
+float g_gas_resistance = 0.0;
+
+
+/****************************************************************************\
+|
+|	CODE:
+|
+\****************************************************************************/
+
+
+
+/*
+
+Name:	setup()
+
+Function:
+        Arduino setup function.
+
+Definition:
+        void setup(
+            void
+            );
+
+Description:
+	This function is called by the Arduino framework after
+	basic framework has been initialized. We initialize the sensors
+	that are present on the platform, set up the LoRaWAN connection,
+        and (ultimately) return to the framework, which then calls loop()
+        forever.
+
+Returns:
+	No explicit result.
+
+*/
+
+void setup(void)
+	{
+	gCatena.begin();
+
+	setup_platform();
+	setup_bme680();
+	run_bme680();
+
+        /* for 4551, we need wider tolerances, it seems */
+#if defined(ARDUINO_ARCH_STM32)
+        LMIC_setClockError(10 * 65536 / 100);
+#endif
+
+        /* trigger a join by sending the first packet */
+        if (! (gCatena.GetOperatingFlags() &
+                        static_cast<uint32_t>(gCatena.OPERATING_FLAGS::fManufacturingTest)))
+		{
+		g_dataValid = false;
+		run_bme680();
+                startSendingUplink();
+		}
+	}
+
+void setup_platform(void)
+        {
+        while (!Serial)
+                /* wait for USB attach */
+                yield();
+
+        Serial.print(
+                "\n"
+                "-------------------------------------------------------------------------------\n"
+                "This is the catena4460_bsec_ulp program.\n"
+                "Enter 'help' for a list of commands.\n"
+                "(remember to select 'Line Ending: Newline' at the bottom of the monitor window.)\n"
+                "--------------------------------------------------------------------------------\n"
+                "\n"
+                );
+
+        gLed.begin();
+        gCatena.registerObject(&gLed);
+        gLed.Set(LedPattern::FastFlash);
+
+        // set up the RTC object
+        gRtc.begin();
+
+        gCatena.SafePrintf("LoRaWAN init: ");
+        if (!gLoRaWAN.begin(&gCatena))
+                {
+                gCatena.SafePrintf("failed\n");
+                gCatena.registerObject(&gLoRaWAN);
+                }
+        else
+                {
+                gCatena.SafePrintf("succeeded\n");
+                gCatena.registerObject(&gLoRaWAN);
+                }
+
+	        /* find the platform */
+        const Catena::EUI64_buffer_t *pSysEUI = gCatena.GetSysEUI();
+
+        uint32_t flags;
+        const CATENA_PLATFORM * const pPlatform = gCatena.GetPlatform();
+
+        if (pPlatform)
+                {
+                gCatena.SafePrintf("EUI64: ");
+                for (unsigned i = 0; i < sizeof(pSysEUI->b); ++i)
+                        {
+                        gCatena.SafePrintf("%s%02x", i == 0 ? "" : "-", pSysEUI->b[i]);
+                        }
+                gCatena.SafePrintf("\n");
+                flags = gCatena.GetPlatformFlags();
+                gCatena.SafePrintf(
+                        "Platform Flags:  %#010x\n",
+                        flags
+                        );
+                gCatena.SafePrintf(
+                        "Operating Flags:  %#010x\n",
+                        gCatena.GetOperatingFlags()
+                        );
+                }
+        else
+                {
+                gCatena.SafePrintf("**** no platform, check provisioning ****\n");
+                flags = 0;
+                }
+
+        gBH1750.begin();
+        gBH1750.configure(BH1750_POWER_DOWN);
+        }
+
+void setup_bme680(void)
+{
   iaqSensor.begin(BME680_I2C_ADDR_SECONDARY, Wire);
-  output = "\nBSEC library version " + String(iaqSensor.version.major) + "." + String(iaqSensor.version.minor) + "." + String(iaqSensor.version.major_bugfix) + "." + String(iaqSensor.version.minor_bugfix);
-  Serial.println(output);
+  gCatena.SafePrintf("\nBSEC library version %d.%d.%d.%d\n",
+  			iaqSensor.version.major,
+			iaqSensor.version.minor,
+			iaqSensor.version.major_bugfix,
+			iaqSensor.version.minor_bugfix
+			);
   checkIaqSensorStatus();
 
   iaqSensor.setConfig(bsec_config_iaq);
   checkIaqSensorStatus();
 
-  loadState();
+  loadCalibrationData();
 
   bsec_virtual_sensor_t sensorList[7] = {
     BSEC_OUTPUT_RAW_TEMPERATURE,
@@ -63,33 +296,51 @@ void setup(void)
 
   iaqSensor.updateSubscription(sensorList, 7, BSEC_SAMPLE_RATE_ULP);
   checkIaqSensorStatus();
-
-  // Print the header
-  output = "Timestamp [ms], raw temperature [°C], pressure [hPa], raw relative humidity [%], gas [Ohm], IAQ, IAQ accuracy, temperature [°C], relative humidity [%]";
-  Serial.println(output);
 }
+
+void run_bme680(void)
+	{
+	if (iaqSensor.run())
+		{ // If new data is available
+		g_dataValid = true;
+		g_temperature = iaqSensor.temperature;
+		g_pressure = iaqSensor.pressure;
+		g_humidity = iaqSensor.humidity;
+		g_iaq = iaqSensor.iaqEstimate;
+		g_gas_resistance = iaqSensor.gasResistance;
+
+		output = String(millis());
+		output += ", " + String(iaqSensor.rawTemperature);
+		output += ", " + String(iaqSensor.pressure);
+		output += ", " + String(iaqSensor.rawHumidity);
+		output += ", " + String(iaqSensor.gasResistance);
+		output += ", " + String(iaqSensor.iaqEstimate);
+		output += ", " + String(iaqSensor.iaqAccuracy);
+		output += ", " + String(iaqSensor.temperature);
+		output += ", " + String(iaqSensor.humidity);
+		gCatena.SafePrintf("%s\n", output.c_str());
+
+		possiblySaveCalibrationData();
+		}
+	else
+		{
+		checkIaqSensorStatus();
+		}
+	}
 
 // Function that is looped forever
 void loop(void)
-{
-  gCatena.poll();
+	{
+	gCatena.poll();
 
-  if (iaqSensor.run()) { // If new data is available
-    output = String(millis());
-    output += ", " + String(iaqSensor.rawTemperature);
-    output += ", " + String(iaqSensor.pressure);
-    output += ", " + String(iaqSensor.rawHumidity);
-    output += ", " + String(iaqSensor.gasResistance);
-    output += ", " + String(iaqSensor.iaqEstimate);
-    output += ", " + String(iaqSensor.iaqAccuracy);
-    output += ", " + String(iaqSensor.temperature);
-    output += ", " + String(iaqSensor.humidity);
-    Serial.println(output);
-    updateState();
-  } else {
-    checkIaqSensorStatus();
-  }
-}
+	run_bme680();
+	if (gCatena.GetOperatingFlags() &
+		static_cast<uint32_t>(gCatena.OPERATING_FLAGS::fManufacturingTest))
+		{
+		TxBuffer_t b;
+		fillBuffer(b);
+		}
+	}
 
 // Helper function definitions
 void checkIaqSensorStatus(void)
@@ -127,10 +378,10 @@ void errLeds(void)
      gCatena.poll();
 }
 
-void dumpState(void)
+void dumpCalibrationData(void)
 {
-    for (auto here = 0, nLeft = BSEC_MAX_STATE_BLOB_SIZE; 
-         nLeft != 0; 
+    for (auto here = 0, nLeft = BSEC_MAX_STATE_BLOB_SIZE;
+         nLeft != 0;
 	)
 	{
     	char line[80];
@@ -141,8 +392,8 @@ void dumpState(void)
 		n = nLeft;
 
 	McciAdkLib_FormatDumpLine(
-		line, sizeof(line), 0,  
-		here, 
+		line, sizeof(line), 0,
+		here,
 		bsecState + here, n
 		);
 
@@ -152,29 +403,36 @@ void dumpState(void)
 	}
 }
 
-void loadState(void)
+void loadCalibrationData(void)
 {
   cFram * const pFram = gCatena.getFram();
+  bool fDataOk;
 
   if (pFram->getField(cFramStorage::kBme680Cal, bsecState)) {
     Serial.println("Got state from FRAM:");
-    dumpState();
+    dumpCalibrationData();
 
     iaqSensor.setState(bsecState);
-    checkIaqSensorStatus();
+    if (iaqSensor.status != BSEC_OK) {
+      gCatena.SafePrintf(
+	      "%s: BSEC error code: %d\n", __func__, iaqSensor.status
+	      );
+      fDataOk = false;
+    } else {
+      fDataOk = true;
+    }
   } else {
-    // zero the saved state
-    Serial.println("Zeroing state");
+    fDataOk = false;
+  }
 
-    std::memset(bsecState, 0, sizeof(bsecState));
-    pFram->saveField(cFramStorage::kBme680Cal, bsecState);
+  if (! fDataOk) {
+    // initialize the saved state
+    Serial.println("Initializing state");
+    saveCalibrationData();
   }
 }
 
-// time stamp of last time we 
-uint32_t lastUpdate = 0;
-
-void updateState(void)
+void possiblySaveCalibrationData(void)
 {
   bool update = false;
   if (stateUpdateCounter == 0) {
@@ -184,41 +442,288 @@ void updateState(void)
       stateUpdateCounter++;
     }
   } else {
-    /* Update every STATE_SAVE_PERIOD minutes */
-    if ((int32_t)(millis() - lastUpdate) >= STATE_SAVE_PERIOD) {
+    /* Update every STATE_SAVE_PERIOD milliseconds */
+    if ((int32_t)(millis() - lastCalibrationWriteMillis) >= STATE_SAVE_PERIOD) {
       update = true;
       stateUpdateCounter++;
     }
   }
 
   if (update) {
-    lastUpdate = millis();
-    iaqSensor.getState(bsecState);
-    checkIaqSensorStatus();
-
-    Serial.println("Writing state to FRAM");
-    gCatena.getFram()->saveField(cFramStorage::kBme680Cal, bsecState);
-    dumpState();
   }
 }
 
-#if 0
-/*!
-   @brief       Interrupt handler for press of a ULP plus button
-
-   @return      none
-*/
-void ulp_plus_button_press()
+void saveCalibrationData(void)
 {
-  /* We call bsec_update_subscription() in order to instruct BSEC to perform an extra measurement at the next
-     possible time slot
-  */
-  Serial.println("Triggering ULP plus.");
-  bsec_virtual_sensor_t sensorList[1] = {
-    BSEC_OUTPUT_IAQ_ESTIMATE,
-  };
+	lastCalibrationWriteMillis = millis();
+	iaqSensor.getState(bsecState);
+	checkIaqSensorStatus();
 
-  iaqSensor.updateSubscription(sensorList, 1, BSEC_SAMPLE_RATE_ULP_MEASUREMENT_ON_DEMAND);
-  checkIaqSensorStatus();
+	Serial.println("Writing state to FRAM");
+	gCatena.getFram()->saveField(cFramStorage::kBme680Cal, bsecState);
+	dumpCalibrationData();
 }
-#endif
+
+static uint16_t f2uflt16(
+        float f
+        )
+        {
+        if (f < 0)
+                return 0;
+        else if (f >= 1.0)
+                return 0xFFFF;
+        else
+                {
+                int iExp;
+                float normalValue;
+                normalValue = frexpf(f, &iExp);
+
+                // f is supposed to be in [0..1), so useful exp
+                // is [0..-15]
+                iExp += 15;
+                if (iExp < 0)
+                        iExp = 0;
+                if (iExp > 15)
+                        return 0xFFFF;
+
+
+                return (uint16_t)((iExp << 12u) + (unsigned) scalbnf(normalValue, 12));
+                }
+        }
+
+void fillBuffer(TxBuffer_t &b)
+{
+
+  b.begin();
+  FlagsSensor5 flag;
+
+  flag = FlagsSensor5(0);
+
+  b.put(FormatSensor5); /* the flag for this record format */
+
+  /* capture the address of the flag byte */
+  uint8_t * const pFlag = b.getp();
+
+  b.put(0x00);  /* insert a byte. Value doesn't matter, will
+                || later be set to the final value of `flag`
+                */
+
+  // vBat is sent as 5000 * v
+  float vBat = gCatena.ReadVbat();
+  gCatena.SafePrintf("vBat:    %d mV\n", (int) (vBat * 1000.0f));
+  b.putV(vBat);
+  flag |= FlagsSensor5::FlagVbat;
+
+  uint32_t bootCount;
+  if (gCatena.getBootCount(bootCount))
+        {
+        b.putBootCountLsb(bootCount);
+        flag |= FlagsSensor5::FlagBoot;
+        }
+
+  if (g_dataValid)
+       {
+       // temperature is 2 bytes from -0x80.00 to +0x7F.FF degrees C
+       // pressure is 2 bytes, hPa * 10.
+       // humidity is one byte, where 0 == 0/256 and 0xFF == 255/256.
+       gCatena.SafePrintf(
+                "BME680:  T=%d P=%d RH=%d\n",
+                (int) (g_temperature + 0.5),
+                (int) (g_pressure + 0.5),
+                (int) (g_humidity + 0.5)
+                );
+       b.putT(g_temperature);
+       b.putP(g_pressure);
+       b.putRH(g_humidity);
+
+       flag |= FlagsSensor5::FlagTPH;
+       }
+
+   /* get light */
+        {
+        /* Get a new sensor event */
+        uint16_t light;
+        
+        gBH1750.configure(BH1750_ONE_TIME_HIGH_RES_MODE);
+        uint32_t const tBegin = millis();
+        uint32_t const tMeas = gBH1750.getMeasurementMillis();
+
+        while (uint32_t(millis() - tBegin) < tMeas)
+                {
+                gCatena.poll();
+                yield();
+                }
+
+        light = gBH1750.readLightLevel();
+        gCatena.SafePrintf("BH1750:  %u lux\n", light);
+        b.putLux(light);
+        flag |= FlagsSensor5::FlagLux;
+        }
+
+  if (g_dataValid)
+        {
+        // output the IAQW (in 0..500/512).
+        uint16_t const encodedIAQ = f2uflt16(g_iaq / 512.0);
+
+        gCatena.SafePrintf(
+                "BME680:   Gas-Resistance=%d IAQ=%d\n",
+                (int) (g_gas_resistance + 0.5),
+                (int) (g_iaq + 0.5)
+                );
+
+        b.put2u(encodedIAQ);
+        flag |= FlagsSensor5::FlagAqi;
+        }
+
+  *pFlag = uint8_t(flag);
+}
+
+
+void startSendingUplink(void)
+{
+  TxBuffer_t b;
+  LedPattern savedLed = gLed.Set(LedPattern::Measuring);
+
+  fillBuffer(b);
+
+  if (savedLed != LedPattern::Joining)
+          gLed.Set(LedPattern::Sending);
+  else
+          gLed.Set(LedPattern::Joining);
+
+  gLoRaWAN.SendBuffer(b.getbase(), b.getn(), sendBufferDoneCb, NULL);
+}
+
+static void
+sendBufferDoneCb(
+    void *pContext,
+    bool fStatus
+    )
+    {
+    osjobcb_t pFn;
+
+    gLed.Set(LedPattern::Settling);
+    if (! fStatus)
+        {
+        gCatena.SafePrintf("send buffer failed\n");
+        pFn = txFailedDoneCb;
+        }
+    else
+        {
+        pFn = settleDoneCb;
+        }
+    os_setTimedCallback(
+            &sensorJob,
+            os_getTime()+sec2osticks(CATCFG_T_SETTLE),
+            pFn
+            );
+    }
+
+static void
+txFailedDoneCb(
+        osjob_t *pSendJob
+        )
+        {
+        gCatena.SafePrintf("not provisioned, idling\n");
+        gLoRaWAN.Shutdown();
+        gLed.Set(LedPattern::NotProvisioned);
+        }
+
+
+//
+// the following API is added to delay.c, .h in the BSP. It adjust millis()
+// forward after a deep sleep.
+//
+// extern "C" { void adjust_millis_forward(unsigned); };
+//
+// If you don't have it, make sure you're running the MCCI Board Support
+// Package for the Catena 4460, https://github.com/mcci-catena/arduino-boards
+//
+
+static void settleDoneCb(
+    osjob_t *pSendJob
+    )
+    {
+    uint32_t startTime;
+    bool fDeepSleep;
+
+    // if connected to USB, don't sleep
+    // ditto if we're monitoring pulses.
+
+    // disable sleep if not unattended, or if USB active
+    if (gCatena.GetOperatingFlags() & (1 << 17))
+        {
+        fDeepSleep = false;
+        }
+    else if (Serial.dtr())
+        {
+        fDeepSleep = false;
+        }
+    else if ((gCatena.GetOperatingFlags() &
+            static_cast<uint32_t>(gCatena.OPERATING_FLAGS::fUnattended)) != 0)
+        {
+        fDeepSleep = true;
+        }
+    else
+        {
+        fDeepSleep = false;
+        }
+
+    /* if we can't sleep deeply, then simply schedule the sleepDoneCb */
+    if (! fDeepSleep)
+        {
+        uint32_t interval = sec2osticks(CATCFG_T_INTERVAL);
+
+        if (gCatena.GetOperatingFlags() & (1 << 18))
+                interval = 1;
+
+        gLed.Set(LedPattern::Sleeping);
+        os_setTimedCallback(
+                &sensorJob,
+                os_getTime() + sec2osticks(CATCFG_T_INTERVAL),
+                sleepDoneCb
+                );
+        return;
+        }
+
+    /*
+    || ok... now it's time for a deep sleep. do the sleep here, since
+    || the Arduino loop won't do it. Note that nothing will get polled
+    || while we sleep
+    */
+    gLed.Set(LedPattern::Off);
+
+    startTime = millis();
+    gRtc.SetAlarm(CATCFG_T_INTERVAL);
+    gRtc.SleepForAlarm(
+        gRtc.MATCH_HHMMSS,
+        gRtc.SleepMode::IdleCpuAhbApb
+        );
+
+    // add the number of ms that we were asleep to the millisecond timer.
+    // we don't need extreme accuracy.
+    adjust_millis_forward(CATCFG_T_INTERVAL * 1000);
+
+    /* and now... we're fully awake. trigger another measurement */
+    sleepDoneCb(pSendJob);
+    }
+
+static void sleepDoneCb(
+        osjob_t *pJob
+        )
+        {
+        gLed.Set(LedPattern::WarmingUp);
+
+        os_setTimedCallback(
+                &sensorJob,
+                os_getTime() + sec2osticks(CATCFG_T_WARMUP),
+                warmupDoneCb
+                );
+        }
+
+static void warmupDoneCb(
+    osjob_t *pJob
+    )
+    {
+    startSendingUplink();
+    }
