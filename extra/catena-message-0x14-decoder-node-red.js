@@ -2,8 +2,19 @@
 // This Node-RED decoding function decodes the record sent by the Catena 4450
 // M101 power monitor application.
 // Written in a big hurry, so no points for style
+var b;
 
-var b = msg.payload;  // pick up data for convenience; just saves typing.
+if ("payload_raw" in msg)
+    {
+    // the console already decoded this
+    b = msg.payload_raw;  // pick up data for convenience
+    // msg.payload_fields still has the decoded data
+    }
+else
+    {
+    // no console debug
+    b = msg.payload;  // pick up data for conveneince
+    }
 
 // an empty table to which we'll add result fields:
 //

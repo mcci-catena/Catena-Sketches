@@ -1,8 +1,19 @@
 // JavaScript source code
 // This Node-RED decoding function decodes the record sent by the Catena 4460
 // air-quality index application.
+var b;
 
-var b = msg.payload;  // pick up data for convenience; just saves typing.
+if ("payload_raw" in msg)
+    {
+    // the console already decoded this
+    b = msg.payload_raw;  // pick up data for convenience
+    // msg.payload_fields still has the decoded data
+    }
+else
+    {
+    // no console debug
+    b = msg.payload;  // pick up data for conveneince
+    }
 
 // an empty table to which we'll add result fields:
 //
@@ -88,7 +99,7 @@ if (flags & 0x20)  // get the air-quality index
     var mant1 = (rawUflt16 & 0xFFF) / 4096.0;
     var f_unscaled = mant1 * Math.pow(2, exp1 - 15);
     var aqi = f_unscaled * 512;
-    result.aqi = aqi;
+    result.iaq = aqi;
 }
 
 // now update msg with the new payload and new .local field
