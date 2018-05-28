@@ -98,9 +98,25 @@ if (flags & 0x20)  // get the air-quality index
     var exp1 = rawUflt16 >> 12;
     var mant1 = (rawUflt16 & 0xFFF) / 4096.0;
     var f_unscaled = mant1 * Math.pow(2, exp1 - 15);
-    var aqi = f_unscaled * 512;
-    result.iaq = aqi;
+    var iaq = f_unscaled * 512;
+    result.iaq = iaq;
 }
+
+if (flags & 0x40)  // get the gas resistance
+{
+    var rawUflt16 = (b[i] << 8) + b[i + 1];
+    i += 2;
+
+    var exp1 = rawUflt16 >> 12;
+    var mant1 = (rawUflt16 & 0xFFF) / 4096.0;
+    var f_unscaled = mant1 * Math.pow(2, exp1 - 15);
+
+    var logGasR = f_unscaled * 16;
+    var gasR = Math.pow(10, logGasR);
+    result.r_gas = gasR;
+    result.log_r_gas = logGasR;
+}
+
 
 // now update msg with the new payload and new .local field
 // the old msg.payload is overwritten.
