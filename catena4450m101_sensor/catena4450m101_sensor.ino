@@ -50,14 +50,26 @@ enum    {
         // add measurement and broadcast time, but we attempt
         // to compensate for the gross effects below.
         CATCFG_T_CYCLE = 6 * 60,        // every 6 minutes
+        CATCFG_T_CYCLE_TEST = 30,       // every 10 seconds
         };
 
 /* additional timing parameters; ususually you don't change these. */
 enum    {
         CATCFG_T_WARMUP = 1,
         CATCFG_T_SETTLE = 5,
-        CATCFG_T_INTERVAL = CATCFG_T_CYCLE - (CATCFG_T_WARMUP +
-                                                CATCFG_T_SETTLE),
+        CATCFG_T_OVERHEAD = (CATCFG_T_WARMUP + CATCFG_T_SETTLE),
+        };
+
+constexpr uint32_t CATCFG_GetInterval(uint32_t tCycle)
+        {
+        return (tCycle < CATCFG_T_OVERHEAD)
+                ? CATCFG_T_OVERHEAD 
+                : tCycle - CATCFG_T_OVERHEAD
+                ;
+        }
+
+enum    {
+        CATCFG_T_INTERVAL = CATCFG_GetInterval(CATCFG_T_CYCLE),
         };
 
 // forwards
@@ -83,7 +95,7 @@ dNdT_getFrac(
 |
 \****************************************************************************/
 
-static const char sVersion[] = "0.1.8";
+static const char sVersion[] = "0.2.0";
 
 /****************************************************************************\
 |
@@ -556,7 +568,7 @@ sendBufferDoneCb(
                 os_getTime() + sec2osticks(CATCFG_T_SETTLE),
                 pFn
                 );
-            }
+        }
 
 static void
 txFailedDoneCb(
@@ -584,9 +596,14 @@ static void settleDoneCb(
         )
         {
         uint32_t startTime;
+        bool const fDeepSleepTest = gCatena.GetOperatingFlags() & (1 << 19);
         bool fDeepSleep;
 
-        if (Serial.dtr() || fHasPower1 || (gCatena.GetOperatingFlags() & (1 << 17)))
+        if (fDeepSleepTest)
+                {
+                fDeepSleep = true;
+                }
+        else if (Serial.dtr() || fHasPower1 || (gCatena.GetOperatingFlags() & (1 << 17)))
                 {
                 fDeepSleep = false;
                 }
@@ -606,11 +623,16 @@ static void settleDoneCb(
 
                 if (fDeepSleep)
                         {
-                        gCatena.SafePrintf("using deep sleep (USB will disconnect) in 30 secs: ");
+                        const uint32_t deepSleepDelay = fDeepSleepTest ? 10 : 30;
+
+                        gCatena.SafePrintf("using deep sleep in %u secs (USB will disconnect while asleep): ",
+                                           deepSleepDelay
+                                           );
+
                         // sleep and print
                         gLed.Set(LedPattern::TwoShort);
 
-                        for (auto n = 30; n > 0; --n)
+                        for (auto n = deepSleepDelay; n > 0; --n)
                                 {
                                 uint32_t tNow = millis();
 
@@ -622,6 +644,12 @@ static void settleDoneCb(
                                 gCatena.SafePrintf(".");
                                 }
                         gCatena.SafePrintf("\nStarting deep sleep.\n");
+                        uint32_t tNow = millis();
+                        while (uint32_t(millis() - tNow) < 100)
+                                {
+                                gCatena.poll();
+                                yield();
+                                }
                         }
                 else
                         gCatena.SafePrintf("using light sleep\n");
@@ -652,17 +680,25 @@ static void settleDoneCb(
         || while we sleep. We can't poll if we're polling power.
         */
         gLed.Set(LedPattern::Off);
+        USBDevice.detach();
 
         startTime = millis();
-        gRtc.SetAlarm(CATCFG_T_INTERVAL);
+        uint32_t const sleepInterval = CATCFG_GetInterval(
+                        fDeepSleepTest ? CATCFG_T_CYCLE_TEST : CATCFG_T_CYCLE
+                        );
+
+        gRtc.SetAlarm(sleepInterval);
         gRtc.SleepForAlarm(
                 gRtc.MATCH_HHMMSS,
-                gRtc.SleepMode::IdleCpuAhbApb
+                // gRtc.SleepMode::IdleCpuAhbApb
+                gRtc.SleepMode::DeepSleep
                 );
 
         // add the number of ms that we were asleep to the millisecond timer.
         // we don't need extreme accuracy.
-        adjust_millis_forward(CATCFG_T_INTERVAL * 1000);
+        adjust_millis_forward(sleepInterval * 1000);
+
+        USBDevice.attach();
 
         /* and now... we're awake again. trigger another measurement */
         sleepDoneCb(pSendJob);

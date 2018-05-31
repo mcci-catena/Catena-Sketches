@@ -3,13 +3,13 @@
 Module:  catena4450m102_pond.ino
 
 Function:
-	Code for the electric sensor with Catena 4450-M101.
+        Code for the electric sensor with Catena 4450-M101.
 
 Copyright notice:
         See LICENSE file accompanying this project
 
 Author:
-	Terry Moore, MCCI Corporation	March 2017
+        Terry Moore, MCCI Corporation	March 2017
 
 */
 
@@ -54,14 +54,26 @@ enum    {
         // add measurement and broadcast time, but we attempt
         // to compensate for the gross effects below.
         CATCFG_T_CYCLE = 6 * 60,        // every 6 minutes
+        CATCFG_T_CYCLE_TEST = 30,       // every 10 seconds
         };
 
 /* additional timing parameters; ususually you don't change these. */
 enum    {
         CATCFG_T_WARMUP = 1,
         CATCFG_T_SETTLE = 5,
-        CATCFG_T_INTERVAL = CATCFG_T_CYCLE - (CATCFG_T_WARMUP +
-                                                CATCFG_T_SETTLE),
+        CATCFG_T_OVERHEAD = (CATCFG_T_WARMUP + CATCFG_T_SETTLE),
+        };
+
+constexpr uint32_t CATCFG_GetInterval(uint32_t tCycle)
+        {
+        return (tCycle < CATCFG_T_OVERHEAD)
+                ? CATCFG_T_OVERHEAD 
+                : tCycle - CATCFG_T_OVERHEAD
+                ;
+        }
+
+enum    {
+        CATCFG_T_INTERVAL = CATCFG_GetInterval(CATCFG_T_CYCLE),
         };
 
 enum    {
@@ -87,7 +99,7 @@ void sensorJob_cb(osjob_t *pJob);
 |
 \****************************************************************************/
 
-static const char sVersion[] = "0.1.9";
+static const char sVersion[] = "0.2.0";
 
 /****************************************************************************\
 |
@@ -139,7 +151,7 @@ uint8_t kPinPower1P2;
 cTotalizer gPower1P1;
 cTotalizer gPower1P2;
 
-//  the job that's used to synchronize us with the LMIC code
+//  the LMIC job that's used to synchronize us with the LMIC code
 static osjob_t sensorJob;
 
 // debug flag for throttling sleep prints
@@ -164,14 +176,14 @@ Definition:
             );
 
 Description:
-	This function is called by the Arduino framework after
-	basic framework has been initialized. We initialize the sensors
-	that are present on the platform, set up the LoRaWAN connection,
+        This function is called by the Arduino framework after
+        basic framework has been initialized. We initialize the sensors
+        that are present on the platform, set up the LoRaWAN connection,
         and (ultimately) return to the framework, which then calls loop()
         forever.
 
 Returns:
-	No explicit result.
+        No explicit result.
 
 */
 
@@ -308,6 +320,8 @@ uint32_t setup_platform()
                 fHasWaterTemp = flags & CatenaBase::fHasWaterOneWire;
                 fSoilSensor = flags & CatenaBase::fHasSoilProbe;
                 }
+
+        return flags;
         }
 
 void setup_sensors(void)
@@ -553,7 +567,7 @@ txFailedDoneCb(
 
 
 //
-// the following API is added to delay.c, .h in the BSP. It adjust millis()
+// the following API is added to delay.c, .h in the BSP. It adjusts millis()
 // forward after a deep sleep.
 //
 // extern "C" { void adjust_millis_forward(unsigned); };
@@ -567,9 +581,14 @@ static void settleDoneCb(
         )
         {
         uint32_t startTime;
+        bool const fDeepSleepTest = gCatena.GetOperatingFlags() & (1 << 19);
         bool fDeepSleep;
 
-        if (Serial.dtr() || fHasPower1 || (gCatena.GetOperatingFlags() & (1 << 17)))
+        if (fDeepSleepTest)
+                {
+                fDeepSleep = true;
+                }
+        else if (Serial.dtr() || fHasPower1 || (gCatena.GetOperatingFlags() & (1 << 17)))
                 {
                 fDeepSleep = false;
                 }
@@ -589,11 +608,16 @@ static void settleDoneCb(
 
                 if (fDeepSleep)
                         {
-                        gCatena.SafePrintf("using deep sleep (USB will disconnect) in 30 secs: ");
+                        const uint32_t deepSleepDelay = fDeepSleepTest ? 10 : 30;
+
+                        gCatena.SafePrintf("using deep sleep in %u secs (USB will disconnect while asleep): ",
+                                           deepSleepDelay
+                                           );
+
                         // sleep and print
                         gLed.Set(LedPattern::TwoShort);
 
-                        for (auto n = 30; n > 0; --n)
+                        for (auto n = deepSleepDelay; n > 0; --n)
                                 {
                                 uint32_t tNow = millis();
 
@@ -605,6 +629,12 @@ static void settleDoneCb(
                                 gCatena.SafePrintf(".");
                                 }
                         gCatena.SafePrintf("\nStarting deep sleep.\n");
+                        uint32_t tNow = millis();
+                        while (uint32_t(millis() - tNow) < 100)
+                                {
+                                gCatena.poll();
+                                yield();
+                                }
                         }
                 else
                         gCatena.SafePrintf("using light sleep\n");
@@ -635,17 +665,25 @@ static void settleDoneCb(
         || while we sleep. We can't poll if we're polling power.
         */
         gLed.Set(LedPattern::Off);
+        USBDevice.detach();
 
         startTime = millis();
-        gRtc.SetAlarm(CATCFG_T_INTERVAL);
+        uint32_t const sleepInterval = CATCFG_GetInterval(
+                        fDeepSleepTest ? CATCFG_T_CYCLE_TEST : CATCFG_T_CYCLE
+                        );
+
+        gRtc.SetAlarm(sleepInterval);
         gRtc.SleepForAlarm(
                 gRtc.MATCH_HHMMSS,
-                gRtc.SleepMode::IdleCpuAhbApb
+                // gRtc.SleepMode::IdleCpuAhbApb
+                gRtc.SleepMode::DeepSleep
                 );
 
         // add the number of ms that we were asleep to the millisecond timer.
         // we don't need extreme accuracy.
-        adjust_millis_forward(CATCFG_T_INTERVAL * 1000);
+        adjust_millis_forward(sleepInterval * 1000);
+
+        USBDevice.attach();
 
         /* and now... we're awake again. trigger another measurement */
         sleepDoneCb(pSendJob);
