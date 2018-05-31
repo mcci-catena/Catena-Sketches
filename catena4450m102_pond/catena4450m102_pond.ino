@@ -1,5 +1,3 @@
-/* catena4450m102_pond.ino	Sat Nov 11 2017 18:58:23 tmm */
-
 /*
 
 Module:  catena4450m102_pond.ino
@@ -7,34 +5,11 @@ Module:  catena4450m102_pond.ino
 Function:
 	Code for the electric sensor with Catena 4450-M101.
 
-Version:
-	V0.1.8	Sat Nov 11 2017 18:58:23 tmm	Edit level 3
-
 Copyright notice:
-	This file copyright (C) 2017 by
-
-		MCCI Corporation
-		3520 Krums Corners Road
-		Ithaca, NY  14850
-
-	An unpublished work.  All rights reserved.
-
-	This file is proprietary information, and may not be disclosed or
-	copied without the prior permission of MCCI Corporation.
+        See LICENSE file accompanying this project
 
 Author:
 	Terry Moore, MCCI Corporation	March 2017
-
-Revision history:
-   0.1.0  Fri Mar 10 2017 21:42:21  tmm
-	Module created.
-
-   0.1.1  Tue Mar 28 2017 19:52:20  tmm
-	Fix bug: not reading current lux value because sensor was not in
-	continuous mode. Add 150uA of current draw.
-
-   0.1.8  Sat Nov 11 2017 18:58:23  tmm
-        Rebuild with latest libraries to fix T < 0 deg C encoding problem.
 
 */
 
@@ -57,10 +32,6 @@ Revision history:
 #include <hal/hal.h>
 #include <mcciadk_baselib.h>
 
-#ifdef ARDUINO_ARCH_SAMD
-# include <delay.h>
-#endif
-
 #include <OneWire.h>
 #include <DallasTemperature.h>
 #include <SHT1x.h>
@@ -70,22 +41,23 @@ Revision history:
 
 /****************************************************************************\
 |
-|		Manifest constants & typedefs.
-|
-|	This is strictly for private types and constants which will not
-|	be exported.
+|       Manifest constants & typedefs.
 |
 \****************************************************************************/
 
 using namespace McciCatena;
-using ThisCatena = Catena;
 
-/* how long do we wait between measurements (in seconds) */
+/* how long do we wait between transmissions? (in seconds) */
 enum    {
-        // set this to interval between measurements, in seconds
+        // set this to interval between transmissions, in seconds
         // Actual time will be a little longer because have to
-        // add measurement and broadcast time.
-        CATCFG_T_CYCLE = 6 * 60,        // ten messages/hour
+        // add measurement and broadcast time, but we attempt
+        // to compensate for the gross effects below.
+        CATCFG_T_CYCLE = 6 * 60,        // every 6 minutes
+        };
+
+/* additional timing parameters; ususually you don't change these. */
+enum    {
         CATCFG_T_WARMUP = 1,
         CATCFG_T_SETTLE = 5,
         CATCFG_T_INTERVAL = CATCFG_T_CYCLE - (CATCFG_T_WARMUP +
@@ -106,59 +78,48 @@ static void sleepDoneCb(osjob_t *pSendJob);
 static Arduino_LoRaWAN::SendBufferCbFn sendBufferDoneCb;
 void fillBuffer(TxBuffer_t &b);
 void startSendingUplink(void);
+void sensorJob_cb(osjob_t *pJob);
 
 
 /****************************************************************************\
 |
-|	Read-only data.
-|
-|	If program is to be ROM-able, these must all be tagged read-only
-|	using the ROM storage class; they may be global.
+|       Read-only data.
 |
 \****************************************************************************/
 
-static const char sVersion[] = "0.1.8";
+static const char sVersion[] = "0.1.9";
 
 /****************************************************************************\
 |
-|	VARIABLES:
-|
-|	If program is to be ROM-able, these must be initialized
-|	using the BSS keyword.  (This allows for compilers that require
-|	every variable to have an initializer.)  Note that only those
-|	variables owned by this module should be declared here, using the BSS
-|	keyword; this allows for linkers that dislike multiple declarations
-|	of objects.
+|       Variables.
 |
 \****************************************************************************/
 
-// globals
-ThisCatena gCatena;
+// the Catena instance
+Catena gCatena;
 
 //
 // the LoRaWAN backhaul.  Note that we use the
-// ThisCatena version so it can provide hardware-specific
+// Catena version so it can provide hardware-specific
 // information to the base class.
 //
-ThisCatena::LoRaWAN gLoRaWAN;
+Catena::LoRaWAN gLoRaWAN;
 
-//
-// the LED
-//
-StatusLed gLed (ThisCatena::PIN_STATUS_LED);
+// the LED instance object
+StatusLed gLed (Catena::PIN_STATUS_LED);
 
-#ifdef ARDUINO_ARCH_SAMD
 // the RTC instance, used for sleeping
+#ifdef ARDUINO_ARCH_SAMD
 CatenaRTC gRtc;
 #endif /* ARDUINO_ARCH_SAMD*/
 
-//   The temperature/humidity sensor
-Adafruit_BME280 bme; // The default initalizer creates an I2C connection
-bool fBme;
+// The BME280 instance, for the temperature/humidity sensor
+Adafruit_BME280 gBME280; // The default initalizer creates an I2C connection
+bool fBme;               // true if BME280 is in use
 
 //   The LUX sensor
-BH1750 bh1750;
-bool fLux;
+BH1750 gBH1750;
+bool fLux;              // true if BH1750 is in use
 
 //   The submersible temperature sensor
 OneWire oneWire(PIN_ONE_WIRE);
@@ -180,15 +141,16 @@ cTotalizer gPower1P2;
 
 //  the job that's used to synchronize us with the LMIC code
 static osjob_t sensorJob;
-void sensorJob_cb(osjob_t *pJob);
 
-// function for scaling power
-static uint16_t
-dNdT_getFrac(
-        uint32_t deltaC,
-        uint32_t delta_ms
-        );
-
+// debug flag for throttling sleep prints
+bool g_fPrintedSleeping = false;
+
+/****************************************************************************\
+|
+|       Code.
+|
+\****************************************************************************/
+
 /*
 
 Name:	setup()
@@ -217,15 +179,55 @@ void setup(void)
         {
         gCatena.begin();
 
-        gCatena.SafePrintf("Catena 4450 sensor1 V%s\n", sVersion);
+        setup_platform();
+        setup_sensors();
 
+        /* for 4551, we need wider tolerances, it seems */
+#if defined(ARDUINO_ARCH_STM32)
+        LMIC_setClockError(10 * 65536 / 100);
+#endif
+
+        /* trigger a join by sending the first packet */
+        if (!(gCatena.GetOperatingFlags() &
+                static_cast<uint32_t>(gCatena.OPERATING_FLAGS::fManufacturingTest)))
+                {
+                gLed.Set(LedPattern::Joining);
+
+                /* warm up the BME280 by discarding a measurement */
+                if (fBme)
+                        (void)gBME280.readTemperature();
+
+                /* trigger a join by sending the first packet */
+                startSendingUplink();
+                }
+        }
+
+uint32_t setup_platform()
+        {
+        // if running unattended, don't wait for USB connect.
+        if (!(gCatena.GetOperatingFlags() &
+                static_cast<uint32_t>(gCatena.OPERATING_FLAGS::fUnattended)))
+                {
+                while (!Serial)
+                        /* wait for USB attach */
+                        yield();
+                }
+
+        gCatena.SafePrintf("\n");
+        gCatena.SafePrintf("-------------------------------------------------------------------------------\n");
+        gCatena.SafePrintf("This is the catena4450m102_pond program V%s.\n", sVersion);
+        gCatena.SafePrintf("Enter 'help' for a list of commands.\n");
+        gCatena.SafePrintf("(remember to select 'Line Ending: Newline' at the bottom of the monitor window.)\n");
+        gCatena.SafePrintf("--------------------------------------------------------------------------------\n");
+        gCatena.SafePrintf("\n");
+
+        // set up the LED
         gLed.begin();
         gCatena.registerObject(&gLed);
+        gLed.Set(LedPattern::FastFlash);
 
-#ifdef ARDUINO_ARCH_SAMD
         // set up the RTC object
         gRtc.begin();
-#endif
 
         gCatena.SafePrintf("LoRaWAN init: ");
         if (!gLoRaWAN.begin(&gCatena))
@@ -239,14 +241,15 @@ void setup(void)
                 gCatena.registerObject(&gLoRaWAN);
                 }
 
-        ThisCatena::UniqueID_string_t CpuIDstring;
+        // display the CPU unique ID
+        Catena::UniqueID_string_t CpuIDstring;
 
         gCatena.SafePrintf("CPU Unique ID: %s\n",
                 gCatena.GetUniqueIDstring(&CpuIDstring)
                 );
 
         /* find the platform */
-        const ThisCatena::EUI64_buffer_t *pSysEUI = gCatena.GetSysEUI();
+        const Catena::EUI64_buffer_t *pSysEUI = gCatena.GetSysEUI();
 
         uint32_t flags;
         const CATENA_PLATFORM * const pPlatform = gCatena.GetPlatform();
@@ -273,30 +276,6 @@ void setup(void)
                 {
                 gCatena.SafePrintf("**** no platform, check provisioning ****\n");
                 flags = 0;
-                }
-
-
-        /* initialize the lux sensor */
-        if (flags & CatenaBase::fHasLuxRohm)
-                {
-                bh1750.begin();
-                fLux = true;
-                bh1750.configure(BH1750_CONTINUOUS_HIGH_RES_MODE_2);
-                }
-        else
-                {
-                fLux = false;
-                }
-
-        /* initialize the BME280 */
-        if (!bme.begin(BME280_ADDRESS, Adafruit_BME280::OPERATING_MODE::Sleep))
-                {
-                gCatena.SafePrintf("No BME280 found: check wiring\n");
-                fBme = false;
-                }
-        else
-                {
-                fBme = true;
                 }
 
         /* is it modded? */
@@ -329,6 +308,34 @@ void setup(void)
                 fHasWaterTemp = flags & CatenaBase::fHasWaterOneWire;
                 fSoilSensor = flags & CatenaBase::fHasSoilProbe;
                 }
+        }
+
+void setup_sensors(void)
+        {
+        uint32_t const flags = gCatena.GetPlatformFlags();
+
+        /* initialize the lux sensor */
+        if (flags & Catena::fHasLuxRohm)
+                {
+                gBH1750.begin();
+                fLux = true;
+                gBH1750.configure(BH1750_POWER_DOWN);
+                }
+        else
+                {
+                fLux = false;
+                }
+
+        /* initialize the BME280 */
+        if (!gBME280.begin(BME280_ADDRESS, Adafruit_BME280::OPERATING_MODE::Sleep))
+                {
+                gCatena.SafePrintf("No BME280 found: defective board or incorrect platform\n");
+                fBme = false;
+                }
+        else
+                {
+                fBme = true;
+                }
 
         if (fHasWaterTemp)
                 {
@@ -341,41 +348,6 @@ void setup(void)
                 else
                         fFoundWaterTemp = true;
                 }
-
-        /* now, we kick off things by sending our first message */
-        gLed.Set(LedPattern::Joining);
-
-        // unit testing for the scaling functions
-        //gCatena.SafePrintf(
-        //        "dNdT_getFrac tests: "
-        //        "0/0: %04x 90/6m: %04x 89/6:00.1: %04x 1439/6m: %04x\n",
-        //        dNdT_getFrac(0, 0),
-        //        dNdT_getFrac(90, 6 * 60 * 1000),
-        //        dNdT_getFrac(89, 6 * 60 * 1000 + 100),
-        //        dNdT_getFrac(1439, 6 * 60 * 1000)
-        //        );
-        //gCatena.SafePrintf(
-        //        "dNdT_getFrac tests: "
-        //        "1/6m: %04x 20/6m: %04x 1/60:00.1: %04x 1440/5:59.99: %04x\n",
-        //        dNdT_getFrac(1, 6 * 60 * 1000),
-        //        dNdT_getFrac(20, 6 * 60 * 1000),
-        //        dNdT_getFrac(1, 60 * 60 * 1000 + 100),
-        //        dNdT_getFrac(1440, 6 * 60 * 1000 - 10)
-        //        );
-
-        /* warm up the BME280 by discarding a measurement */
-        if (fBme)
-                (void)bme.readTemperature();
-
-        /* for 4551, we need wider tolerances, it seems */
-#if defined(ARDUINO_ARCH_STM32)
-        LMIC_setClockError(10 * 65536 / 100);
-#endif
-
-        /* trigger a join by sending the first packet */
-        if (! (gCatena.GetOperatingFlags() &
-                        static_cast<uint32_t>(gCatena.OPERATING_FLAGS::fManufacturingTest)))
-                startSendingUplink();
         }
 
 // The Arduino loop routine -- in our case, we just drive the other loops.
@@ -384,130 +356,119 @@ void setup(void)
 void loop()
         {
         gCatena.poll();
+
+        /* for mfg test, don't tx, just fill */
         if (gCatena.GetOperatingFlags() &
                 static_cast<uint32_t>(gCatena.OPERATING_FLAGS::fManufacturingTest))
                 {
                 TxBuffer_t b;
                 fillBuffer(b);
-                }
-        }
-
-static uint16_t dNdT_getFrac(
-        uint32_t deltaC,
-        uint32_t delta_ms
-        )
-        {
-        if (delta_ms == 0 || deltaC == 0)
-                return 0;
-
-        // this is a value in [0,1)
-        float dNdTperHour = float(deltaC * 250) / float(delta_ms);
-
-        if (dNdTperHour <= 0)
-                return 0;
-        else if (dNdTperHour >= 1)
-                return 0xFFFF;
-        else
-                {
-                int iExp;
-                float normalValue;
-                normalValue = frexpf(dNdTperHour, &iExp);
-
-                // dNdTperHour is supposed to be in [0..1), so useful exp
-                // is [0..-15]
-                iExp += 15;
-                if (iExp < 0)
-                        iExp = 0;
-                if (iExp > 15)
-                        return 0xFFFF;
-
-
-                return (uint16_t)((iExp << 12u) + (unsigned) scalbnf(normalValue, 12));
+                delay(1000);
                 }
         }
 
 void fillBuffer(TxBuffer_t &b)
-{
-  b.begin();
-  FlagsSensor3 flag;
-
-  flag = FlagsSensor3(0);
-
-  b.put(FormatSensor3); /* the flag for this record format */
-  uint8_t * const pFlag = b.getp();
-  b.put(0x00); /* will be set to the flags */
-
-  // vBat is sent as 5000 * v
-  float vBat = gCatena.ReadVbat();
-  gCatena.SafePrintf("vBat:    %d mV\n", (int) (vBat * 1000.0f));
-  b.putV(vBat);
-  flag |= FlagsSensor3::FlagVbat;
-
-  uint32_t bootCount;
-  if (gCatena.getBootCount(bootCount))
         {
-        b.putBootCountLsb(bootCount);
-        flag |= FlagsSensor3::FlagBoot;
-        }
+        uint32_t tLuxBegin;
 
-  if (fBme)
-       {
-       Adafruit_BME280::Measurements m = bme.readTemperaturePressureHumidity();
-       // temperature is 2 bytes from -0x80.00 to +0x7F.FF degrees C
-       // pressure is 2 bytes, hPa * 10.
-       // humidity is one byte, where 0 == 0/256 and 0xFF == 255/256.
-       gCatena.SafePrintf(
-                "BME280:  T: %d P: %d RH: %d\n",
-                (int) m.Temperature,
-                (int) m.Pressure,
-                (int) m.Humidity
-                );
-       b.putT(m.Temperature);
-       b.putP(m.Pressure);
-       b.putRH(m.Humidity);
-
-       flag |= FlagsSensor3::FlagTPH;
-       }
-
-  if (fLux)
-        {
-        /* Get a new sensor event */
-        uint16_t light;
-
-        light = bh1750.readLightLevel();
-        gCatena.SafePrintf("BH1750:  %u lux\n", light);
-        b.putLux(light);
-        flag |= FlagsSensor3::FlagLux;
-        }
-
-  if (fHasWaterTemp)
-        {
-        if (! fFoundWaterTemp)
+        /* start a Lux measurement */
+        if (fLux)
                 {
-                sensor_WaterTemp.begin();
-                if (sensor_WaterTemp.getDeviceCount() != 0)
-                        fFoundWaterTemp = true;
+                gBH1750.configure(BH1750_ONE_TIME_HIGH_RES_MODE_2);
+                tLuxBegin = millis();
                 }
-        if (fFoundWaterTemp)
-                {
-                sensor_WaterTemp.requestTemperatures();
-                float waterTempC = sensor_WaterTemp.getTempCByIndex(0);
+        else
+                tLuxBegin = 0;
 
-                gCatena.SafePrintf("Water:   T: %d\n", (int) waterTempC);
-                if (waterTempC <= 0.0)
+        /* meanwhile, fill the buffer */
+        b.begin();
+        FlagsSensor3 flag;
+
+        flag = FlagsSensor3(0);
+
+        b.put(FormatSensor3); /* the flag for this record format */
+        uint8_t * const pFlag = b.getp();
+        b.put(0x00); /* will be set to the flags */
+
+        // vBat is sent as 5000 * v
+        float vBat = gCatena.ReadVbat();
+        gCatena.SafePrintf("vBat:    %d mV\n", (int)(vBat * 1000.0f));
+        b.putV(vBat);
+        flag |= FlagsSensor3::FlagVbat;
+
+        uint32_t bootCount;
+        if (gCatena.getBootCount(bootCount))
+                {
+                b.putBootCountLsb(bootCount);
+                flag |= FlagsSensor3::FlagBoot;
+                }
+
+        if (fBme)
+                {
+                Adafruit_BME280::Measurements m = gBME280.readTemperaturePressureHumidity();
+                // temperature is 2 bytes from -0x80.00 to +0x7F.FF degrees C
+                // pressure is 2 bytes, hPa * 10.
+                // humidity is one byte, where 0 == 0/256 and 0xFF == 255/256.
+                gCatena.SafePrintf(
+                        "BME280:  T: %d P: %d RH: %d\n",
+                        (int)m.Temperature,
+                        (int)m.Pressure,
+                        (int)m.Humidity
+                        );
+                b.putT(m.Temperature);
+                b.putP(m.Pressure);
+                b.putRH(m.Humidity);
+
+                flag |= FlagsSensor3::FlagTPH;
+                }
+
+        if (fLux)
+                {
+                /* Measure light. */
+                uint16_t light;
+                uint32_t tMeas = gBH1750.getMeasurementMillis();
+
+                while (uint32_t(millis() - tLuxBegin) < tMeas)
                         {
-                        // discard data and reset flag
-                        // so we'll check again next time
-                        fFoundWaterTemp = false;
+                        gCatena.poll();
+                        yield();
                         }
-                else
+
+                light = gBH1750.readLightLevel();
+                gCatena.SafePrintf("BH1750:  %u lux\n", light);
+                b.putLux(light);
+                flag |= FlagsSensor3::FlagLux;
+                }
+
+
+        if (fHasWaterTemp)
+                {
+                if (!fFoundWaterTemp)
                         {
-                        // transmit the measurement
-                        b.putT(waterTempC);
-                        flag |= FlagsSensor3::FlagWater;
+                        sensor_WaterTemp.begin();
+                        if (sensor_WaterTemp.getDeviceCount() != 0)
+                                fFoundWaterTemp = true;
+                        }
+                if (fFoundWaterTemp)
+                        {
+                        sensor_WaterTemp.requestTemperatures();
+                        float waterTempC = sensor_WaterTemp.getTempCByIndex(0);
+
+                        gCatena.SafePrintf("Water:   T: %d\n", (int)waterTempC);
+                        if (waterTempC <= 0.0)
+                                {
+                                // discard data and reset flag
+                                // so we'll check again next time
+                                fFoundWaterTemp = false;
+                                }
+                        else
+                                {
+                                // transmit the measurement
+                                b.putT(waterTempC);
+                                flag |= FlagsSensor3::FlagWater;
+                                }
                         }
                 }
-        }
 
         /*
         || Measure and transmit the "soil sensor" transducer
@@ -516,11 +477,11 @@ void fillBuffer(TxBuffer_t &b)
         || not being used, but otherwise adapts nicely.
         */
         if (fSoilSensor)
-        {
+                {
                 /* display temp and RH. library doesn't tell whether sensor is disconnected but gives us huge values instead */
                 float SoilT = sensor_Soil.readTemperatureC();
                 if (SoilT <= 100.0)
-                {
+                        {
                         float SoilRH = sensor_Soil.readHumidity();
 
                         b.putT(SoilT);
@@ -528,57 +489,57 @@ void fillBuffer(TxBuffer_t &b)
                         gCatena.SafePrintf("Soil:    T: %d RH: %d\n", (int)SoilT, (int)SoilRH);
 
                         flag |= FlagsSensor3::FlagSoilTH;
+                        }
                 }
+
+        *pFlag = uint8_t(flag);
         }
 
-  *pFlag = uint8_t(flag);
-}
-
 void startSendingUplink(void)
-{
-  TxBuffer_t b;
-  LedPattern savedLed = gLed.Set(LedPattern::Measuring);
-
-  fillBuffer(b);
-  if (savedLed != LedPattern::Joining)
-          gLed.Set(LedPattern::Sending);
-  else
-          gLed.Set(LedPattern::Joining);
-
-  bool fConfirmed = false;
-  if (gCatena.GetOperatingFlags() & (1 << 16))
         {
-        gCatena.SafePrintf("requesting confirmed tx");
-          fConfirmed = true;
-          }
+        TxBuffer_t b;
+        LedPattern savedLed = gLed.Set(LedPattern::Measuring);
 
-  gLoRaWAN.SendBuffer(b.getbase(), b.getn(), sendBufferDoneCb, NULL, fConfirmed);
-}
+        fillBuffer(b);
+        if (savedLed != LedPattern::Joining)
+                gLed.Set(LedPattern::Sending);
+        else
+                gLed.Set(LedPattern::Joining);
+
+        bool fConfirmed = false;
+        if (gCatena.GetOperatingFlags() & (1 << 16))
+                {
+                gCatena.SafePrintf("requesting confirmed tx");
+                fConfirmed = true;
+                }
+
+        gLoRaWAN.SendBuffer(b.getbase(), b.getn(), sendBufferDoneCb, NULL, fConfirmed);
+        }
 
 static void
 sendBufferDoneCb(
-    void *pContext,
-    bool fStatus
-    )
-    {
-    osjobcb_t pFn;
+        void *pContext,
+        bool fStatus
+        )
+        {
+        osjobcb_t pFn;
 
-    gLed.Set(LedPattern::Settling);
-    if (! fStatus)
-        {
-        gCatena.SafePrintf("send buffer failed\n");
-        pFn = txFailedDoneCb;
+        gLed.Set(LedPattern::Settling);
+        if (!fStatus)
+                {
+                gCatena.SafePrintf("send buffer failed\n");
+                pFn = txFailedDoneCb;
+                }
+        else
+                {
+                pFn = settleDoneCb;
+                }
+        os_setTimedCallback(
+                &sensorJob,
+                os_getTime() + sec2osticks(CATCFG_T_SETTLE),
+                pFn
+                );
         }
-    else
-        {
-        pFn = settleDoneCb;
-        }
-    os_setTimedCallback(
-            &sensorJob,
-            os_getTime()+sec2osticks(CATCFG_T_SETTLE),
-            pFn
-            );
-    }
 
 static void
 txFailedDoneCb(
@@ -597,61 +558,98 @@ txFailedDoneCb(
 //
 // extern "C" { void adjust_millis_forward(unsigned); };
 //
-// If you don't have it, check the following commit at github:
-// https://github.com/mcci-catena/ArduinoCore-samd/commit/78d8440dbcd29bf5ac659fd65514268c1334f683
+// If you don't have it, make sure you're running the MCCI Board Support
+// Package for the MCCI Catenas, https://github.com/mcci-catena/arduino-boards
 //
 
 static void settleDoneCb(
-    osjob_t *pSendJob
-    )
-    {
-    uint32_t startTime;
-#ifndef ARDUINO_ARCH_SAMD
-    const bool fDontSleep = true;
-#else
-    const bool fDontSleep =
-        (gCatena.GetOperatingFlags() & (1 << 17)) ||
-         Serial.dtr() || fHasPower1;
-#endif /* ARDUINO_ARCH_SAMD */
-
-    // if connected to USB, don't sleep
-    // ditto if we're monitoring pulses.
-    if (fDontSleep)
+        osjob_t *pSendJob
+        )
         {
-        uint32_t interval = sec2osticks(CATCFG_T_INTERVAL);
+        uint32_t startTime;
+        bool fDeepSleep;
 
-        if (gCatena.GetOperatingFlags() & (1 << 18))
-                interval = 1;
+        if (Serial.dtr() || fHasPower1 || (gCatena.GetOperatingFlags() & (1 << 17)))
+                {
+                fDeepSleep = false;
+                }
+        else if ((gCatena.GetOperatingFlags() &
+                static_cast<uint32_t>(gCatena.OPERATING_FLAGS::fUnattended)) != 0)
+                {
+                fDeepSleep = true;
+                }
+        else
+                {
+                fDeepSleep = false;
+                }
 
-        gLed.Set(LedPattern::Sleeping);
-        os_setTimedCallback(
-                &sensorJob,
-                os_getTime() + sec2osticks(CATCFG_T_INTERVAL),
-                sleepDoneCb
+        if (! g_fPrintedSleeping)
+                {
+                g_fPrintedSleeping = true;
+
+                if (fDeepSleep)
+                        {
+                        gCatena.SafePrintf("using deep sleep (USB will disconnect) in 30 secs: ");
+                        // sleep and print
+                        gLed.Set(LedPattern::TwoShort);
+
+                        for (auto n = 30; n > 0; --n)
+                                {
+                                uint32_t tNow = millis();
+
+                                while (uint32_t(millis() - tNow) < 1000)
+                                        {
+                                        gCatena.poll();
+                                        yield();
+                                        }
+                                gCatena.SafePrintf(".");
+                                }
+                        gCatena.SafePrintf("\nStarting deep sleep.\n");
+                        }
+                else
+                        gCatena.SafePrintf("using light sleep\n");
+                }
+
+
+        // if connected to USB, don't sleep
+        // ditto if we're monitoring pulses.
+        if (! fDeepSleep)
+                {
+                uint32_t interval = sec2osticks(CATCFG_T_INTERVAL);
+
+                if (gCatena.GetOperatingFlags() & (1 << 18))
+                        interval = 1;
+
+                gLed.Set(LedPattern::Sleeping);
+                os_setTimedCallback(
+                        &sensorJob,
+                        os_getTime() + sec2osticks(CATCFG_T_INTERVAL),
+                        sleepDoneCb
+                        );
+                return;
+                }
+
+        /*
+        || ok... now it's time for a deep sleep.  Do the sleep here, since
+        || the Arduino loop won't do it. Note that nothing will get polled
+        || while we sleep. We can't poll if we're polling power.
+        */
+        gLed.Set(LedPattern::Off);
+
+        startTime = millis();
+        gRtc.SetAlarm(CATCFG_T_INTERVAL);
+        gRtc.SleepForAlarm(
+                gRtc.MATCH_HHMMSS,
+                gRtc.SleepMode::IdleCpuAhbApb
                 );
-        return;
+
+        // add the number of ms that we were asleep to the millisecond timer.
+        // we don't need extreme accuracy.
+        adjust_millis_forward(CATCFG_T_INTERVAL * 1000);
+
+        /* and now... we're awake again. trigger another measurement */
+        sleepDoneCb(pSendJob);
         }
-
-#ifdef ARDUINO_ARCH_SAMD
-    /* ok... now it's time for a deep sleep */
-    gLed.Set(LedPattern::Off);
-
-    startTime = millis();
-    gRtc.SetAlarm(CATCFG_T_INTERVAL);
-    gRtc.SleepForAlarm(
-        gRtc.MATCH_HHMMSS,
-        gRtc.SleepMode::IdleCpuAhbApb
-        );
-
-    // add the number of ms that we were asleep to the millisecond timer.
-    // we don't need extreme accuracy.
-    adjust_millis_forward(CATCFG_T_INTERVAL  * 1000);
-
-    /* and now... we're awake again. trigger another measurement */
-    sleepDoneCb(pSendJob);
-#endif /* ARDUINO_ARCH_SAMD */
-
-    }
 
 static void sleepDoneCb(
         osjob_t *pJob
