@@ -17,6 +17,8 @@ Author:
 
 #ifdef ARDUINO_ARCH_SAMD
 # include <CatenaRTC.h>
+#elif defined(ARDUINO_ARCH_STM32)
+# include <CatenaStm32L0Rtc.h>
 #endif
 
 #include <Catena_Led.h>
@@ -67,7 +69,7 @@ enum    {
 constexpr uint32_t CATCFG_GetInterval(uint32_t tCycle)
         {
         return (tCycle < CATCFG_T_OVERHEAD)
-                ? CATCFG_T_OVERHEAD 
+                ? CATCFG_T_OVERHEAD
                 : tCycle - CATCFG_T_OVERHEAD
                 ;
         }
