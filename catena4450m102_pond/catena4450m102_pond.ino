@@ -125,6 +125,8 @@ StatusLed gLed (Catena::PIN_STATUS_LED);
 // the RTC instance, used for sleeping
 #ifdef ARDUINO_ARCH_SAMD
 CatenaRTC gRtc;
+#elif defined(ARDUINO_ARCH_STM32)
+# include <CatenaStm32L0Rtc.h>
 #endif /* ARDUINO_ARCH_SAMD*/
 
 // The BME280 instance, for the temperature/humidity sensor
@@ -216,7 +218,7 @@ void setup(void)
                 }
         }
 
-uint32_t setup_platform()
+void setup_platform()
         {
         // if running unattended, don't wait for USB connect.
         if (!(gCatena.GetOperatingFlags() &
@@ -322,8 +324,6 @@ uint32_t setup_platform()
                 fHasWaterTemp = flags & CatenaBase::fHasWaterOneWire;
                 fSoilSensor = flags & CatenaBase::fHasSoilProbe;
                 }
-
-        return flags;
         }
 
 void setup_sensors(void)
@@ -575,7 +575,7 @@ txFailedDoneCb(
 // extern "C" { void adjust_millis_forward(unsigned); };
 //
 // If you don't have it, make sure you're running the MCCI Board Support
-// Package for the MCCI Catenas, https://github.com/mcci-catena/arduino-boards
+// Package for MCCI Catenas, https://github.com/mcci-catena/arduino-boards
 //
 
 static void settleDoneCb(
@@ -687,7 +687,7 @@ static void settleDoneCb(
 
         USBDevice.attach();
 
-        /* and now... we're awake again. trigger another measurement */
+        /* and now... we're awake again. Go to next state. */
         sleepDoneCb(pSendJob);
         }
 
@@ -705,8 +705,8 @@ static void sleepDoneCb(
         }
 
 static void warmupDoneCb(
-    osjob_t *pJob
-    )
-    {
-    startSendingUplink();
-    }
+        osjob_t *pJob
+        )
+        {
+        startSendingUplink();
+        }

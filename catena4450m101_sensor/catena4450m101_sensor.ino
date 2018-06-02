@@ -204,7 +204,7 @@ void setup(void)
                 }
         }
 
-uint32_t setup_platform()
+void setup_platform()
         {
         // if running unattended, don't wait for USB connect.
         if (!(gCatena.GetOperatingFlags() &
@@ -303,8 +303,6 @@ uint32_t setup_platform()
                 {
                 gCatena.SafePrintf("No mods detected\n");
                 }
-
-        return flags;
         }
 
 void setup_sensors(void)
@@ -589,7 +587,7 @@ txFailedDoneCb(
 // extern "C" { void adjust_millis_forward(unsigned); };
 //
 // If you don't have it, make sure you're running the MCCI Board Support
-// Package for the MCCI Catenas, https://github.com/mcci-catena/arduino-boards
+// Package for MCCI Catenas, https://github.com/mcci-catena/arduino-boards
 //
 
 static void settleDoneCb(
@@ -701,7 +699,7 @@ static void settleDoneCb(
 
         USBDevice.attach();
 
-        /* and now... we're awake again. trigger another measurement */
+        /* and now... we're awake again. Go to next state. */
         sleepDoneCb(pSendJob);
         }
 
@@ -719,8 +717,8 @@ static void sleepDoneCb(
         }
 
 static void warmupDoneCb(
-    osjob_t *pJob
-    )
-    {
-    startSendingUplink();
-    }
+        osjob_t *pJob
+        )
+        {
+        startSendingUplink();
+        }
