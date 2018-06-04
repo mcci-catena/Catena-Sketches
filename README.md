@@ -2,18 +2,24 @@
 
 This repository contains top-level Arduino sketches for the Catena 4xxx family of LoRaWAN remote sensors made by MCCI based on the [Adafruit LoRa Feather M0 LoRa](https://www.adafruit.com/products/3178), [Adafruit Feather M0 Basic](https://www.adafruit.com/products/2772) and so forth.
 
+[![GitHub release](https://img.shields.io/github/release/mcci-catena/Catena-Sketches.svg)](https://github.com/mcci-catena/Catena-Sketches/releases/latest) [![GitHub commits](https://img.shields.io/github/commits-since/mcci-catena/Catena-Sketches/latest.svg)](https://github.com/mcci-catena/Catena-Sketches/compare/v0.3.4...master) [![Build Status](https://travis-ci.org/mcci-catena/Catena-Sketches.svg?branch=master)](https://travis-ci.org/mcci-catena/Catena-Sketches)
+
+
 ![Picture of Catena 4410](extra/assets/MCCI-Catena-4410-1080x620.jpg)
 
 This repository is the top-level repository for the software. In order to build, you will have to download a number of additional libraries from the [MCCI Catena github page](https://github.com/mcci-catena); the repositories needed vary depending on the sketch you want to build. A bash script is provided to simplify this process.
 
 **Contents:**
-<!-- TOC depthFrom:2 -->
+<!-- TOC depthFrom:2 updateOnSave:true -->
 
+- [Getting Started](#getting-started)
 - [Sketch Overview](#sketch-overview)
 	- [Full Sensor Programs](#full-sensor-programs)
 		- [catena4450m101_sensor1](#catena4450m101_sensor1)
 		- [catena4450m102_pond](#catena4450m102_pond)
+		- [catena4450m102_waterlevel](#catena4450m102_waterlevel)
 		- [catena4460_aqi](#catena4460_aqi)
+		- [catena4460_bsec_ulp](#catena4460_bsec_ulp)
 		- [catena4410_sensor1](#catena4410_sensor1)
 	- [Test programs](#test-programs)
 		- [catena4410_test3](#catena4410_test3)
@@ -29,13 +35,17 @@ This repository is the top-level repository for the software. In order to build,
 
 <!-- /TOC -->
 
+## Getting Started
+
+If you're getting started with Catenas, please check the detailed instructions at [catena4450m101_sensor/README.md](https://github.com/mcci-catena/Catena-Sketches/blob/master/catena4450m101_sensor/README.md).
+
 ## Sketch Overview
 
-There are two kinds of sketches here: test programs (catena4410_test1, catene4410_test2, catena4410_test3, catena4420_test1,catena4450_test1), and full sensor programs (catena4410_sensor1,  catena4450m101_sensor1, catena4450m102_pond, catena4460_aqi).
+There are two kinds of sketches here: test programs (catena4410_test1, catene4410_test2, catena4410_test3, catena4420_test1,catena4450_test1), and full sensor programs (catena4410_sensor1,  catena4450m101_sensor1, catena4450m102_pond, catena4460_aqi, catena4460_bsec_ulp).
 
 The sketches that use LoRaWAN take advantage of the [MCCI](http://www.mcci.com) [arduino-lorawan](https://github.com/mcci-catena/arduino-lorawan) library to cleanly separate the application from the network transport.
 
-The sensor sketches also use the RTCZero library to sleep the CPU.
+Most of these sketches also use the [Catena-Arduino-Platform](https://github.com/mcci-catena/Catena-Arduino-Platform) library to provide common services and make things a little more portable.
 
 ### Full Sensor Programs
 
@@ -47,9 +57,17 @@ This is the application written for the Catena 4450 power monitoring node used i
 
 This is the Tzu Chi University / Asolar Hualian research farm project sketch, upgraded for use with the Catena 4450. It uses the integrated FRAM for provisioning, auto-detects the attached sensors, and transmits data in format 0x15.
 
+#### catena4450m102_waterlevel
+
+This application is used by Auroville for monitring well water depth.
+
 #### catena4460_aqi
 
 This sketch collects and transmits air-quality information using the Bosch BME680 sensor on the MCCI Catena 4460. It transmits data in format 0x17.
+
+#### catena4460_bsec_ulp
+
+This sketch uses the official (but closed source) library from Bosch Sensortec for the BME680 sensor on the Catena 4460. It also transmits data in format 0x17.
 
 #### catena4410_sensor1
 
@@ -65,8 +83,7 @@ This is the primary test app used when bringing up and provisioning Catena 4410 
 
 #### catena4410_test1, catena4410_test2
 
-These are simpler test programs. They were rarely used after test3 was ready, but they may be useful for test of future Catena 441x variants
-with different sensor configurations.
+These are simpler test programs. They were rarely used after test3 was ready, but they may be useful for test of future Catena 441x variants with different sensor configurations.
 
 #### catena4450_test01
 
@@ -78,11 +95,11 @@ The directory `extras` contains documentation and sample scripts for decoding th
 
 ## Required Board-Support Packages
 
-All board support packages are maintained by MCCI. You should add the path to the reference Json file in your Arduino preferences. See the README for [arduino-boards](https://github.com/mcci-catena/arduino-boards) for more informatin.
+All board support packages are maintained by MCCI. You should add the path to the reference Json file in your Arduino preferences. See the README.md for [arduino-boards](https://github.com/mcci-catena/arduino-boards) for instructions.
 
 ## Required Libraries
 
-A number of libraries are required by this code. `catena4450m101_sensor1` contains a Bash script [`git-boot.sh`](https://github.com/mcci-catena/Catena-Sketches/blob/master/catena4450m101_sensor/git-boot.sh) that can be used to download all the libraries, using a simple database stored in [`git-repos.dat`](https://github.com/mcci-catena/Catena-Sketches/blob/master/catena4450m101_sensor/git-repos.dat).
+A number of libraries are required by this code. The top-level of this repository contains a Bash script [`git-boot.sh`](https://github.com/mcci-catena/Catena-Sketches/blob/master/git-boot.sh) that can be used to download all the libraries, using a simple database stored in a file named `git-repos.dat`. Different sketches have different needs, and so each one has its own `git-repos.dat`. For an example, see [`catena4450m101_sensor/git-repos.dat`](https://github.com/mcci-catena/Catena-Sketches/blob/master/catena4450m101_sensor/git-repos.dat).
 
 * [MCCI's Catena Platform library](https://github.com/mcci-catena/Catena-Arduino-Platform) provides an enhanced environment for portable sketch development. It includes an command-processing framework, an elaborate persistent storage framework, encoding libraries, support for storing the persistent data from the `arduino-lorawan` library, and so forth.
 

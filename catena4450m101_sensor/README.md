@@ -7,7 +7,6 @@
 - [Installing the required libraries](#installing-the-required-libraries)
 	- [List of required libraries](#list-of-required-libraries)
 - [Build and Download](#build-and-download)
-- [Disabling USB Sleep (Optional)](#disabling-usb-sleep-optional)
 - [Load the sketch into the Catena](#load-the-sketch-into-the-catena)
 - [Provision your Catena 4450](#provision-your-catena-4450)
 	- [Check platform provisioning](#check-platform-provisioning)
@@ -63,12 +62,7 @@ $ cd Catena-Sketches/catena4450m101_sensor
 
 $ # confirm that you're in the right place.
 $ ls
-arduino-boards-manager.png         provisioned.png
-catena4450m101_sensor.ino          README.md
-code-for-sleep-usb-adjustment.png  serial-monitor-newline.png
-git-boot.sh*                       system-configure-platformguid.png
-git-repos.dat                      ThisCatena.h
-platform-number.png                VERSION.txt
+assets/  catena4450m101_sensor.ino  git-repos.dat  README.md  VERSION.txt
 ```
 
 ## Install the MCCI SAMD board support library
@@ -94,13 +88,13 @@ Go to Boards Manager (`Tools>Board:...>Boards Manager...`) and search for `SAM`.
 
 This sketch uses several sensor libraries.
 
-The script `git-boot.sh` in this directory will get all the things you need.
+The script `git-boot.sh`](https://github.com/mcci-catena/Catena-Sketches/blob/master/git-boot.sh) in the top directory of this repo will get all the things you need.
 
 It's easy to run, provided you're on Windows, macOS, or Linux, and provided you have `git` installed. We tested on Windows with git bash from https://git-scm.org, on macOS 10.11.3 with the git and bash shipped by Apple, and on Ubuntu 16.0.4 LTS (64-bit) with the built-in bash and git from `apt-get install git`.
 
 ```console
 $ cd Catena4410-Sketches/catena4450m101_sensor
-$ ./git-boot.sh
+$ ../git-boot.sh
 Cloning into 'Adafruit_FRAM_I2C'...
 remote: Counting objects: 96, done.
 remote: Total 96 (delta 0), reused 0 (delta 0), pack-reused 96
@@ -152,7 +146,7 @@ No repos skipped.
 Repos downloaded:      Adafruit_FRAM_I2C Catena-Arduino-Platform arduino-lorawan Catena-mcciadk arduino-lmic Adafruit_BME280_Library Adafruit_Sensor RTCZero BH1750
 ```
 
-It has a number of advanced options; use `./git-boot.sh -h` to get help, or look at the source code [here](gitboot.sh).
+It has a number of advanced options; use `../git-boot.sh -h` to get help, or look at the source code [here](https://github.com/mcci-catena/Catena-Sketches/blob/master/git-boot.sh).
 
 **Beware of issue #18**.  If you happen to already have libraries installed with the same names as any of the libraries in `git-repos.dat`, `git-boot.sh` will silently use the versions of the library that you already have installed. (We hope to soon fix this to at least tell you that you have a problem.)
 
@@ -170,7 +164,6 @@ This sketch depends on the following libraries.
 *  https://github.com/mcci-catena/RTCZero
 *  https://github.com/mcci-catena/BH1750
 
-
 ## Build and Download
 
 Shutdown the Arduino IDE and restart it, just in case.
@@ -180,26 +173,6 @@ Ensure selected board is 'Catena 4450' (in the GUI, check that `Tools`>`Board ".
 In the IDE, use File>Open to load the `Catena4450m101_sensor.ino` sketch. (Remember, in step 1 you cloned `Catena-Sketches` -- find that, and navigate to `{somewhere}/Catena-Sketches/catena4450_m101/`)
 
 Follow normal Arduino IDE procedures to build the sketch: `Sketch`>`Verify/Compile`. If there are no errors, go to the next step.
-
-## Disabling USB Sleep (Optional)
-
-The `catena4450m101_sensor` sketch uses the SAMD "deep sleep" mode in order to reduce power. This works, but it's inconvenient in development. See **Deep Sleep and USB** under **Notes**, below, for a technical explanation.
-
-In order to keep the Catena from falling asleep while connected to USB, make the following change.
-
-Search for
-
-```c++
-if (Serial.dtr() || fHasPower1)
-```
-
-and change it to
-
-```c++
-if (Serial.dtr() | fHasPower1 || true)
-```
-
-![USB Sleep Fix](./assets/code-for-sleep-usb-adjustment.png)
 
 ## Load the sketch into the Catena
 
@@ -243,16 +216,14 @@ The Catena 4450 has a number of build options. We have a single firmware image t
 
 If your Catena 4450 is fresh from the factory, you will need to enter the following commands.
 
-`system configure syseui` _`serialnumber`_
+- <code>system configure syseui <strong><em>serialnumber</em></strong></code>
 
 You will find the serial number on the Catena 4450 assembly. If you can't find a serial number, please contact MCCI for assistance.
 
 Continue by entering the following commands.
 
-```
-system configure operatingflags 1
-system configure platformguid 82BF2661-70CB-45AE-B620-CAF695478BC1
-```
+- `system configure operatingflags 1`
+- `system configure platformguid 82BF2661-70CB-45AE-B620-CAF695478BC1`
 
 ### LoRaWAN Provisioning
 
@@ -284,12 +255,12 @@ Make sure your device is still connected to the Arduino IDE, and make sure the s
 
 Enter the following commands in the serial monitor, substituting your _`DevEUI`_, _`AppEUI`_, and _`AppKey`_, one at a time.
 
-<code>lorawan configure deveui <em>DevEUI</em><br/>
-lorawan configure appeui <em>AppEUI</em><br/>
-lorawan configure appkey <em>AppKey</em><br/>
-lorawan configure join 1</code>
+- <code>lorawan configure deveui <em>DevEUI</em></code>
+- <code>lorawan configure appeui <em>AppEUI</em></code>
+- <code>lorawan configure appkey <em>AppKey</em></code>
+- <code>lorawan configure join 1</code>
 
-After each command you will see an `OK`.
+After ea/codecommand you will see an `OK`.
 
 ![provisioned](./assets/provisioned.png)
 
@@ -297,7 +268,7 @@ Then reboot your Catena (using the reset button on the upper board). You may hav
 
 You should then see a series of messages including:
 
-```
+```console
 EV_JOINED
 NetId ...
 ```
@@ -308,15 +279,13 @@ Once your device has joined the network, it's somewhat painful to unjoin.
 
 You need to enter a number of commands:
 
-```
-lorawan configure appskey 0
-lorawan configure nwkskey 0
-lorawan configure fcntdown 0
-lorawan configure fcntup 0
-lorawan configure devaddr 0
-lorawan configure netid 0
-lorawan configure join 0
-```
+- `lorawan configure appskey 0`
+- `lorawan configure nwkskey 0`
+- `lorawan configure fcntdown 0`
+- `lorawan configure fcntup 0`
+- `lorawan configure devaddr 0`
+- `lorawan configure netid 0`
+- `lorawan configure join 0`
 
 Then reset your device, and repeat [LoRaWAN Provisioning](#lorawan-provisioning) above.
 
@@ -324,9 +293,7 @@ Then reset your device, and repeat [LoRaWAN Provisioning](#lorawan-provisioning)
 
 If all the typing in [Changing registration](#changing-registration) is too painful, or if you're in a real hurry, you can simply reset the Catena's non-volatile memory to it's initial state. The command for this is:
 
-```
-fram reset hard
-```
+- `fram reset hard`
 
 Then reset your Catena, and return to [Provision your Catena 4450](#provision-your-catena-4450).
 
@@ -398,10 +365,12 @@ Unfortunately, the Arudino USB drivers for the Catena 4450 do not distinguish be
 
 ### Deep sleep and USB
 
-When the Catena 4450 is in deep sleep, the USB port will not respond to cable attaches. However, the PC may see that a device is attached, and complain that it is malfunctioning. This sketch does not normally use deep sleep, so you might not see this problem. But if you do, unplug the cable, unplug the battery, then plug in the cable.  A simple change (described above as **Disabling USB Sleep (Optional)**) will disable deep sleep altogether, which may make things easier.
+When the Catena 4450 is in deep sleep, the USB port will not respond to cable attaches. When the 4450 wakes up, it will connect to the PC while it is doing its work, then disconnect to go back to sleep.
 
-As with any Feather M0, double-pressing the RESET button will put the Feather into download mode. To confirm this, the red light will flicker rapidly. You may have to temporarily change the download port using `Tools`>`Port`, but once the port setting is correct, you should be able to download no matter what state the board was in.
+While disconnected, you won't be able to select the COM port for the board from the Arduino UI. And depending on the various operatingflags settings, even after reset, you may have trouble catching the board to download a sketch before it goes to sleep.
+
+The workaround is to "double tap" the reset button. As with any Feather M0, double-pressing the RESET button will put the Feather into download mode. To confirm this, the red light will flicker rapidly. You may have to temporarily change the download port using `Tools`>`Port`, but once the port setting is correct, you should be able to download no matter what state the board was in.
 
 ### gitboot.sh and the other sketches
 
-The sketches in other directories in this tree are for engineering use at MCCI. `git-boot.sh` does not necessarily install all the required libraries needed for building them. However, all the libraries should be available from https://github.com/mcci-catena/.
+The sketches in other directories in this tree are for engineering use at MCCI. The `git-repos.dat` file in this directory does not necessarily install all the required libraries needed for building the other directories. However, all the libraries should be available from https://github.com/mcci-catena/; and we are working on getting `git-repos.dat` files in every sub-directory.
