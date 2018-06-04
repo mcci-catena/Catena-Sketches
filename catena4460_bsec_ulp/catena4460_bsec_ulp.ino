@@ -656,7 +656,7 @@ void startSendingUplink(void)
         bool fConfirmed = false;
         if (gCatena.GetOperatingFlags() & (1 << 16))
                 {
-                gCatena.SafePrintf("requesting confirmed tx");
+                gCatena.SafePrintf("requesting confirmed tx\n");
                 fConfirmed = true;
                 }
 
