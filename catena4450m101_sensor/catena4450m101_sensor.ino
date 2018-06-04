@@ -218,6 +218,13 @@ void setup_platform()
         gCatena.SafePrintf("\n");
         gCatena.SafePrintf("-------------------------------------------------------------------------------\n");
         gCatena.SafePrintf("This is the catena4450m101_sensor program V%s.\n", sVersion);
+                {
+                char sRegion[16];
+                gCatena.SafePrintf("Target network: %s / %s\n",
+                                gLoRaWAN.GetNetworkName(),
+                                gLoRaWAN.GetRegionString(sRegion, sizeof(sRegion))
+                                );
+                }
         gCatena.SafePrintf("Enter 'help' for a list of commands.\n");
         gCatena.SafePrintf("(remember to select 'Line Ending: Newline' at the bottom of the monitor window.)\n");
         gCatena.SafePrintf("--------------------------------------------------------------------------------\n");

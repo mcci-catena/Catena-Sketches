@@ -101,7 +101,7 @@ void sensorJob_cb(osjob_t *pJob);
 |
 \****************************************************************************/
 
-static const char sVersion[] = "0.2.0";
+static const char sVersion[] = "0.2.1";
 
 /****************************************************************************\
 |
@@ -232,6 +232,13 @@ void setup_platform()
         gCatena.SafePrintf("\n");
         gCatena.SafePrintf("-------------------------------------------------------------------------------\n");
         gCatena.SafePrintf("This is the catena4450m102_pond program V%s.\n", sVersion);
+                {
+                char sRegion[16];
+                gCatena.SafePrintf("Target network: %s / %s\n",
+                                gLoRaWAN.GetNetworkName(),
+                                gLoRaWAN.GetRegionString(sRegion, sizeof(sRegion))
+                                );
+                }
         gCatena.SafePrintf("Enter 'help' for a list of commands.\n");
         gCatena.SafePrintf("(remember to select 'Line Ending: Newline' at the bottom of the monitor window.)\n");
         gCatena.SafePrintf("--------------------------------------------------------------------------------\n");
