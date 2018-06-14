@@ -101,7 +101,7 @@ void sensorJob_cb(osjob_t *pJob);
 |
 \****************************************************************************/
 
-static const char sVersion[] = "0.2.0";
+static const char sVersion[] = "0.2.1";
 
 extern const uint8_t bsec_config_iaq[];
 //#include "bsec_serialized_configurations_iaq.h"
@@ -152,6 +152,7 @@ static osjob_t sensorJob;
 // transmit times.
 bool g_dataValid;
 bool g_iaqValid;
+uint8_t g_iaqAccuracy = 0;
 float g_temperature = 0.0;
 float g_pressure = 0.0;
 float g_humidity = 0.0;
@@ -338,8 +339,9 @@ void run_bme680(void)
                 g_pressure = iaqSensor.pressure;
                 g_humidity = iaqSensor.humidity;
                 g_iaq = iaqSensor.iaqEstimate;
+		g_iaqAccuracy = iaqSensor.iaqAccuracy;
                 g_gas_resistance = iaqSensor.gasResistance;
-                g_iaqValid = iaqSensor.iaqAccuracy >= 3;
+                g_iaqValid = true;
 
                 output = String(millis());
                 output += ", " + String(iaqSensor.rawTemperature);
@@ -636,6 +638,11 @@ void fillBuffer(TxBuffer_t &b)
                         b.put2u(encodedLogGasR);
                         flag |= FlagsSensor5::FlagLogGasR;
                         }
+		if (g_iaqValid)
+			{
+			b.put(g_iaqAccuracy & 0x03);
+			flag |= FlagsSensor5::FlagAqiAccuracyMisc;
+			}
                 }
 
         *pFlag = uint8_t(flag);

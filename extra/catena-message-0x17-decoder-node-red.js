@@ -117,6 +117,15 @@ if (flags & 0x40)  // get the gas resistance
     result.log_r_gas = logGasR;
 }
 
+if (flags & 0x80)  // get the miscellaneous flags
+{
+    var rawFlags = b[i];
+    i += 1;
+    
+    var iaqQuality = rawFlags & 3;
+    
+    result.iaqQuality = iaqQuality;
+}
 
 // now update msg with the new payload and new .local field
 // the old msg.payload is overwritten.

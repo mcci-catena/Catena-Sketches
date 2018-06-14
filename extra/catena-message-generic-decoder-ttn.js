@@ -6,6 +6,7 @@
 // 2017-12-15 add format 0x11.
 // 2018-04-24 add format 0x16.
 // 2018-04-01 add format 0x17.
+// 2018-06-13 add air quality.
 
 // calculate dewpoint (degrees C) given temperature (C) and relative humidity (0..100)
 // from http://andrew.rsmas.miami.edu/bmcnoldy/Humidity.html
@@ -478,6 +479,21 @@ function Decoder(bytes, port) {
             //    "tempC": 23.640625,
             //    "vBat": 4.21533203125
             //    }
+            // 17 FD 3C 05 53 16 EE 61 F1 94 00 A7 DB 91 EB F7 03 ==>
+            //    {
+            //    "boot": 83,
+            //    "error": "none",
+            //    "iaq": 92.53125,
+            //    "iaqQuality": 3,
+            //    "log_r_gas": 5.982421875,
+            //    "lux": 167,
+            //    "p": 1002.92,
+            //    "r_gas": 960333.0490535165,
+            //    "rh": 57.8125,
+            //    "tDewC": 14.178238315794754,
+            //    "tempC": 22.9296875,
+            //    "vBat": 3.751220703125
+            //    }
 
             // i is used as the index into the message. Start with the flag byte.
             var i = 1;
@@ -558,6 +574,16 @@ function Decoder(bytes, port) {
                 decoded.log_r_gas = logGasR;
                 decoded.r_gas = gasR;
             }
+
+            if (flags & 0x80) {  // get the miscellaneous flags
+                var rawFlags = bytes[i];
+                i += 1;
+
+                var iaqQuality = rawFlags & 3;
+
+                decoded.iaqQuality = iaqQuality;
+            }
+
         } else {
             // cmd value not recognized.
         }
