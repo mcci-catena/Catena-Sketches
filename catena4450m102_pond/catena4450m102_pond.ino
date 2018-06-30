@@ -478,7 +478,7 @@ void fillBuffer(TxBuffer_t &b)
                         float waterTempC = sensor_WaterTemp.getTempCByIndex(0);
 
                         gCatena.SafePrintf("Water:   T: %d\n", (int)waterTempC);
-                        if (waterTempC < -100.0 || waterTempC > 100.0)
+                        if (waterTempC < -55.0 || waterTempC > 125.0)
                                 {
                                 // discard data and reset flag
                                 // so we'll check again next time
