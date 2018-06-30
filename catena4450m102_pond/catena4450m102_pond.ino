@@ -491,6 +491,10 @@ void fillBuffer(TxBuffer_t &b)
                                 flag |= FlagsSensor3::FlagWater;
                                 }
                         }
+                else
+                        {
+                        gCatena.SafePrintf("Water:   Sensor not responding\n");
+                        }
                 }
 
         /*
@@ -512,6 +516,10 @@ void fillBuffer(TxBuffer_t &b)
                         gCatena.SafePrintf("Soil:    T: %d RH: %d\n", (int)SoilT, (int)SoilRH);
 
                         flag |= FlagsSensor3::FlagSoilTH;
+                        }
+                else
+                        {
+                        gCatena.SafePrintf("Soil:    Sensor not responding\n");
                         }
                 }
 
