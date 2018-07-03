@@ -36,7 +36,7 @@ Revision history:
 	Add USB power check.
 	
    0.8.0 Wed Tue Jul 03 2018 20:18:23 vel
-    Fixed Lux sensor initalization issue
+	Fixed Lux sensor initalization issue
 
 */
 
