@@ -48,8 +48,10 @@ Revision history:
 |
 \****************************************************************************/
 
+using namespace McciCatena;
+
 //#define SEALEVELPRESSURE_HPA (1013.25)
-#define SEALEVELPRESSURE_HPA (1027.087) // 3170 Perry City Road, 2016-10-04 22:57
+#define SEALEVELPRESSURE_HPA (1027.087) // my location, 2016-10-04 22:57
 
 static void configureLuxSensor(void);
 static void displayLuxSensorDetails(void);

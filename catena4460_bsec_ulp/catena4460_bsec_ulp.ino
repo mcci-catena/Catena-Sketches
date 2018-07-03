@@ -46,24 +46,37 @@ using namespace McciCatena;
 
 #define STATE_SAVE_PERIOD  UINT32_C(3 * 60 * 1000) // 3 minutes: basically any change.
 
-/* how long do we wait between transmissions (in seconds) */
+/* how long do we wait between transmissions? (in seconds) */
 enum    {
         // set this to interval between transmissions, in seconds
         // Actual time will be a little longer because have to
-        // add measurement and broadcast time.
+        // add measurement and broadcast time, but we attempt
+        // to compensate for the gross effects below.
         CATCFG_T_CYCLE = 6 * 60,        // every 6 minutes
+        CATCFG_T_CYCLE_TEST = 30,       // every 10 seconds
         };
 
-/* Additional timing parameters */
+/* additional timing parameters; ususually you don't change these. */
 enum    {
         CATCFG_T_WARMUP = 1,
         CATCFG_T_SETTLE = 5,
-        CATCFG_T_INTERVAL = CATCFG_T_CYCLE - (CATCFG_T_WARMUP +
-                                                CATCFG_T_SETTLE),
+        CATCFG_T_OVERHEAD = (CATCFG_T_WARMUP + CATCFG_T_SETTLE),
+        };
+
+constexpr uint32_t CATCFG_GetInterval(uint32_t tCycle)
+        {
+        return (tCycle < CATCFG_T_OVERHEAD)
+                ? CATCFG_T_OVERHEAD
+                : tCycle - CATCFG_T_OVERHEAD
+                ;
+        }
+
+enum    {
+        CATCFG_T_INTERVAL = CATCFG_GetInterval(CATCFG_T_CYCLE),
         };
 
 
-// Helper functions declarations
+// Helper function declarations
 void checkIaqSensorStatus(void);
 void errLeds(void);
 void loadCalibrationData(void);
@@ -80,6 +93,7 @@ static void sleepDoneCb(osjob_t *pSendJob);
 static Arduino_LoRaWAN::SendBufferCbFn sendBufferDoneCb;
 void fillBuffer(TxBuffer_t &b);
 void startSendingUplink(void);
+void sensorJob_cb(osjob_t *pJob);
 
 /****************************************************************************\
 |
@@ -87,7 +101,7 @@ void startSendingUplink(void);
 |
 \****************************************************************************/
 
-static const char sVersion[] = "0.2.0";
+static const char sVersion[] = "0.2.1";
 
 extern const uint8_t bsec_config_iaq[];
 //#include "bsec_serialized_configurations_iaq.h"
@@ -109,7 +123,7 @@ Catena gCatena;
 //
 Catena::LoRaWAN gLoRaWAN;
 
-// declare the LED object instance
+// the LED instance object
 StatusLed gLed (Catena::PIN_STATUS_LED);
 
 // the RTC instance, used for sleeping
@@ -132,15 +146,22 @@ uint32_t lastCalibrationWriteMillis = 0;
 
 //  the LMIC job that's used to synchronize us with the LMIC code
 static osjob_t sensorJob;
-void sensorJob_cb(osjob_t *pJob);
 
+// measurements come out of BSEC as they well; we store the
+// ones we want here for transmission at the designated
+// transmit times.
 bool g_dataValid;
 bool g_iaqValid;
+uint8_t g_iaqAccuracy = 0;
 float g_temperature = 0.0;
 float g_pressure = 0.0;
 float g_humidity = 0.0;
 float g_iaq = 0.0;
 float g_gas_resistance = 0.0;
+
+// debug flag for throttling sleep prints
+bool g_fPrintedSleeping = false;
+
 
 
 /****************************************************************************\
@@ -211,12 +232,20 @@ void setup_platform(void)
 
         gCatena.SafePrintf("\n");
         gCatena.SafePrintf("-------------------------------------------------------------------------------\n");
-        gCatena.SafePrintf("This is the catena4460_bsec_ulp program.\n");
+        gCatena.SafePrintf("This is the catena4460_bsec_ulp program V%s.\n", sVersion);
+                {
+                char sRegion[16];
+                gCatena.SafePrintf("Target network: %s / %s\n",
+                                gLoRaWAN.GetNetworkName(),
+                                gLoRaWAN.GetRegionString(sRegion, sizeof(sRegion))
+                                );
+                }
         gCatena.SafePrintf("Enter 'help' for a list of commands.\n");
         gCatena.SafePrintf("(remember to select 'Line Ending: Newline' at the bottom of the monitor window.)\n");
         gCatena.SafePrintf("--------------------------------------------------------------------------------\n");
         gCatena.SafePrintf("\n");
 
+        // set up the LED
         gLed.begin();
         gCatena.registerObject(&gLed);
         gLed.Set(LedPattern::FastFlash);
@@ -236,7 +265,7 @@ void setup_platform(void)
                 gCatena.registerObject(&gLoRaWAN);
                 }
 
-                /* find the platform */
+        /* find the platform */
         const Catena::EUI64_buffer_t *pSysEUI = gCatena.GetSysEUI();
 
         uint32_t flags;
@@ -271,34 +300,35 @@ void setup_platform(void)
         }
 
 void setup_bme680(void)
-{
-  iaqSensor.begin(BME680_I2C_ADDR_SECONDARY, Wire);
-  gCatena.SafePrintf("\nBSEC library version %d.%d.%d.%d\n",
-                          iaqSensor.version.major,
-                        iaqSensor.version.minor,
-                        iaqSensor.version.major_bugfix,
-                        iaqSensor.version.minor_bugfix
-                        );
-  checkIaqSensorStatus();
+        {
+        iaqSensor.begin(BME680_I2C_ADDR_SECONDARY, Wire);
+        gCatena.SafePrintf("\nBSEC library version %d.%d.%d.%d\n",
+                           iaqSensor.version.major,
+                           iaqSensor.version.minor,
+                           iaqSensor.version.major_bugfix,
+                           iaqSensor.version.minor_bugfix
+                           );
+        checkIaqSensorStatus();
 
-  iaqSensor.setConfig(bsec_config_iaq);
-  checkIaqSensorStatus();
+        iaqSensor.setConfig(bsec_config_iaq);
+        checkIaqSensorStatus();
 
-  loadCalibrationData();
+        loadCalibrationData();
 
-  bsec_virtual_sensor_t sensorList[7] = {
-    BSEC_OUTPUT_RAW_TEMPERATURE,
-    BSEC_OUTPUT_RAW_PRESSURE,
-    BSEC_OUTPUT_RAW_HUMIDITY,
-    BSEC_OUTPUT_RAW_GAS,
-    BSEC_OUTPUT_IAQ_ESTIMATE,
-    BSEC_OUTPUT_SENSOR_HEAT_COMPENSATED_TEMPERATURE,
-    BSEC_OUTPUT_SENSOR_HEAT_COMPENSATED_HUMIDITY,
-  };
+        bsec_virtual_sensor_t sensorList[7] =
+                {
+                BSEC_OUTPUT_RAW_TEMPERATURE,
+                BSEC_OUTPUT_RAW_PRESSURE,
+                BSEC_OUTPUT_RAW_HUMIDITY,
+                BSEC_OUTPUT_RAW_GAS,
+                BSEC_OUTPUT_IAQ_ESTIMATE,
+                BSEC_OUTPUT_SENSOR_HEAT_COMPENSATED_TEMPERATURE,
+                BSEC_OUTPUT_SENSOR_HEAT_COMPENSATED_HUMIDITY,
+                };
 
-  iaqSensor.updateSubscription(sensorList, 7, BSEC_SAMPLE_RATE_ULP);
-  checkIaqSensorStatus();
-}
+        iaqSensor.updateSubscription(sensorList, 7, BSEC_SAMPLE_RATE_ULP);
+        checkIaqSensorStatus();
+        }
 
 void run_bme680(void)
         {
@@ -309,8 +339,9 @@ void run_bme680(void)
                 g_pressure = iaqSensor.pressure;
                 g_humidity = iaqSensor.humidity;
                 g_iaq = iaqSensor.iaqEstimate;
+		g_iaqAccuracy = iaqSensor.iaqAccuracy;
                 g_gas_resistance = iaqSensor.gasResistance;
-                g_iaqValid = iaqSensor.iaqAccuracy >= 3;
+                g_iaqValid = true;
 
                 output = String(millis());
                 output += ", " + String(iaqSensor.rawTemperature);
@@ -347,119 +378,138 @@ void loop(void)
 
 // Helper function definitions
 void checkIaqSensorStatus(void)
-{
-  if (iaqSensor.status != BSEC_OK) {
-    if (iaqSensor.status < BSEC_OK) {
-      output = "BSEC error code : " + String(iaqSensor.status);
-      gCatena.SafePrintf("%s\n", output.c_str());
-      for (;;)
-        errLeds(); /* Halt in case of failure */
-    } else {
-      output = "BSEC warning code : " + String(iaqSensor.status);
-      gCatena.SafePrintf("%s\n", output.c_str());
-    }
-  }
+        {
+        if (iaqSensor.status != BSEC_OK)
+                {
+                if (iaqSensor.status < BSEC_OK)
+                        {
+                        output = "BSEC error code : " + String(iaqSensor.status);
+                        gCatena.SafePrintf("%s\n", output.c_str());
+                        for (;;)
+                                errLeds(); /* Halt in case of failure */
+                        }
+                else
+                        {
+                        output = "BSEC warning code : " + String(iaqSensor.status);
+                        gCatena.SafePrintf("%s\n", output.c_str());
+                        }
+                }
 
-  if (iaqSensor.bme680Status != BME680_OK) {
-    if (iaqSensor.bme680Status < BME680_OK) {
-      output = "BME680 error code : " + String(iaqSensor.bme680Status);
-      gCatena.SafePrintf("%s\n", output.c_str());
-      for (;;)
-        errLeds(); /* Halt in case of failure */
-    } else {
-      output = "BME680 warning code : " + String(iaqSensor.bme680Status);
-      gCatena.SafePrintf("%s\n", output.c_str());
-    }
-  }
-}
+        if (iaqSensor.bme680Status != BME680_OK)
+                {
+                if (iaqSensor.bme680Status < BME680_OK)
+                        {
+                        output = "BME680 error code : " + String(iaqSensor.bme680Status);
+                        gCatena.SafePrintf("%s\n", output.c_str());
+                        for (;;)
+                                errLeds(); /* Halt in case of failure */
+                        }
+                else
+                        {
+                        output = "BME680 warning code : " + String(iaqSensor.bme680Status);
+                        gCatena.SafePrintf("%s\n", output.c_str());
+                        }
+                }
+        }
 
 void errLeds(void)
-{
-  gLed.Set(LedPattern::ThreeShort);
+        {
+        gLed.Set(LedPattern::ThreeShort);
 
-  for (;;)
-     gCatena.poll();
-}
+        for (;;)
+                gCatena.poll();
+        }
 
 void dumpCalibrationData(void)
-{
-    for (auto here = 0, nLeft = BSEC_MAX_STATE_BLOB_SIZE;
-         nLeft != 0;
-        )
         {
-            char line[80];
-            size_t n;
+        for (auto here = 0, nLeft = BSEC_MAX_STATE_BLOB_SIZE;
+             nLeft != 0;)
+                {
+                char line[80];
+                size_t n;
 
-        n = 16;
-        if (n >= nLeft)
-                n = nLeft;
+                n = 16;
+                if (n >= nLeft)
+                        n = nLeft;
 
-        McciAdkLib_FormatDumpLine(
-                line, sizeof(line), 0,
-                here,
-                bsecState + here, n
-                );
+                McciAdkLib_FormatDumpLine(
+                    line, sizeof(line), 0,
+                    here,
+                    bsecState + here, n);
 
-        gCatena.SafePrintf("%s\n", line);
+                gCatena.SafePrintf("%s\n", line);
 
-        here += n, nLeft -= n;
+                here += n, nLeft -= n;
+                }
         }
-}
 
 void loadCalibrationData(void)
-{
-  cFram * const pFram = gCatena.getFram();
-  bool fDataOk;
+        {
+        cFram * const pFram = gCatena.getFram();
+        bool fDataOk;
 
-  if (pFram->getField(cFramStorage::kBme680Cal, bsecState)) {
-    gCatena.SafePrintf("Got state from FRAM:\n");
-    dumpCalibrationData();
+        if (pFram->getField(cFramStorage::kBme680Cal, bsecState))
+                {
+                gCatena.SafePrintf("Got state from FRAM:\n");
+                dumpCalibrationData();
 
-    iaqSensor.setState(bsecState);
-    if (iaqSensor.status != BSEC_OK) {
-      gCatena.SafePrintf(
-              "%s: BSEC error code: %d\n", __func__, iaqSensor.status
-              );
-      fDataOk = false;
-    } else {
-      fDataOk = true;
-    }
-  } else {
-    fDataOk = false;
-  }
+                iaqSensor.setState(bsecState);
+                if (iaqSensor.status != BSEC_OK)
+                        {
+                        gCatena.SafePrintf(
+                                "%s: BSEC error code: %d\n", __func__, iaqSensor.status
+                                );
+                        fDataOk = false;
+                        }
+                else
+                        {
+                        fDataOk = true;
+                        }
+                }
+        else
+                {
+                fDataOk = false;
+                }
 
-  if (! fDataOk) {
-    // initialize the saved state
-    gCatena.SafePrintf("Initializing state\n");
-    saveCalibrationData();
-  }
-}
+        if (! fDataOk)
+                {
+                // initialize the saved state
+                gCatena.SafePrintf("Initializing state\n");
+                saveCalibrationData();
+                }
+        }
 
 void possiblySaveCalibrationData(void)
-{
-  bool update = false;
-  if (stateUpdateCounter == 0) {
-    /* First state update when IAQ accuracy is >= 3 (calibration complete) */
-    if (iaqSensor.iaqAccuracy >= 3) {
-      update = true;
-      stateUpdateCounter++;
-    }
-  } else {
-    /* Update every STATE_SAVE_PERIOD milliseconds */
-    if (iaqSensor.iaqAccuracy >= 3 &&
-        (uint32_t)(millis() - lastCalibrationWriteMillis) >= STATE_SAVE_PERIOD) {
-      update = true;
-      stateUpdateCounter++;
-    }
-  }
+        {
+        bool update = false;
+        if (stateUpdateCounter == 0)
+                {
+                /* First state update when IAQ accuracy is >= 3 (calibration complete) */
+                if (iaqSensor.iaqAccuracy >= 3)
+                        {
+                        update = true;
+                        stateUpdateCounter++;
+                        }
+                }
+        else
+                {
+                /* Update every STATE_SAVE_PERIOD milliseconds */
+                if (iaqSensor.iaqAccuracy >= 3 &&
+                    (uint32_t)(millis() - lastCalibrationWriteMillis) >= STATE_SAVE_PERIOD)
+                        {
+                        update = true;
+                        stateUpdateCounter++;
+                        }
+                }
 
-  if (update) {
-        saveCalibrationData();
-  }
-}
+        if (update)
+                {
+                saveCalibrationData();
+                }
+        }
 
 void saveCalibrationData(void)
-{
+        {
         lastCalibrationWriteMillis = millis();
         iaqSensor.getState(bsecState);
         checkIaqSensorStatus();
@@ -467,7 +517,7 @@ void saveCalibrationData(void)
         gCatena.SafePrintf("Writing state to FRAM\n");
         gCatena.getFram()->saveField(cFramStorage::kBme680Cal, bsecState);
         dumpCalibrationData();
-}
+        }
 
 static uint16_t f2uflt16(
         float f
@@ -497,143 +547,153 @@ static uint16_t f2uflt16(
         }
 
 void fillBuffer(TxBuffer_t &b)
-{
-
-  b.begin();
-  FlagsSensor5 flag;
-
-  flag = FlagsSensor5(0);
-
-  b.put(FormatSensor5); /* the flag for this record format */
-
-  /* capture the address of the flag byte */
-  uint8_t * const pFlag = b.getp();
-
-  b.put(0x00);  /* insert a byte. Value doesn't matter, will
-                || later be set to the final value of `flag`
-                */
-
-  // vBat is sent as 5000 * v
-  float vBat = gCatena.ReadVbat();
-  gCatena.SafePrintf("vBat:    %d mV\n", (int) (vBat * 1000.0f));
-  b.putV(vBat);
-  flag |= FlagsSensor5::FlagVbat;
-
-  uint32_t bootCount;
-  if (gCatena.getBootCount(bootCount))
         {
-        b.putBootCountLsb(bootCount);
-        flag |= FlagsSensor5::FlagBoot;
-        }
+        b.begin();
+        FlagsSensor5 flag;
 
-  if (g_dataValid)
-       {
-       // temperature is 2 bytes from -0x80.00 to +0x7F.FF degrees C
-       // pressure is 2 bytes, hPa * 10.
-       // humidity is one byte, where 0 == 0/256 and 0xFF == 255/256.
-       gCatena.SafePrintf(
-                "BME680:  T=%d P=%d RH=%d\n",
-                (int) (g_temperature + 0.5),
-                (int) (g_pressure + 0.5),
-                (int) (g_humidity + 0.5)
-                );
-       b.putT(g_temperature);
-       b.putP(g_pressure);
-       b.putRH(g_humidity);
+        flag = FlagsSensor5(0);
 
-       flag |= FlagsSensor5::FlagTPH;
-       }
+        b.put(FormatSensor5); /* the flag for this record format */
 
-   /* get light */
-        {
-        /* Get a new sensor event */
-        uint16_t light;
+        /* capture the address of the flag byte */
+        uint8_t * const pFlag = b.getp();
 
-        gBH1750.configure(BH1750_ONE_TIME_HIGH_RES_MODE);
-        uint32_t const tBegin = millis();
-        uint32_t const tMeas = gBH1750.getMeasurementMillis();
+        b.put(0x00);    /* insert a byte. Value doesn't matter, will
+                        || later be set to the final value of `flag`
+                        */
 
-        while (uint32_t(millis() - tBegin) < tMeas)
+        // vBat is sent as 5000 * v
+        float vBat = gCatena.ReadVbat();
+        gCatena.SafePrintf("vBat:    %d mV\n", (int) (vBat * 1000.0f));
+        b.putV(vBat);
+        flag |= FlagsSensor5::FlagVbat;
+
+        uint32_t bootCount;
+        if (gCatena.getBootCount(bootCount))
                 {
-                gCatena.poll();
-                yield();
+                b.putBootCountLsb(bootCount);
+                flag |= FlagsSensor5::FlagBoot;
                 }
 
-        light = gBH1750.readLightLevel();
-        gCatena.SafePrintf("BH1750:  %u lux\n", light);
-        b.putLux(light);
-        flag |= FlagsSensor5::FlagLux;
-        }
-
-  if (g_dataValid)
-        {
-        // output the IAQW (in 0..500/512).
-        uint16_t const encodedIAQ = f2uflt16(g_iaq / 512.0);
-
-        gCatena.SafePrintf(
-                "BME680:   Gas-Resistance=%d IAQ=%d\n",
-                (int) (g_gas_resistance + 0.5),
-                (int) (g_iaq + 0.5)
-                );
-        if (g_iaqValid)
+        if (g_dataValid)
                 {
-                b.put2u(encodedIAQ);
-                flag |= FlagsSensor5::FlagAqi;
+                // temperature is 2 bytes from -0x80.00 to +0x7F.FF degrees C
+                // pressure is 2 bytes, hPa * 10.
+                // humidity is one byte, where 0 == 0/256 and 0xFF == 255/256.
+                gCatena.SafePrintf(
+                        "BME680:  T=%d P=%d RH=%d\n",
+                        (int) (g_temperature + 0.5),
+                        (int) (g_pressure + 0.5),
+                        (int) (g_humidity + 0.5)
+                        );
+                b.putT(g_temperature);
+                b.putP(g_pressure);
+                b.putRH(g_humidity);
+
+                flag |= FlagsSensor5::FlagTPH;
                 }
 
-        if (g_gas_resistance > 1.0 && g_gas_resistance < 1e15)
+        /* get light */
                 {
-                float log_gas_resistance = log10f(g_gas_resistance);
+                /* Get a new sensor event */
+                uint16_t light;
 
-                uint16_t const encodedLogGasR = f2uflt16(log_gas_resistance / 16.0);
-                b.put2u(encodedLogGasR);
-                flag |= FlagsSensor5::FlagLogGasR;
+                gBH1750.configure(BH1750_ONE_TIME_HIGH_RES_MODE);
+                uint32_t const tBegin = millis();
+                uint32_t const tMeas = gBH1750.getMeasurementMillis();
+
+                while (uint32_t(millis() - tBegin) < tMeas)
+                        {
+                        gCatena.poll();
+                        yield();
+                        }
+
+                light = gBH1750.readLightLevel();
+                gCatena.SafePrintf("BH1750:  %u lux\n", light);
+                b.putLux(light);
+                flag |= FlagsSensor5::FlagLux;
                 }
+
+        if (g_dataValid)
+                {
+                // output the IAQ (in 0..500/512).
+                uint16_t const encodedIAQ = f2uflt16(g_iaq / 512.0);
+
+                gCatena.SafePrintf(
+                    "BME680:   Gas-Resistance=%d IAQ=%d\n",
+                    (int) (g_gas_resistance + 0.5),
+                    (int) (g_iaq + 0.5)
+                    );
+                if (g_iaqValid)
+                        {
+                        b.put2u(encodedIAQ);
+                        flag |= FlagsSensor5::FlagAqi;
+                        }
+
+                if (g_gas_resistance > 1.0 && g_gas_resistance < 1e15)
+                        {
+                        float log_gas_resistance = log10f(g_gas_resistance);
+
+                        uint16_t const encodedLogGasR = f2uflt16(log_gas_resistance / 16.0);
+                        b.put2u(encodedLogGasR);
+                        flag |= FlagsSensor5::FlagLogGasR;
+                        }
+		if (g_iaqValid)
+			{
+			b.put(g_iaqAccuracy & 0x03);
+			flag |= FlagsSensor5::FlagAqiAccuracyMisc;
+			}
+                }
+
+        *pFlag = uint8_t(flag);
         }
-
-  *pFlag = uint8_t(flag);
-}
-
 
 void startSendingUplink(void)
-{
-  TxBuffer_t b;
-  LedPattern savedLed = gLed.Set(LedPattern::Measuring);
+        {
+        TxBuffer_t b;
+        LedPattern savedLed = gLed.Set(LedPattern::Measuring);
 
-  fillBuffer(b);
+        fillBuffer(b);
 
-  if (savedLed != LedPattern::Joining)
-          gLed.Set(LedPattern::Sending);
-  else
-          gLed.Set(LedPattern::Joining);
+        if (savedLed != LedPattern::Joining)
+                gLed.Set(LedPattern::Sending);
+        else
+                gLed.Set(LedPattern::Joining);
 
-  gLoRaWAN.SendBuffer(b.getbase(), b.getn(), sendBufferDoneCb, NULL);
-}
+        bool fConfirmed = false;
+        if (gCatena.GetOperatingFlags() & (1 << 16))
+                {
+                gCatena.SafePrintf("requesting confirmed tx\n");
+                fConfirmed = true;
+                }
+
+        gLoRaWAN.SendBuffer(b.getbase(), b.getn(), sendBufferDoneCb, nullptr, fConfirmed);
+        }
 
 static void
 sendBufferDoneCb(
-    void *pContext,
-    bool fStatus
-    )
-    {
-    osjobcb_t pFn;
+        void *pContext,
+        bool fStatus
+        )
+        {
+        osjobcb_t pFn;
 
-    gLed.Set(LedPattern::Settling);
-    if (! fStatus)
-        {
-        gCatena.SafePrintf("send buffer failed\n");
-        pFn = txFailedDoneCb;
+        gLed.Set(LedPattern::Settling);
+        if (! fStatus)
+                {
+                gCatena.SafePrintf("send buffer failed\n");
+                pFn = txFailedDoneCb;
+                }
+        else
+                {
+                pFn = settleDoneCb;
+                }
+        os_setTimedCallback(
+                &sensorJob,
+                os_getTime() + sec2osticks(CATCFG_T_SETTLE),
+                pFn
+                );
         }
-    else
-        {
-        pFn = settleDoneCb;
-        }
-    os_setTimedCallback(
-            &sensorJob,
-            os_getTime()+sec2osticks(CATCFG_T_SETTLE),
-            pFn
-            );
-    }
 
 static void
 txFailedDoneCb(
@@ -647,118 +707,143 @@ txFailedDoneCb(
 
 
 //
-// the following API is added to delay.c, .h in the BSP. It adjust millis()
+// the following API is added to delay.c, .h in the BSP. It adjusts millis()
 // forward after a deep sleep.
 //
 // extern "C" { void adjust_millis_forward(unsigned); };
 //
 // If you don't have it, make sure you're running the MCCI Board Support
-// Package for the Catena 4460, https://github.com/mcci-catena/arduino-boards
+// Package for MCCI Catenas, https://github.com/mcci-catena/arduino-boards
 //
-static bool g_fPrintedSleeping;
 
 static void settleDoneCb(
-    osjob_t *pSendJob
-    )
-    {
-    uint32_t startTime;
-    bool fDeepSleep;
+        osjob_t *pSendJob
+        )
+        {
+        uint32_t startTime;
+        bool const fDeepSleepTest = gCatena.GetOperatingFlags() & (1 << 19);
+        bool fDeepSleep;
 
-    // if connected to USB, don't sleep
-    // ditto if we're monitoring pulses.
-
-    // disable sleep if not unattended, or if USB active
-    if (gCatena.GetOperatingFlags() & (1 << 17))
-        {
-        fDeepSleep = false;
-        }
-    else if (Serial.dtr())
-        {
-        fDeepSleep = false;
-        }
-    else if ((gCatena.GetOperatingFlags() &
-            static_cast<uint32_t>(gCatena.OPERATING_FLAGS::fUnattended)) != 0)
-        {
-        fDeepSleep = true;
-        }
-    else
-        {
-        fDeepSleep = false;
-        }
-
-    if (! g_fPrintedSleeping)
-        {
-        g_fPrintedSleeping = true;
-
-        if (fDeepSleep)
+        if (fDeepSleepTest)
                 {
-                gCatena.SafePrintf("using deep sleep (USB is not reliable) in 30 secs: ");
-                // sleep and print
-                gLed.Set(LedPattern::TwoShort);
-
-                for (auto n = 30; n > 0; --n)
-                        {
-                        uint32_t tNow = millis();
-
-                        while (uint32_t(millis() - tNow) < 1000)
-                                {
-                                gCatena.poll();
-                                run_bme680();
-                                yield();
-                                }
-                        gCatena.SafePrintf(".");
-                        }
-                gCatena.SafePrintf("\nStarting deep sleep.\n");
+                fDeepSleep = true;
+                }
+        else if (Serial.dtr() || (gCatena.GetOperatingFlags() & (1 << 17)))
+                {
+                fDeepSleep = false;
+                }
+        else if ((gCatena.GetOperatingFlags() &
+                        static_cast<uint32_t>(gCatena.OPERATING_FLAGS::fUnattended)) != 0)
+                {
+                fDeepSleep = true;
                 }
         else
-                gCatena.SafePrintf("using light sleep\n");
+                {
+                fDeepSleep = false;
+                }
+
+        if (! g_fPrintedSleeping)
+                {
+                g_fPrintedSleeping = true;
+
+                if (fDeepSleep)
+                        {
+                        const uint32_t deepSleepDelay = fDeepSleepTest ? 10 : 30;
+
+                        gCatena.SafePrintf("using deep sleep in %u secs (USB will disconnect while asleep): ",
+                                           deepSleepDelay
+                                           );
+
+                        // sleep and print
+                        gLed.Set(LedPattern::TwoShort);
+
+                        for (auto n = deepSleepDelay; n > 0; --n)
+                                {
+                                uint32_t tNow = millis();
+
+                                while (uint32_t(millis() - tNow) < 1000)
+                                        {
+                                        gCatena.poll();
+                                        run_bme680();
+                                        yield();
+                                        }
+                                gCatena.SafePrintf(".");
+                                }
+                        gCatena.SafePrintf("\nStarting deep sleep.\n");
+                        uint32_t tNow = millis();
+                        while (uint32_t(millis() - tNow) < 100)
+                                {
+                                gCatena.poll();
+                                yield();
+                                }
+                        }
+                else
+                        gCatena.SafePrintf("using light sleep\n");
+                }
+
+        /* if we can't sleep deeply, then simply schedule the sleepDoneCb */
+        if (! fDeepSleep)
+                {
+                uint32_t interval = sec2osticks(CATCFG_T_INTERVAL);
+
+                if (gCatena.GetOperatingFlags() & (1 << 18))
+                        interval = 1;
+
+                gLed.Set(LedPattern::Sleeping);
+                os_setTimedCallback(
+                        &sensorJob,
+                        os_getTime() + sec2osticks(CATCFG_T_INTERVAL),
+                        sleepDoneCb
+                        );
+                return;
+                }
+
+        /*
+        || ok... now it's time for a deep sleep. Do the sleep here, since
+        || the Arduino loop won't do it. Note that nothing will get polled
+        || while we sleep. We need to poll the bme680 every 3 seconds, so
+        || we sleep as much as we can.
+        */
+        const auto tSampleSeconds = 3;
+        uint32_t sleepInterval = CATCFG_GetInterval(
+                        fDeepSleepTest ? CATCFG_T_CYCLE_TEST : CATCFG_T_CYCLE
+                        );
+
+        while (sleepInterval > 0)
+                {
+                uint32_t nThisTime;
+
+                nThisTime = tSampleSeconds;
+                if (nThisTime > sleepInterval)
+                        nThisTime = sleepInterval;
+
+                sleepInterval -= nThisTime;
+
+                gLed.Set(LedPattern::Off);
+
+                USBDevice.detach();
+
+                startTime = millis();
+                gRtc.SetAlarm(nThisTime);
+                gRtc.SleepForAlarm(
+                        gRtc.MATCH_HHMMSS,
+                        gRtc.SleepMode::DeepSleep
+                        );
+
+                // add the number of ms that we were asleep to the millisecond timer.
+                // we don't need extreme accuracy.
+                adjust_millis_forward(nThisTime * 1000);
+
+                gLed.Set(LedPattern::Measuring);
+
+                /* we're not convinced that it's safe to leave USB off, so turn it on */
+                USBDevice.attach();
+                run_bme680();
+                }
+
+        /* and now... we're fully awake. Go to next state. */
+        sleepDoneCb(pSendJob);
         }
-
-    /* if we can't sleep deeply, then simply schedule the sleepDoneCb */
-    if (! fDeepSleep)
-        {
-        uint32_t interval = sec2osticks(CATCFG_T_INTERVAL);
-
-        if (gCatena.GetOperatingFlags() & (1 << 18))
-                interval = 1;
-
-        gLed.Set(LedPattern::Sleeping);
-        os_setTimedCallback(
-                &sensorJob,
-                os_getTime() + sec2osticks(CATCFG_T_INTERVAL),
-                sleepDoneCb
-                );
-        return;
-        }
-
-    /*
-    || ok... now it's time for a deep sleep. do the sleep here, since
-    || the Arduino loop won't do it. Note that nothing will get polled
-    || while we sleep. We need to poll the bme680 every 3 seconds, so
-    || we sleep as much as we can.
-    */
-    const auto tSampleSeconds = 3;
-    for (auto n = CATCFG_T_INTERVAL / tSampleSeconds; n > 0; --n)
-        {
-        gLed.Set(LedPattern::Off);
-
-        startTime = millis();
-        gRtc.SetAlarm(tSampleSeconds);
-        gRtc.SleepForAlarm(
-                gRtc.MATCH_HHMMSS,
-                gRtc.SleepMode::IdleCpuAhbApb
-                );
-
-        // add the number of ms that we were asleep to the millisecond timer.
-        // we don't need extreme accuracy.
-        adjust_millis_forward(tSampleSeconds * 1000);
-        gLed.Set(LedPattern::Measuring);
-        run_bme680();
-        }
-
-    /* and now... we're fully awake. trigger another measurement */
-    sleepDoneCb(pSendJob);
-    }
 
 static void sleepDoneCb(
         osjob_t *pJob
@@ -774,8 +859,8 @@ static void sleepDoneCb(
         }
 
 static void warmupDoneCb(
-    osjob_t *pJob
-    )
-    {
-    startSendingUplink();
-    }
+        osjob_t *pJob
+        )
+        {
+        startSendingUplink();
+        }

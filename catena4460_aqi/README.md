@@ -34,17 +34,16 @@ You must provision the Catena as normal, and set up your application to understa
 
 ### Prerequisites
 
-- Make sure you're running the MCCI Board Support
-Package for the Catena 4460. See https://github.com/mcci-catena/arduino-boards for information on how to set up the Arduino IDE.
+- Make sure you're running the MCCI Board Support Package for the Catena 4460. See https://github.com/mcci-catena/arduino-boards for information on how to set up the Arduino IDE.
 - Select Catena 4460 as the target board in the Arduino IDE.
-- Use `git-boot.sh` (elsewhere in the Catena-Sketches repository) to fetch the required libraries, by using the command:
+- Use [`git-boot.sh`]() (at the top level of this repository) to fetch the required libraries, by using the command:
 
    ```shell
    cd catena4460_aqi
-   {path}/git-boot.sh -u ./git-repos.dat
+   ../git-boot.sh -u ./git-repos.dat
    ```
 
-   We recommend the `-u` switch because this will ensure that libraries will be updated if already present on your system. However, this may not be what you want. Use `{path}/git-boot.sh -H` to get help on the various options.
+   We recommend the `-u` switch because this will ensure that libraries will be updated if already present on your system. However, this may not be what you want. Use `../git-boot.sh -H` to get help on the various options.
 
 - Make sure you have at least v0.9.0 of the `Catena-Arduino-Platform`; otherwise the sketch will not compile.
 
