@@ -1,4 +1,4 @@
-/* catena4551_test01.ino	Wed Jan 03 2018 11:09:13 chwon */
+/* catena4551_test01.ino	Tue Jul 03 2018 20:18:23 vel */
 
 /*
 
@@ -8,7 +8,7 @@ Function:
 	Test program for Catena 4551 and variants.
 
 Version:
-	V0.7.0	Wed Jan 03 2018 11:09:14 chwon	Edit level 3
+	V0.8.0	Tue Jul 03 2018 20:18:23 vel	Edit level 4
 
 Copyright notice:
 	This file copyright (C) 2017 by
@@ -34,6 +34,9 @@ Revision history:
 
    0.7.0  Wed Jan 03 2018 11:09:14  chwon
 	Add USB power check.
+	
+   0.8.0 Wed Tue Jul 03 2018 20:18:23 vel
+    Fixed Lux sensor initalization issue
 
 */
 
@@ -259,7 +262,7 @@ void setup(void)
 
 
 	/* initialize the lux sensor */
-	if (flags & CatenaStm32::fHasLuxRohm)
+	if (flags & CatenaStm32::fHasLuxSi1133)
 		{
 		if (gSi1133.begin())
 			{
