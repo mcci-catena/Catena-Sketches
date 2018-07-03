@@ -1,4 +1,4 @@
-/* catena4551_test01.ino	Tue Jul 03 2018 20:18:23 vel */
+/* catena4551_test01.ino	Tue Jul 03 2018 12:47:57 chwon */
 
 /*
 
@@ -8,10 +8,10 @@ Function:
 	Test program for Catena 4551 and variants.
 
 Version:
-	V0.8.0	Tue Jul 03 2018 20:18:23 vel	Edit level 4
+	V0.8.0	Tue Jul 03 2018 12:47:57 chwon	Edit level 4
 
 Copyright notice:
-	This file copyright (C) 2017 by
+	This file copyright (C) 2017-2018 by
 
 		MCCI Corporation
 		3520 Krums Corners Road
@@ -35,18 +35,26 @@ Revision history:
    0.7.0  Wed Jan 03 2018 11:09:14  chwon
 	Add USB power check.
 	
-   0.8.0 Wed Tue Jul 03 2018 20:18:23 vel
-	Fixed Lux sensor initalization issue
+   0.8.0  Tue Jul 03 2018 12:47:57  chwon
+	Remove ThisCatena.h and add water sensor test code.
+	Set BME280 operating mode to Sleep.
+	Use CatenaStm32::fHasLuxSi1113 instead of CatenaStm32::fHasLuxRohm and
+	report white value intead of IR value.
 
 */
 
-#include "ThisCatena.h"
+#include <Catena.h>
 
 #include <Catena_Led.h>
 #include <Catena_TxBuffer.h>
 #include <Catena_CommandStream.h>
 #include <Catena_Totalizer.h>
 #include <Catena_Mx25v8035f.h>
+#include <CatenaStm32L0Rtc.h>
+
+#include <OneWire.h>
+#include <DallasTemperature.h>
+#include <SHT1x.h>
 
 #include <Wire.h>
 #include <Adafruit_BME280.h>
@@ -59,6 +67,8 @@ Revision history:
 #include <cmath>
 #include <type_traits>
 
+using namespace McciCatena;
+
 /****************************************************************************\
 |
 |		Manifest constants & typedefs.
@@ -83,7 +93,14 @@ enum    {
 						CATCFG_T_SETTLE),
 	};
 
+enum    {
+        PIN_ONE_WIRE =  A2,        // XSDA1 == A2
+        PIN_SHT10_CLK = 8,         // XSCL0 == D8
+        PIN_SHT10_DATA = 12,       // XSDA0 == D12
+        };
+
 // forwards
+static bool checkWaterSensorPresent(void);
 static void settleDoneCb(osjob_t *pSendJob);
 static void warmupDoneCb(osjob_t *pSendJob);
 static void txFailedDoneCb(osjob_t *pSendJob);
@@ -115,19 +132,19 @@ static const char sVersion[] = "0.1.0";
 \****************************************************************************/
 
 // globals
-ThisCatena gCatena;
+Catena gCatena;
 
 //
 // the LoRaWAN backhaul.  Note that we use the
-// ThisCatena version so it can provide hardware-specific
+// Catena version so it can provide hardware-specific
 // information to the base class.
 //
-ThisCatena::LoRaWAN gLoRaWAN;
+Catena::LoRaWAN gLoRaWAN;
 
 //
 // the LED
 //
-StatusLed gLed (ThisCatena::PIN_STATUS_LED);
+StatusLed gLed (Catena::PIN_STATUS_LED);
 
 // the RTC instance, used for sleeping
 CatenaStm32L0Rtc gRtc;
@@ -140,6 +157,15 @@ bool fBme;
 Catena_Si1133 gSi1133;
 bool fLux;
 
+//   The submersible temperature sensor
+OneWire oneWire(PIN_ONE_WIRE);
+DallasTemperature sensor_WaterTemp(&oneWire);
+bool fMayHaveWaterTemp;
+
+//  The SHT10 soil sensor
+SHT1x sensor_Soil(PIN_SHT10_DATA, PIN_SHT10_CLK);
+bool fSoilSensor;
+
 //   The contact sensors
 bool fHasPower1;
 uint8_t kPinPower1P1;
@@ -149,9 +175,9 @@ cTotalizer gPower1P1;
 cTotalizer gPower1P2;
 
 SPIClass gSPI2(
-		ThisCatena::PIN_SPI2_MOSI,
-		ThisCatena::PIN_SPI2_MISO,
-		ThisCatena::PIN_SPI2_SCK
+		Catena::PIN_SPI2_MOSI,
+		Catena::PIN_SPI2_MISO,
+		Catena::PIN_SPI2_SCK
 		);
 
 //   The flash
@@ -202,6 +228,12 @@ void setup(void)
 
 	gCatena.SafePrintf("Catena 4551 test01 V%s\n", sVersion);
 
+#ifdef USBCON
+	gCatena.SafePrintf("USB enabled\n");
+#else
+	gCatena.SafePrintf("USB disabled\n");
+#endif
+
 	gLed.begin();
 	gCatena.registerObject(&gLed);
 
@@ -220,7 +252,7 @@ void setup(void)
 		gCatena.registerObject(&gLoRaWAN);
 		}
 
-	ThisCatena::UniqueID_string_t CpuIDstring;
+	Catena::UniqueID_string_t CpuIDstring;
 
 	gCatena.SafePrintf(
 		"CPU Unique ID: %s\n",
@@ -228,7 +260,7 @@ void setup(void)
 		);
 
 	/* find the platform */
-	const ThisCatena::EUI64_buffer_t *pSysEUI = gCatena.GetSysEUI();
+	const Catena::EUI64_buffer_t *pSysEUI = gCatena.GetSysEUI();
 
 	uint32_t flags;
 	const CATENA_PLATFORM * const pPlatform = gCatena.GetPlatform();
@@ -262,7 +294,7 @@ void setup(void)
 
 
 	/* initialize the lux sensor */
-	if (flags & CatenaStm32::fHasLuxSi1133)
+	if (flags & CatenaStm32::fHasLuxSi1113)
 		{
 		if (gSi1133.begin())
 			{
@@ -280,13 +312,14 @@ void setup(void)
 		}
 	else
 		{
+		gCatena.SafePrintf("No Si1133 wiring\n");
 		fLux = false;
 		}
 
 	/* initialize the BME280 */
 	if (flags & CatenaStm32::fHasBme280)
 		{
-		if (gBme.begin())
+		if (gBme.begin(BME280_ADDRESS, Adafruit_BME280::OPERATING_MODE::Sleep))
 			{
 			fBme = true;
 			}
@@ -304,7 +337,7 @@ void setup(void)
 	/* initialize the FLASH */
 	if (flags & CatenaStm32::fHasFlash)
 		{
-		if (gFlash.begin(&gSPI2, ThisCatena::PIN_SPI2_FLASH_SS))
+		if (gFlash.begin(&gSPI2, Catena::PIN_SPI2_FLASH_SS))
 			{
 			fFlash = true;
 			gFlash.powerDown();
@@ -334,6 +367,11 @@ void setup(void)
 			kPinPower1P1 = A0;
 			kPinPower1P2 = A1;
 			}
+		else if (modnumber == 102)
+			{
+			fMayHaveWaterTemp = true;
+			fSoilSensor = true;
+			}
 		else
 			{
 			gCatena.SafePrintf("unknown mod number %d\n", modnumber);
@@ -350,6 +388,19 @@ void setup(void)
 		    ! gPower1P2.begin(kPinPower1P2))
 			{
 			fHasPower1 = false;
+			}
+		}
+
+	if (fMayHaveWaterTemp)
+		{
+		sensor_WaterTemp.begin();
+		if (sensor_WaterTemp.getDeviceCount() == 0)
+			{
+			gCatena.SafePrintf("No one-wire temperature sensor detected\n");
+			}
+		else
+			{
+			gCatena.SafePrintf("One-wire temperature sensor detected\n");
 			}
 		}
 
@@ -383,8 +434,26 @@ void setup(void)
 		delay(510);	/* default measure interval is 500ms */
 		}
 
+	if (fHasPower1)
+		{
+		gCatena.SafePrintf("fHasPower1=%u\n", fHasPower1);
+		}
+
 	/* trigger a join by sending the first packet */
 	startSendingUplink();
+	}
+
+static bool checkWaterSensorPresent(void)
+	{
+	// this is unpleasant. But the way to deal with plugging is to call
+	// begin again.
+	if (fMayHaveWaterTemp)
+		{
+		sensor_WaterTemp.begin();
+		return sensor_WaterTemp.getDeviceCount() != 0;
+		}
+	else
+		return false;
 	}
 
 // The Arduino loop routine -- in our case, we just drive the other loops.
@@ -452,7 +521,7 @@ void startSendingUplink(void)
 	// vBus is sent as 5000 * v
 	float vBus = gCatena.ReadVbus();
 	gCatena.SafePrintf("vBus:    %d mV\n", (int) (vBus * 1000.0f));
-	fUsbPower = (vBus > 2.0) ? true : false;
+	fUsbPower = (vBus > 3.0) ? true : false;
 
 	uint32_t bootCount;
 	if (gCatena.getBootCount(bootCount))
@@ -487,12 +556,12 @@ void startSendingUplink(void)
 
 		gSi1133.readMultiChannelData(data, 3);
 		gCatena.SafePrintf(
-			"Si1133:  %u lux, %u White, %u UV\n",
+			"Si1133:  %u IR, %u White, %u UV\n",
 			data[0],
 			data[1],
 			data[2]
 			);
-		b.putLux(data[0]);
+		b.putLux(data[1]);
 		flag |= FlagsSensor2::FlagLux;
 		}
 
@@ -547,6 +616,32 @@ void startSendingUplink(void)
 			);
 
 		flag |= FlagsSensor2::FlagPulsesPerHour;
+		}
+
+	/*
+	|| Measure and transmit the "water temperature" (OneWire)
+	|| tranducer value. This is complicated because we want
+	|| to support plug/unplug and the sw interface is not
+	|| really hot-pluggable.
+	*/
+	bool fWaterTemp = checkWaterSensorPresent();
+
+	if (fWaterTemp)
+		{
+		sensor_WaterTemp.requestTemperatures();
+		float waterTempC = sensor_WaterTemp.getTempCByIndex(0);
+		Serial.print("Water temperature: "); Serial.print(waterTempC); Serial.println(" C");
+		}
+	else if (fMayHaveWaterTemp)
+		{
+		gCatena.SafePrintf("No water temperature\n");
+		}
+
+	if (fSoilSensor)
+		{
+		/* display temp and RH. library doesn't tell whether sensor is disconnected but gives us huge values instead */
+		Serial.print("Soil temperature: "); Serial.print(sensor_Soil.readTemperatureC()); Serial.println(" C");
+		Serial.print("Soil humidity:    "); Serial.print(sensor_Soil.readHumidity()); Serial.println(" %");
 		}
 
 	*pFlag = uint8_t(flag);
