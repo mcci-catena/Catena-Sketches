@@ -34,7 +34,7 @@ Revision history:
 
    0.7.0  Wed Jan 03 2018 11:09:14  chwon
 	Add USB power check.
-
+	
    0.8.0  Tue Jul 03 2018 12:47:57  chwon
 	Remove ThisCatena.h and add water sensor test code.
 	Set BME280 operating mode to Sleep.
