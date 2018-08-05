@@ -52,7 +52,9 @@ enum    {
         // add measurement and broadcast time, but we attempt
         // to compensate for the gross effects below.
         CATCFG_T_CYCLE = 6 * 60,        // every 6 minutes
-        CATCFG_T_CYCLE_TEST = 30,       // every 10 seconds
+        CATCFG_T_CYCLE_TEST = 30,       // every 30 seconds
+        CATCFG_T_CYCLE_INITIAL = 30,    // every 30 seconds initially
+        CATCFG_INTERVAL_COUNT_INITIAL = 30,     // repeat for 15 minutes
         };
 
 /* additional timing parameters; ususually you don't change these. */
@@ -60,6 +62,9 @@ enum    {
         CATCFG_T_WARMUP = 1,
         CATCFG_T_SETTLE = 5,
         CATCFG_T_OVERHEAD = (CATCFG_T_WARMUP + CATCFG_T_SETTLE),
+        CATCFG_T_MIN = CATCFG_T_OVERHEAD,
+        CATCFG_T_MAX = CATCFG_T_CYCLE < 60 * 60 ? 60 * 60 : CATCFG_T_CYCLE,     // normally one hour max.
+        CATCFG_INTERVAL_COUNT = 30,
         };
 
 constexpr uint32_t CATCFG_GetInterval(uint32_t tCycle)
@@ -146,6 +151,13 @@ static osjob_t sensorJob;
 
 // debug flag for throttling sleep prints
 bool g_fPrintedSleeping = false;
+
+// the interval to use
+unsigned gTxInterval;
+// remaining before we reset to default
+unsigned gTxIntervalCount;
+
+static Arduino_LoRaWAN::ReceivePortBufferCbFn receiveMessage;
 
 /****************************************************************************\
 |
@@ -249,6 +261,10 @@ void setup_platform()
                 gCatena.SafePrintf("succeeded\n");
                 gCatena.registerObject(&gLoRaWAN);
                 }
+
+        gLoRaWAN.SetReceiveBufferBufferCb(receiveMessage);
+        gTxInterval = CATCFG_GetInterval(CATCFG_T_CYCLE_INITIAL);
+        gTxIntervalCount = CATCFG_INTERVAL_COUNT_INITIAL;
 
         // display the CPU unique ID
         Catena::UniqueID_string_t CpuIDstring;
@@ -661,12 +677,23 @@ static void settleDoneCb(
                         gCatena.SafePrintf("using light sleep\n");
                 }
 
+        // update the sleep parameters
+        if (gTxIntervalCount > 1)
+                --gTxIntervalCount;
+        else
+                {
+                if (gTxIntervalCount > 0)
+                       gCatena.SafePrintf("resetting tx interval to default: %u\n", CATCFG_T_INTERVAL);
+
+                gTxIntervalCount = 0;
+                gTxInterval = CATCFG_T_INTERVAL;
+                }
 
         // if connected to USB, don't sleep
         // ditto if we're monitoring pulses.
         if (! fDeepSleep)
                 {
-                uint32_t interval = sec2osticks(CATCFG_T_INTERVAL);
+                uint32_t interval = sec2osticks(gTxInterval);
 
                 if (gCatena.GetOperatingFlags() & (1 << 18))
                         interval = 1;
@@ -674,7 +701,7 @@ static void settleDoneCb(
                 gLed.Set(LedPattern::Sleeping);
                 os_setTimedCallback(
                         &sensorJob,
-                        os_getTime() + sec2osticks(CATCFG_T_INTERVAL),
+                        os_getTime() + interval,
                         sleepDoneCb
                         );
                 return;
@@ -690,7 +717,7 @@ static void settleDoneCb(
 
         startTime = millis();
         uint32_t const sleepInterval = CATCFG_GetInterval(
-                        fDeepSleepTest ? CATCFG_T_CYCLE_TEST : CATCFG_T_CYCLE
+                        fDeepSleepTest ? CATCFG_T_CYCLE_TEST : gTxInterval + CATCFG_T_OVERHEAD
                         );
 
         gRtc.SetAlarm(sleepInterval);
@@ -728,4 +755,48 @@ static void warmupDoneCb(
         )
         {
         startSendingUplink();
+        }
+
+static void receiveMessage(
+        void *pContext,
+        uint8_t port,
+        const uint8_t *pMessage,
+        size_t nMessage
+        )
+        {
+        unsigned txInterval;
+        unsigned txCount;
+
+        if (! (port == 1 && 2 <= nMessage && nMessage <= 3))
+                {
+                gCatena.SafePrintf("invalid message port(%02x)/length(%zx)\n",
+                        port, nMessage
+                        );
+                return;
+                }
+
+        txInterval = (pMessage[0] << 8) | pMessage[1];
+
+        if (txInterval < CATCFG_T_MIN || txInterval > CATCFG_T_MAX)
+                {
+                gCatena.SafePrintf("tx interval out of range: %u\n", txInterval);
+                return;
+                }
+
+        // byte [2], if present, is the repeat count.
+        // explicitly sending zero causes it to stick.
+        txCount = CATCFG_INTERVAL_COUNT;
+        if (nMessage >= 3)
+                {
+                txCount = pMessage[2];
+                }
+
+        gCatena.SafePrintf(
+                "message interval %u seconds for %u messages\n",
+                txInterval, txCount
+                );
+
+        gTxInterval = txInterval;
+        gTxIntervalCount = txCount;
+
         }
