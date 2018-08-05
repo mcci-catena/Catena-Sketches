@@ -564,6 +564,9 @@ void startSendingUplink(void)
                 fConfirmed = true;
                 }
 
+        // for ib, need lower data rate
+        LMIC_setDrTxpow(DR_SF10, 20);
+
         gLoRaWAN.SendBuffer(b.getbase(), b.getn(), sendBufferDoneCb, NULL, fConfirmed);
         }
 
