@@ -566,6 +566,10 @@ void startSendingUplink(void)
                 fConfirmed = true;
                 }
 
+        // for iseechange, need lower data rate
+        LMIC_setDrTxpow(DR_SF10, 20);
+        gCatena.SafePrintf("requesting DR_SF10, 20dB tx\n");
+
         gLoRaWAN.SendBuffer(b.getbase(), b.getn(), sendBufferDoneCb, NULL, fConfirmed);
         }
 
