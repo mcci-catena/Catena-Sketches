@@ -1,4 +1,4 @@
-/* catena4551_test01.ino	Tue Jul 03 2018 12:47:57 chwon */
+/* catena4551_test01.ino	Thu Sep 13 2018 14:26:28 chwon */
 
 /*
 
@@ -8,7 +8,7 @@ Function:
 	Test program for Catena 4551 and variants.
 
 Version:
-	V0.8.0	Tue Jul 03 2018 12:47:57 chwon	Edit level 4
+	V0.11.0	Thu Sep 13 2018 14:26:28 chwon	Edit level 5
 
 Copyright notice:
 	This file copyright (C) 2017-2018 by
@@ -40,6 +40,9 @@ Revision history:
 	Set BME280 operating mode to Sleep.
 	Use CatenaStm32::fHasLuxSi1113 instead of CatenaStm32::fHasLuxRohm and
 	report white value intead of IR value.
+
+   0.11.0  Thu Sep 13 2018 14:26:28  chwon
+	Add SYSCLK debug message and check fUsbPower if USBCON is defined.
 
 */
 
@@ -227,6 +230,10 @@ void setup(void)
 	gCatena.begin();
 
 	gCatena.SafePrintf("Catena 4551 test01 V%s\n", sVersion);
+
+#ifdef CATENA_CFG_SYSCLK
+	gCatena.SafePrintf("SYSCLK: %d MHz\n", CATENA_CFG_SYSCLK);
+#endif
 
 #ifdef USBCON
 	gCatena.SafePrintf("USB enabled\n");
@@ -697,7 +704,11 @@ static void settleDoneCb(
 
 	// if connected to USB, don't sleep
 	// ditto if we're monitoring pulses.
+#ifdef USBCON
 	if (fUsbPower || fHasPower1)
+#else
+	if (fHasPower1)
+#endif
 		{
 		gLed.Set(LedPattern::Sleeping);
 		os_setTimedCallback(
