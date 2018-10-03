@@ -808,8 +808,7 @@ void setTxCycleTime(
                 gCatena.SafePrintf(
                         "message cycle time %u seconds indefinitely\n",
                         txCycle
-                );
-
+                        );
 
         gTxCycle = txCycle;
         gTxCycleCount = txCount;
