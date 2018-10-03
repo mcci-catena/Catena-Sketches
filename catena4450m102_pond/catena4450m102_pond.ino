@@ -3,7 +3,7 @@
 Module:  catena4450m102_pond.ino
 
 Function:
-        Code for the electric sensor with Catena 4450-M101.
+        Code for the pond sensor with Catena 4450-M102.
 
 Copyright notice:
         See LICENSE file accompanying this project
