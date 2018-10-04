@@ -109,6 +109,12 @@ void setTxCycleTime(unsigned txCycle, unsigned txCount);
 
 static const char sVersion[] = "0.2.2";
 
+//
+// set this to the branch you're using, if this is a branch.
+static const char sBranch[] = "";
+// keep by itself, more or less, for easy git rebasing.
+//
+
 /****************************************************************************\
 |
 |       Variables.
@@ -244,7 +250,7 @@ void setup_platform()
 
         gCatena.SafePrintf("\n");
         gCatena.SafePrintf("-------------------------------------------------------------------------------\n");
-        gCatena.SafePrintf("This is the catena4450m102_pond program V%s.\n", sVersion);
+        gCatena.SafePrintf("This is the catena4450m102_pond program V%s%s.\n", sVersion, sBranch);
                 {
                 char sRegion[16];
                 gCatena.SafePrintf("Target network: %s / %s\n",
