@@ -3,7 +3,7 @@
 
 - [Clone this repository into a suitable directory on your system](#clone-this-repository-into-a-suitable-directory-on-your-system)
 - [Install the MCCI SAMD board support library](#install-the-mcci-samd-board-support-library)
-	- [Additional board packages required](#additional-board-packages-required)
+- [Select your desired band](#select-your-desired-band)
 - [Installing the required libraries](#installing-the-required-libraries)
 	- [List of required libraries](#list-of-required-libraries)
 - [Build and Download](#build-and-download)
@@ -75,14 +75,13 @@ Next, open the board manager. `Tools>Board:...`, and get up to the top of the me
 
 Then go to `Tools>Board:...` and scroll to the bottom. You should see `Catena 4450`; select that.
 
-### Additional board packages required
+## Select your desired band
 
-Due to a bug, you must install two additonal packages in order to be able to download code.
+When you select a board, the default LoRaWAN region is set to US-915, which is used in North America and much of South America. If you're elsewhere, you need to select your target region. You can do it in the IDE:
 
-Go to Boards Manager (`Tools>Board:...>Boards Manager...`) and search for `SAM`. Install:
+![Select Bandplan](./assets/menu-region.gif)
 
-- **Arduino SAM Boards (32-bits ARM Cortex M3)** by **Arduino**
-- **Arduino SAMD Boards (32-bits ARM Cortex M0+)** by **Arduino**
+As the animation shows, use `Tools>LoRaWAN Region...` and choose the appropriate entry from the menu.
 
 ## Installing the required libraries
 
