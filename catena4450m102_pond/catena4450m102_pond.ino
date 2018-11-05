@@ -111,7 +111,7 @@ static const char sVersion[] = "0.2.2";
 
 //
 // set this to the branch you're using, if this is a branch.
-static const char sBranch[] = " (ISEECHANGE-201810.1)";
+static const char sBranch[] = " (ISEECHANGE-201810.2)";
 // keep by itself, more or less, for easy git rebasing.
 //
 
