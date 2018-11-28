@@ -206,14 +206,19 @@ void setup(void)
         if (!(gCatena.GetOperatingFlags() &
                 static_cast<uint32_t>(gCatena.OPERATING_FLAGS::fManufacturingTest)))
                 {
-                gLed.Set(LedPattern::Joining);
+                if (!gLoRaWAN.IsProvisioned())
+                        gCatena.SafePrintf("LoRaWAN not provisioned yet. Use the commands to set it up.\n");
+                else
+                        {
+                        gLed.Set(LedPattern::Joining);
 
-                /* warm up the BME280 by discarding a measurement */
-                if (fBme)
-                        (void)gBME280.readTemperature();
+                        /* warm up the BME280 by discarding a measurement */
+                        if (fBme)
+                                (void)gBME280.readTemperature();
 
-                /* trigger a join by sending the first packet */
-                startSendingUplink();
+                        /* trigger a join by sending the first packet */
+                        startSendingUplink();
+                        }
                 }
         }
 
