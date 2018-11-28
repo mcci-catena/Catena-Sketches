@@ -1,17 +1,17 @@
-/* catena4551_test01.ino	Thu Sep 13 2018 14:26:28 chwon */
+/* catena461x_test01.ino	Mon Nov 19 2018 15:52:04 chwon */
 
 /*
 
-Module:  catena4551_test01.ino
+Module:  catena461x_test01.ino
 
 Function:
-	Test program for Catena 4551 and variants.
+	Test program for Catena 4612 and variants.
 
 Version:
-	V0.11.0	Thu Sep 13 2018 14:26:28 chwon	Edit level 5
+	V0.11.0	Mon Nov 19 2018 15:52:04 chwon	Edit level 1
 
 Copyright notice:
-	This file copyright (C) 2017-2018 by
+	This file copyright (C) 2018 by
 
 		MCCI Corporation
 		3520 Krums Corners Road
@@ -23,26 +23,11 @@ Copyright notice:
 	copied without the prior permission of MCCI Corporation
 
 Author:
-	ChaeHee Won, MCCI Corporation	October 2017
+	ChaeHee Won, MCCI Corporation	November 2018
 
 Revision history:
-   0.1.0  Thu Oct 19 2017 13:10:58  chwon
+   0.11.0  Mon Nov 19 2018 15:52:04  chwon
 	Module created.
-
-   0.6.0  Wed Dec 06 2017 15:35:20  chwon
-	Improve power management.
-
-   0.7.0  Wed Jan 03 2018 11:09:14  chwon
-	Add USB power check.
-	
-   0.8.0  Tue Jul 03 2018 12:47:57  chwon
-	Remove ThisCatena.h and add water sensor test code.
-	Set BME280 operating mode to Sleep.
-	Use CatenaStm32::fHasLuxSi1113 instead of CatenaStm32::fHasLuxRohm and
-	report white value intead of IR value.
-
-   0.11.0  Thu Sep 13 2018 14:26:28  chwon
-	Add SYSCLK debug message and check fUsbPower if USBCON is defined.
 
 */
 
@@ -118,7 +103,7 @@ static Arduino_LoRaWAN::SendBufferCbFn sendBufferDoneCb;
 |
 \****************************************************************************/
 
-static const char sVersion[] = "0.2.0";
+static const char sVersion[] = "0.1.0";
 
 /****************************************************************************\
 |
@@ -225,7 +210,7 @@ void setup(void)
 	{
 	gCatena.begin();
 
-	gCatena.SafePrintf("Catena 4551 test01 V%s\n", sVersion);
+	gCatena.SafePrintf("%s test01 V%s\n", gCatena.CatenaName(), sVersion);
 
 #ifdef CATENA_CFG_SYSCLK
 	gCatena.SafePrintf("SYSCLK: %d MHz\n", CATENA_CFG_SYSCLK);
@@ -364,7 +349,7 @@ void setup(void)
 
 	if (modnumber != 0)
 		{
-		gCatena.SafePrintf("Catena 4551-M%u\n", modnumber);
+		gCatena.SafePrintf("%s-M%u\n", gCatena.CatenaName(), modnumber);
 		if (modnumber == 101)
 			{
 			fHasPower1 = true;
@@ -526,6 +511,8 @@ void startSendingUplink(void)
 	float vBus = gCatena.ReadVbus();
 	gCatena.SafePrintf("vBus:    %d mV\n", (int) (vBus * 1000.0f));
 	fUsbPower = (vBus > 3.0) ? true : false;
+
+	// gCatena.SafePrintf("VBUS: %u\n", analogRead(Catena::APIN_VBUS_SENSE));
 
 	uint32_t bootCount;
 	if (gCatena.getBootCount(bootCount))
@@ -698,13 +685,8 @@ static void settleDoneCb(
 	osjob_t *pSendJob
 	)
 	{
-	// if connected to USB, don't sleep
-	// ditto if we're monitoring pulses.
-#ifdef USBCON
-	if (fUsbPower || fHasPower1)
-#else
+	// if we're monitoring pulses, don't sleep
 	if (fHasPower1)
-#endif
 		{
 		gLed.Set(LedPattern::Sleeping);
 		os_setTimedCallback(
