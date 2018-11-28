@@ -15,21 +15,17 @@ Author:
 
 #include <Catena.h>
 
-#ifdef ARDUINO_ARCH_SAMD
-# include <CatenaRTC.h>
-#elif defined(ARDUINO_ARCH_STM32)
-# include <CatenaStm32L0Rtc.h>
-#endif
-
 #include <Catena_Led.h>
 #include <Catena_TxBuffer.h>
 #include <Catena_CommandStream.h>
 #include <Catena_Totalizer.h>
 
+#include <SPI.h>
 #include <Wire.h>
 #include <Adafruit_BME280.h>
 #include <Arduino_LoRaWAN.h>
 #include <BH1750.h>
+#include <Catena_Si1133.h>
 #include <lmic.h>
 #include <hal/hal.h>
 #include <mcciadk_baselib.h>
@@ -107,7 +103,7 @@ void setTxCycleTime(unsigned txCycle, unsigned txCount);
 |
 \****************************************************************************/
 
-static const char sVersion[] = "0.2.2";
+static const char sVersion[] = "0.3.0";
 
 //
 // set this to the branch you're using, if this is a branch.
@@ -134,13 +130,6 @@ Catena::LoRaWAN gLoRaWAN;
 // the LED instance object
 StatusLed gLed (Catena::PIN_STATUS_LED);
 
-// the RTC instance, used for sleeping
-#ifdef ARDUINO_ARCH_SAMD
-CatenaRTC gRtc;
-#elif defined(ARDUINO_ARCH_STM32)
-# include <CatenaStm32L0Rtc.h>
-#endif /* ARDUINO_ARCH_SAMD*/
-
 // The BME280 instance, for the temperature/humidity sensor
 Adafruit_BME280 gBME280; // The default initalizer creates an I2C connection
 bool fBme;               // true if BME280 is in use
@@ -148,6 +137,10 @@ bool fBme;               // true if BME280 is in use
 //   The LUX sensor
 BH1750 gBH1750;
 bool fLux;              // true if BH1750 is in use
+
+//  The light sensor
+Catena_Si1133 gSi1133 {};
+bool fSi1133;
 
 //   The submersible temperature sensor
 OneWire oneWire(PIN_ONE_WIRE);
@@ -226,14 +219,19 @@ void setup(void)
         if (!(gCatena.GetOperatingFlags() &
                 static_cast<uint32_t>(gCatena.OPERATING_FLAGS::fManufacturingTest)))
                 {
-                gLed.Set(LedPattern::Joining);
+                if (! gLoRaWAN.IsProvisioned())
+                        gCatena.SafePrintf("LoRaWAN not provisioned yet. Use the commands to set it up.\n");
+                else
+                        {
+                        gLed.Set(LedPattern::Joining);
 
-                /* warm up the BME280 by discarding a measurement */
-                if (fBme)
-                        (void)gBME280.readTemperature();
+                        /* warm up the BME280 by discarding a measurement */
+                        if (fBme)
+                                (void)gBME280.readTemperature();
 
-                /* trigger a join by sending the first packet */
-                startSendingUplink();
+                        /* trigger a join by sending the first packet */
+                        startSendingUplink();
+                        }
                 }
         }
 
@@ -258,6 +256,7 @@ void setup_platform()
                                 gLoRaWAN.GetRegionString(sRegion, sizeof(sRegion))
                                 );
                 }
+        gCatena.SafePrintf("Current board: %s\n", gCatena.CatenaName());
         gCatena.SafePrintf("Enter 'help' for a list of commands.\n");
         gCatena.SafePrintf("(remember to select 'Line Ending: Newline' at the bottom of the monitor window.)\n");
         gCatena.SafePrintf("--------------------------------------------------------------------------------\n");
@@ -267,9 +266,6 @@ void setup_platform()
         gLed.begin();
         gCatena.registerObject(&gLed);
         gLed.Set(LedPattern::FastFlash);
-
-        // set up the RTC object
-        gRtc.begin();
 
         gCatena.SafePrintf("LoRaWAN init: ");
         if (!gLoRaWAN.begin(&gCatena))
@@ -369,6 +365,29 @@ void setup_sensors(void)
         else
                 {
                 fLux = false;
+                }
+
+        /* initialize the lux sensor */
+        if (flags & Catena::fHasLuxSi1133)
+                {
+                if (gSi1133.begin())
+                        {
+                        fLux = true;
+                        gSi1133.configure(0, CATENA_SI1133_MODE_SmallIR);
+                        gSi1133.configure(1, CATENA_SI1133_MODE_White);
+                        gSi1133.configure(2, CATENA_SI1133_MODE_UV);
+                        gSi1133.start(/* onetime */ true);
+                        }
+                else
+                        {
+                        fSi1133 = false;
+                        gCatena.SafePrintf("No Si1133 found: check wiring\n");
+                        }
+                }
+        else
+                {
+                gCatena.SafePrintf("No Si1133 wiring\n");
+                fSi1133 = false;
                 }
 
         /* initialize the BME280 */
@@ -484,7 +503,21 @@ void fillBuffer(TxBuffer_t &b)
                 b.putLux(light);
                 flag |= FlagsSensor3::FlagLux;
                 }
+        else if (fSi1133)
+                {
+                /* Get a new sensor event */
+                uint16_t data[3];
 
+                gSi1133.readMultiChannelData(data, 3);
+                gCatena.SafePrintf(
+                        "Si1133:  %u IR, %u White, %u UV\n",
+                        data[0],
+                        data[1],
+                        data[2]
+                        );
+                b.putLux(data[1]);
+                flag |= FlagsSensor3::FlagLux;
+                }
 
         if (fHasWaterTemp)
                 {
@@ -619,7 +652,6 @@ static void settleDoneCb(
         osjob_t *pSendJob
         )
         {
-        uint32_t startTime;
         bool const fDeepSleepTest = gCatena.GetOperatingFlags() & (1 << 19);
         bool fDeepSleep;
 
@@ -691,8 +723,7 @@ static void settleDoneCb(
                 gTxCycle = CATCFG_T_CYCLE;
                 }
 
-        // if connected to USB, don't sleep
-        // ditto if we're monitoring pulses.
+        // if not permitted to sleep, just go on as normal.
         if (! fDeepSleep)
                 {
                 uint32_t interval = sec2osticks(CATCFG_GetInterval(gTxCycle));
@@ -715,25 +746,37 @@ static void settleDoneCb(
         || while we sleep. We can't poll if we're polling power.
         */
         gLed.Set(LedPattern::Off);
-        USBDevice.detach();
+        if (fSi1133)
+                {
+                gSi1133.stop();
+                }
 
-        startTime = millis();
+#ifdef ARDUINO_ARCH_SAMD
+        USBDevice.detach();
+#else
+        Serial.end();
+#endif
+        SPI.end();
+        Wire.end();
+
         uint32_t const sleepInterval = CATCFG_GetInterval(
                         fDeepSleepTest ? CATCFG_T_CYCLE_TEST : gTxCycle
                         );
 
-        gRtc.SetAlarm(sleepInterval);
-        gRtc.SleepForAlarm(
-                gRtc.MATCH_HHMMSS,
-                // gRtc.SleepMode::IdleCpuAhbApb
-                gRtc.SleepMode::DeepSleep
-                );
+        gCatena.Sleep(sleepInterval);
 
-        // add the number of ms that we were asleep to the millisecond timer.
-        // we don't need extreme accuracy.
-        adjust_millis_forward(sleepInterval * 1000);
+        SPI.begin();
+        Wire.begin();
 
+#ifdef ARDUINO_ARCH_SAMD
         USBDevice.attach();
+#else
+        Serial.begin(115200);
+#endif
+        if (fSi1133)
+                {
+                gSi1133.start(/* onetime */ true);
+                }
 
         /* and now... we're awake again. Go to next state. */
         sleepDoneCb(pSendJob);
