@@ -280,7 +280,7 @@ void setup(void)
 
 
 	/* initialize the lux sensor */
-	if (flags & CatenaStm32::fHasLuxSi1113)
+	if (flags & CatenaBase::fHasLuxSi1113)
 		{
 		if (gSi1133.begin())
 			{
@@ -303,7 +303,7 @@ void setup(void)
 		}
 
 	/* initialize the BME280 */
-	if (flags & CatenaStm32::fHasBme280)
+	if (flags & CatenaBase::fHasBme280)
 		{
 		if (gBme.begin(BME280_ADDRESS, Adafruit_BME280::OPERATING_MODE::Sleep))
 			{
@@ -321,7 +321,7 @@ void setup(void)
 		}
 
 	/* initialize the FLASH */
-	if (flags & CatenaStm32::fHasFlash)
+	if (flags & CatenaBase::fHasFlash)
 		{
 		if (gFlash.begin(&gSPI2, Catena::PIN_SPI2_FLASH_SS))
 			{
