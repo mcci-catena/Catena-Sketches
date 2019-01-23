@@ -378,7 +378,7 @@ void setup_platform()
 
 	if (modnumber != 0)
 		{
-		gCatena.SafePrintf("Catena 4450-M%u\n", modnumber);
+		gCatena.SafePrintf("Catena 4470-M%u\n", modnumber);
 		if (modnumber == 101)
 			{
 			fHasPower1 = true;
