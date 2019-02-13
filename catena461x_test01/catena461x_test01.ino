@@ -512,8 +512,6 @@ void startSendingUplink(void)
 	gCatena.SafePrintf("vBus:    %d mV\n", (int) (vBus * 1000.0f));
 	fUsbPower = (vBus > 3.0) ? true : false;
 
-	// gCatena.SafePrintf("VBUS: %u\n", analogRead(Catena::APIN_VBUS_SENSE));
-
 	uint32_t bootCount;
 	if (gCatena.getBootCount(bootCount))
 		{
