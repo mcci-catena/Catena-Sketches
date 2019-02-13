@@ -1,4 +1,4 @@
-/* catena4410_sensor1.ino	Tue Nov  1 2016 16:33:44 tmm */
+/* catena4410_sensor1.ino	Wed Feb 13 2019 00:57:45 tmm */
 
 /*
 
@@ -7,33 +7,23 @@ Module:  catena4410_sensor1.ino
 Function:
 	Standard LoRaWAN sensor configuration 1
 
-Version:
-	V0.1.0	Tue Nov  1 2016 16:33:44 tmm	Edit level 2
-
 Copyright notice:
-	This file copyright (C) 2016 by
+	This file copyright (C) 2016, 2019 by
 
 		MCCI Corporation
 		3520 Krums Corners Road
                 Ithaca, NY  14850
 
-	An unpublished work.  All rights reserved.
-
-	This file is proprietary information, and may not be disclosed or
-	copied without the prior permission of MCCI Corporation.
+	See accompanying LICENSE file.
 
 Author:
 	Terry Moore, MCCI Corporation	November 2016
-
-Revision history:
-   V0.1.0  Tue Nov  1 2016 16:32:44  tmm
-	Module created.
 
 */
 
 
 #include <Catena4410.h>
-#include <Catena_LED.h>
+#include <Catena_Led.h>
 #include <Catena_TxBuffer.h>
 #include <Catena_CommandStream.h>
 
