@@ -256,8 +256,7 @@ void startSendingUplink(void)
   gLoRaWAN.SendBuffer(b.getbase(), b.getn(), sendBufferDoneCb, NULL);
 }
 
-static void
-sendBufferDoneCb(
+static void sendBufferDoneCb(
     void *pContext,
     bool fStatus
     )

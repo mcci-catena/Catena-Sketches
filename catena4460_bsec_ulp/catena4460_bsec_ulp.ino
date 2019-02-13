@@ -670,8 +670,7 @@ void startSendingUplink(void)
         gLoRaWAN.SendBuffer(b.getbase(), b.getn(), sendBufferDoneCb, nullptr, fConfirmed);
         }
 
-static void
-sendBufferDoneCb(
+static void sendBufferDoneCb(
         void *pContext,
         bool fStatus
         )
@@ -695,8 +694,7 @@ sendBufferDoneCb(
                 );
         }
 
-static void
-txFailedDoneCb(
+static void txFailedDoneCb(
         osjob_t *pSendJob
         )
         {
