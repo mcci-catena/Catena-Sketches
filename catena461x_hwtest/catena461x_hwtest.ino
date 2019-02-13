@@ -1,4 +1,4 @@
-/* catena461x_hwtest.ino	Thu Dec 06 2018 09:58:51 chwon */
+/* catena461x_hwtest.ino	Wed Feb 13 2019 12:40:49 chwon */
 
 /*
 
@@ -8,10 +8,10 @@ Function:
 	 Hardware test app for Catena-461x
 
 Version:
-	V0.12.0	Thu Dec 06 2018 09:58:51 chwon	Edit level 1
+	V0.14.0	Wed Feb 13 2019 12:40:49 chwon	Edit level 2
 
 Copyright notice:
-	This file copyright (C) 2018 by
+	This file copyright (C) 2018-2019 by
 
 		MCCI Corporation
 		3520 Krums Corners Road
@@ -28,6 +28,9 @@ Author:
 Revision history:
    0.12.0  Thu Dec 06 2018 09:58:51  chwon
 	Module created.
+
+   0.14.0  Wed Feb 13 2019 12:40:49  chwon
+	Use gCatena.ReadXxx() instead of analogRead().
 
 */
 
@@ -768,22 +771,20 @@ void adc_testing(void)
 		{
 		lasttime = now;
 
-		uint32_t vBat = analogRead(Catena461x::APIN_VBAT_SENSE);;
-		Serial.print("\nvBat:   "); Serial.println(vBat);
+		float vBat = gCatena.ReadVbat();
+		gCatena.SafePrintf("vBat:    %d mV\n", (int) (vBat * 1000.0f));
 
-		uint32_t vBus = analogRead(Catena461x::APIN_VBUS_SENSE);
-		Serial.print("vBus:   "); Serial.println(vBus);
+		float vBus = gCatena.ReadVbus();
+		gCatena.SafePrintf("vBus:    %d mV\n", (int) (vBus * 1000.0f));
 
-		uint32_t vA0 = analogRead(A0);
-		Serial.print("vA0:    "); Serial.println(vA0);
+		uint32_t vA0 = gCatena.ReadAnalog(Catena461x::ANALOG_CHANNEL_A0);
+		gCatena.SafePrintf("vA0:     %d mV\n", vA0);
 
-		uint32_t vA1 = analogRead(A1);
-		Serial.print("vA1:    "); Serial.println(vA1);
+		uint32_t vA1 = gCatena.ReadAnalog(Catena461x::ANALOG_CHANNEL_A1);
+		gCatena.SafePrintf("vA1:     %d mV\n", vA1);
 
-#if NUM_DIGITAL_PINS > 34
-		uint32_t vRef = analogRead(D34);
-		Serial.print("vRef:   "); Serial.println(vRef);
-#endif
+		uint32_t vA2 = gCatena.ReadAnalog(Catena461x::ANALOG_CHANNEL_A2);
+		gCatena.SafePrintf("vA2:     %d mV\n", vA2);
 		}
 	}
 
