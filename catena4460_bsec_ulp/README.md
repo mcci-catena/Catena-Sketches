@@ -33,3 +33,5 @@ We have tried this procedure with Arduino IDE 1.8.5, and we were successful. How
 The Bosch documentation doesn't make it clear when to use a different calibration file with longer period. The Catena 4460 runs at 3.3V, so we definitely need the 3.3v family. We've only tested with the 3s / 4d combination.
 
 Adafruit and MCCI use a different default address for the BME680 than Bosch does.
+
+Because of license restrictions, there is no CI test for this sketch.
