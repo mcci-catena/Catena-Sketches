@@ -2,7 +2,7 @@
 
 This repository contains top-level Arduino sketches for the Catena 4xxx family of LoRaWAN remote sensors made by MCCI based on the [Adafruit LoRa Feather M0 LoRa](https://www.adafruit.com/products/3178), [Adafruit Feather M0 Basic](https://www.adafruit.com/products/2772) and so forth.
 
-[![GitHub release](https://img.shields.io/github/release/mcci-catena/Catena-Sketches.svg)](https://github.com/mcci-catena/Catena-Sketches/releases/latest) [![GitHub commits](https://img.shields.io/github/commits-since/mcci-catena/Catena-Sketches/latest.svg)](https://github.com/mcci-catena/Catena-Sketches/compare/v0.3.4...master) [![Build Status](https://travis-ci.org/mcci-catena/Catena-Sketches.svg?branch=master)](https://travis-ci.org/mcci-catena/Catena-Sketches)
+[![GitHub release](https://img.shields.io/github/release/mcci-catena/Catena-Sketches.svg)](https://github.com/mcci-catena/Catena-Sketches/releases/latest) [![GitHub commits](https://img.shields.io/github/commits-since/mcci-catena/Catena-Sketches/latest.svg)](https://github.com/mcci-catena/Catena-Sketches/compare/v0.3.4...master) [![Build Status](https://travis-ci.com/mcci-catena/Catena-Sketches.svg?branch=master)](https://travis-ci.com/mcci-catena/Catena-Sketches)
 
 
 ![Picture of Catena 4410](extra/assets/MCCI-Catena-4410-1080x620.jpg)
