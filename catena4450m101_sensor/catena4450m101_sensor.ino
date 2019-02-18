@@ -15,17 +15,12 @@ Author:
 
 #include <Catena.h>
 
-#ifdef ARDUINO_ARCH_SAMD
-# include <CatenaRTC.h>
-#elif defined(ARDUINO_ARCH_STM32)
-# include <CatenaStm32L0Rtc.h>
-#endif
-
 #include <Catena_Led.h>
 #include <Catena_TxBuffer.h>
 #include <Catena_CommandStream.h>
 #include <Catena_Totalizer.h>
 
+#include <SPI.h>
 #include <Wire.h>
 #include <Adafruit_BME280.h>
 #include <Arduino_LoRaWAN.h>
@@ -123,13 +118,6 @@ Catena::LoRaWAN gLoRaWAN;
 
 // the LED instance object
 StatusLed gLed (Catena::PIN_STATUS_LED);
-
-// the RTC instance, used for sleeping
-#ifdef ARDUINO_ARCH_SAMD
-CatenaRTC gRtc;
-#elif defined(ARDUINO_ARCH_STM32)
-CatenaStm32L0Rtc gRtc;
-#endif
 
 // The BME280 instance, for the temperature/humidity sensor
 Adafruit_BME280 gBME280; // The default initalizer creates an I2C connection
@@ -252,9 +240,6 @@ void setup_platform()
         gLed.begin();
         gCatena.registerObject(&gLed);
         gLed.Set(LedPattern::FastFlash);
-
-        // set up the RTC object
-        gRtc.begin();
 
         gCatena.SafePrintf("LoRaWAN init: ");
         if (!gLoRaWAN.begin(&gCatena))
@@ -716,25 +701,28 @@ static void settleDoneCb(
         || while we sleep. We can't poll if we're polling power.
         */
         gLed.Set(LedPattern::Off);
+#ifdef ARDUINO_ARCH_SAMD
         USBDevice.detach();
+#elif defined(ARDUINO_ARCH_STM32)
+	Serial.end();
+#endif
+	Wire.end();
+	SPI.end();
 
         startTime = millis();
         uint32_t const sleepInterval = CATCFG_GetInterval(
                         fDeepSleepTest ? CATCFG_T_CYCLE_TEST : gTxCycle
                         );
 
-        gRtc.SetAlarm(sleepInterval);
-        gRtc.SleepForAlarm(
-                gRtc.MATCH_HHMMSS,
-                // gRtc.SleepMode::IdleCpuAhbApb
-                gRtc.SleepMode::DeepSleep
-                );
+	gCatena.Sleep(sleepInterval);
 
-        // add the number of ms that we were asleep to the millisecond timer.
-        // we don't need extreme accuracy.
-        adjust_millis_forward(sleepInterval * 1000);
-
+#ifdef ARDUINO_ARCH_SAMD
         USBDevice.attach();
+#elif defined(ARDUINO_ARCH_STM32)
+	Serial.begin();
+#endif
+	Wire.begin();
+	SPI.begin();
 
         /* and now... we're awake again. Go to next state. */
         sleepDoneCb(pSendJob);
