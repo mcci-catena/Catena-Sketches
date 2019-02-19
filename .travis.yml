@@ -120,14 +120,14 @@ install:
  - "echo $(_samdopts) $(_samdopts '' projcfg)"
 
 script:
-
- #
- # *** TESTS FOR SAMD21 / Feather M0, Catena 44xx boards ***
- # test each of the SAMD boards
  - _testsketch catena461x_hwtest  mcci_catena_4610 "$REGION"
  - _testsketch catena461x_hwtest  mcci_catena_4611 "$REGION"
  - _testsketch catena461x_hwtest  mcci_catena_4612 "$REGION"
  - _testsketch catena461x_test01  mcci_catena_4610 "$REGION"
+ - _testsketch catena461x_test01  mcci_catena_4612 "$REGION"
+ - _testsketch catena4612_simple  mcci_catena_4610 "$REGION"
+ - _testsketch catena4612_simple  mcci_catena_4612 "$REGION"
+
  - _testsketch catena4410_sensor1 mcci_catena_4410 "$REGION"
  - _testsketch catena4410_test01  mcci_catena_4410 "$REGION"
  - _testsketch catena4410_test02  mcci_catena_4410 "$REGION"
@@ -159,6 +159,5 @@ script:
  - _testsketch catena4450m102_waterlevel mcci_catena_4612 "$REGION"
 
  - _testsketch catena4460_aqi   mcci_catena_4460 "$REGION"
-
 
 ### end of file ###
