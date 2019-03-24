@@ -108,7 +108,7 @@ enum    {
 // forwards
 static void settleDoneCb(osjob_t *pSendJob);
 static void warmupDoneCb(osjob_t *pSendJob);
-static void txFailedDoneCb(osjob_t *pSendJob);
+static void txNotProvisionedCb(osjob_t *pSendJob);
 static void sleepDoneCb(osjob_t *pSendJob);
 static Arduino_LoRaWAN::SendBufferCbFn sendBufferDoneCb;
 static Arduino_LoRaWAN::ReceivePortBufferCbFn receiveMessage;
@@ -119,7 +119,7 @@ static Arduino_LoRaWAN::ReceivePortBufferCbFn receiveMessage;
 |
 \****************************************************************************/
 
-static const char sVersion[] = "0.1.0";
+static const char sVersion[] = "0.1.1";
 
 /****************************************************************************\
 |
@@ -384,6 +384,8 @@ void setup_uplink(void)
 // The Arduino loop routine -- in our case, we just drive the other loops.
 // If we try to do too much, we can break the LMIC radio. So the work is
 // done by outcalls scheduled from the LMIC os loop.
+void fillBuffer(TxBuffer_t &b);
+
 void loop()
         {
         gCatena.poll();
@@ -505,15 +507,18 @@ static void sendBufferDoneCb(
 	osjobcb_t pFn;
 
 	gLed.Set(LedPattern::Settling);
+        pFn = settleDoneCb;
 	if (! fStatus)
 		{
-		gCatena.SafePrintf("send buffer failed\n");
-		pFn = txFailedDoneCb;
+                if (!gLoRaWAN.IsProvisioned())
+                        {
+                        // we'll talk about it at the callback.
+                        pFn = txNotProvisionedCb;
+                        }
+                else
+                        gCatena.SafePrintf("send buffer failed\n");
 		}
-	else
-		{
-		pFn = settleDoneCb;
-		}
+
 	os_setTimedCallback(
 		&sensorJob,
 		os_getTime()+sec2osticks(CATCFG_T_SETTLE),
@@ -521,12 +526,12 @@ static void sendBufferDoneCb(
 		);
 	}
 
-static void txFailedDoneCb(
+static void txNotProvisionedCb(
 	osjob_t *pSendJob
 	)
 	{
-	gCatena.SafePrintf("not provisioned, idling\n");
-	gLoRaWAN.Shutdown();
+        gCatena.SafePrintf("LoRaWAN not provisioned yet. Use the commands to set it up.\n");
+        gLoRaWAN.Shutdown();
 	gLed.Set(LedPattern::NotProvisioned);
 	}
 
