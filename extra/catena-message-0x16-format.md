@@ -31,13 +31,15 @@ byte | description
 1 | bitmap encoding the fields that follow
 2..n | data bytes; use bitmap to decode.
 
-Each bit in byte 1 represent whether a corresponding field in bytes 2..n is present. If all bits are clear, then no data bytes are present. If bit 0 is set, then field 0 is present; if bit 1 is set, then field 1 is present, and so forth. Fields, if present, are
+Each bit in byte 1 represent whether a corresponding field in bytes 2..n is present. If all bits are clear, then no data bytes are present. If bit 0 is set, then field 0 is present; if bit 1 is set, then field 1 is present, and so forth.
 
-## Bitmap fields and associated fields
+Fields are appended sequentially in ascending order.  A bitmap of 0000101 indicates that field 0 is present, followed by field 2; the other fields are missing.  A bitmap of 00011010 indicates that fields 1, 3, and 4 are present, in that order, but that fields 0, 2, 5 and 6 are missing.
 
-The bitmap byte has the following interpretation. `int16`, `uint16`, etc. are defined after the table.
+## Field format definitions
 
-Bitmap bit | Length of corresponding field (bytes) | Data format |Description
+Each field has its own format, as defined in the following table. `int16`, `uint16`, etc. are defined after the table.
+
+Field number (Bitmap bit) | Length of corresponding field (bytes) | Data format |Description
 :---:|:---:|:---:|:----
 0 | 2 | [int16](#int16) | [Battery voltage](#battery-voltage-field-0)
 1 | 2 | [int16](#int16) | [Bus voltage](#bus-voltage-field-1)
