@@ -766,10 +766,21 @@ static void receiveMessage(
         unsigned txCycle;
         unsigned txCount;
 
+        if (port == 0)
+                {
+                gCatena.SafePrintf("MAC message:");
+                for (unsigned i = 0; i < LMIC.dataBeg; ++i)
+                        {
+                        gCatena.SafePrintf(" %02x", LMIC.frame[i]);
+                        }
+                gCatena.SafePrintf("\n");
+                return;
+                }
+
         if (! (port == 1 && 2 <= nMessage && nMessage <= 3))
                 {
-                gCatena.SafePrintf("invalid message port(%02x)/length(%zx)\n",
-                        port, nMessage
+                gCatena.SafePrintf("invalid message port(%02x)/length(%x)\n",
+                        port, (unsigned) nMessage
                         );
                 return;
                 }

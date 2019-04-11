@@ -747,9 +747,15 @@ static void receiveMessage(
 
         if (port == 0)
                 {
-                // mac downlink mesage; do nothing.
+                gCatena.SafePrintf("MAC message:");
+                for (unsigned i = 0; i < LMIC.dataBeg; ++i)
+                        {
+                        gCatena.SafePrintf(" %02x", LMIC.frame[i]);
+                        }
+                gCatena.SafePrintf("\n");
                 return;
                 }
+
         else if (! (port == 1 && 2 <= nMessage && nMessage <= 3))
                 {
                 gCatena.SafePrintf("invalid message port(%02x)/length(%x)\n",
