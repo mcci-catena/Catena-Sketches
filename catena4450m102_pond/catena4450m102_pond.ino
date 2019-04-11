@@ -619,6 +619,9 @@ static void sendBufferDoneCb(
                 }
         else
                 {
+                gCatena.SafePrintf("tx complete: adrAckReq: %d  adrChanged: %d\n",
+                        LMIC.adrAckReq, LMIC.adrChanged
+                        );
                 pFn = settleDoneCb;
                 }
         os_setTimedCallback(
