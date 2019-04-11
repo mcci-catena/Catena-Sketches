@@ -667,15 +667,23 @@ static void settleDoneCb(
 
         // update the sleep parameters
         if (gTxCycleCount > 1)
-                --gTxCycleCount;
-        else
                 {
-                if (gTxCycleCount > 0)
-                       gCatena.SafePrintf("resetting tx cycle to default: %u\n", CATCFG_T_CYCLE);
+                // values greater than one are decremented and ultimately reset to default.
+                --gTxCycleCount;
+                }
+        else if (gTxCycleCount == 1)
+                {
+                // it's now one (otherwise we couldn't be here.)
+                gCatena.SafePrintf("resetting tx cycle to default: %u\n", CATCFG_T_CYCLE);
 
                 gTxCycleCount = 0;
                 gTxCycle = CATCFG_T_CYCLE;
                 }
+        else
+                {
+                // it's zero. Leave it alone.
+                }
+
 
         // if connected to USB, don't sleep
         // ditto if we're monitoring pulses.
