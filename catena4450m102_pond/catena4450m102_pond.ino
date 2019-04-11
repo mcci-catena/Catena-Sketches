@@ -279,6 +279,8 @@ void setup_platform()
                 gCatena.registerObject(&gLoRaWAN);
                 }
 
+        LMIC_setClockError(5 * MAX_CLOCK_ERROR / 100);
+
         gLoRaWAN.SetReceiveBufferBufferCb(receiveMessage);
         setTxCycleTime(CATCFG_T_CYCLE_INITIAL, CATCFG_INTERVAL_COUNT_INITIAL);
 
