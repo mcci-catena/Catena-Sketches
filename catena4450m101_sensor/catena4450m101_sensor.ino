@@ -25,7 +25,7 @@ Author:
 || the command processor and functions are all external. It's also not
 || needed unless you're using Visual Micro.
 */
-#include "catena4450m101_sensor_vmicro_fixup.h"
+#include <Catena_CommandStream_vmicro_fixup.h>
 
 #include <SPI.h>
 #include <Wire.h>
