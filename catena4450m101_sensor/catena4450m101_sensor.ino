@@ -880,7 +880,7 @@ cCommandStream::CommandStatus
 setTransmitPeriod(
 	cCommandStream *pThis,
 	void *pContext,
-	int argc, 
+	int argc,
 	char **argv
 	)
 	{
