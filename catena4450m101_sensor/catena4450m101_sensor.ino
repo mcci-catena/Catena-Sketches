@@ -14,11 +14,18 @@ Author:
 */
 
 #include <Catena.h>
-
 #include <Catena_Led.h>
 #include <Catena_TxBuffer.h>
 #include <Catena_CommandStream.h>
 #include <Catena_Totalizer.h>
+
+/*
+|| This header file fixes things related to symbolic types, to allow us to
+|| build with Visual Micro. It's not needed if using a .cpp file, or if
+|| the command processor and functions are all external. It's also not
+|| needed unless you're using Visual Micro.
+*/
+#include "catena4450m101_sensor_vmicro_fixup.h"
 
 #include <SPI.h>
 #include <Wire.h>
@@ -153,7 +160,7 @@ static Arduino_LoRaWAN::ReceivePortBufferCbFn receiveMessage;
 |
 \****************************************************************************/
 
-extern cCommandStream::CommandFn setTransmitPeriod;
+cCommandStream::CommandFn setTransmitPeriod;
 
 static const cCommandStream::cEntry sApplicationCommmands[] =
         {
@@ -876,8 +883,7 @@ void setTxCycleTime(
 /* process "application tx-period" -- without args, display, with an arg set the value */
 // argv[0] is "tx-period"
 // argv[1] if present is the new value
-cCommandStream::CommandStatus
-setTransmitPeriod(
+cCommandStream::CommandStatus setTransmitPeriod(
         cCommandStream *pThis,
         void *pContext,
         int argc,
