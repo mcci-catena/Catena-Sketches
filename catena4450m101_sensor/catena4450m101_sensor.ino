@@ -156,10 +156,10 @@ static Arduino_LoRaWAN::ReceivePortBufferCbFn receiveMessage;
 extern cCommandStream::CommandFn setTransmitPeriod;
 
 static const cCommandStream::cEntry sApplicationCommmands[] =
-	{
-	{ "tx-period", setTransmitPeriod },
+        {
+        { "tx-period", setTransmitPeriod },
         // other commands go here....
-	};
+        };
 
 /* create the top level structure for the command dispatch table */
 static cCommandStream::cDispatch
@@ -745,25 +745,25 @@ static void settleDoneCb(
 #ifdef ARDUINO_ARCH_SAMD
         USBDevice.detach();
 #elif defined(ARDUINO_ARCH_STM32)
-	Serial.end();
+        Serial.end();
 #endif
-	Wire.end();
-	SPI.end();
+        Wire.end();
+        SPI.end();
 
         startTime = millis();
         uint32_t const sleepInterval = CATCFG_GetInterval(
                         fDeepSleepTest ? CATCFG_T_CYCLE_TEST : gTxCycle
                         );
 
-	gCatena.Sleep(sleepInterval);
+        gCatena.Sleep(sleepInterval);
 
 #ifdef ARDUINO_ARCH_SAMD
         USBDevice.attach();
 #elif defined(ARDUINO_ARCH_STM32)
-	Serial.begin();
+        Serial.begin();
 #endif
-	Wire.begin();
-	SPI.begin();
+        Wire.begin();
+        SPI.begin();
 
         /* and now... we're awake again. Go to next state. */
         sleepDoneCb(pSendJob);
@@ -878,12 +878,12 @@ void setTxCycleTime(
 // argv[1] if present is the new value
 cCommandStream::CommandStatus
 setTransmitPeriod(
-	cCommandStream *pThis,
-	void *pContext,
-	int argc,
-	char **argv
-	)
-	{
+        cCommandStream *pThis,
+        void *pContext,
+        int argc,
+        char **argv
+        )
+        {
         if (argc > 2)
                 return cCommandStream::CommandStatus::kInvalidParameter;
 
