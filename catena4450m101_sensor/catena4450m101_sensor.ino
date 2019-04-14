@@ -20,6 +20,22 @@ Author:
 #include <Catena_CommandStream.h>
 #include <Catena_Totalizer.h>
 
+/*
+|| This header file fixes things related to symbolic types, to allow us to
+|| build with Visual Micro. It's not needed if using a .cpp file, or if
+|| the command processor and functions are all external. It's also not
+|| needed unless you're using Visual Micro.
+*/
+// do a quick version check.
+#if ! defined(CATENA_ARDUINO_PLATFORM_VERSION)
+# error MCCI Catena Arduino Platform is out of date. Check CATENA_ARDUINO_PLATFORM_VERSION
+#elif (CATENA_ARDUINO_PLATFORM_VERSION < CATENA_ARDUINO_PLATFORM_VERSION_CALC(0, 14, 0, 50))
+# error MCCI Catena Arduino Platform is out of date. Check CATENA_ARDUINO_PLATFORM_VERSION
+#endif
+
+// load the fixup.
+#include <Catena_CommandStream_vmicro_fixup.h>
+
 #include <SPI.h>
 #include <Wire.h>
 #include <Adafruit_BME280.h>
@@ -82,7 +98,6 @@ static void sleepDoneCb(osjob_t *pSendJob);
 static Arduino_LoRaWAN::SendBufferCbFn sendBufferDoneCb;
 void fillBuffer(TxBuffer_t &b);
 void startSendingUplink(void);
-void sensorJob_cb(osjob_t *pJob);
 void setTxCycleTime(unsigned txCycle, unsigned txCount);
 
 // function for scaling power
@@ -98,7 +113,7 @@ dNdT_getFrac(
 |
 \****************************************************************************/
 
-static const char sVersion[] = "0.2.1";
+static const char sVersion[] = "0.3.0";
 
 /****************************************************************************\
 |
@@ -150,6 +165,28 @@ static Arduino_LoRaWAN::ReceivePortBufferCbFn receiveMessage;
 
 /****************************************************************************\
 |
+|	The command table
+|
+\****************************************************************************/
+
+cCommandStream::CommandFn setTransmitPeriod;
+
+static const cCommandStream::cEntry sApplicationCommmands[] =
+        {
+        { "tx-period", setTransmitPeriod },
+        // other commands go here....
+        };
+
+/* create the top level structure for the command dispatch table */
+static cCommandStream::cDispatch
+sApplicationCommandDispatch(
+        sApplicationCommmands,          /* this is the pointer to the table */
+        sizeof(sApplicationCommmands),  /* this is the size of the table */
+        "application"                   /* this is the "first word" for all the commands in this table*/
+        );
+
+/****************************************************************************\
+|
 |       Code.
 |
 \****************************************************************************/
@@ -189,6 +226,18 @@ void setup(void)
 #if defined(ARDUINO_ARCH_STM32)
         LMIC_setClockError(10 * 65536 / 100);
 #endif
+
+        /* add our application-specific commands */
+        gCatena.addCommands(
+                /* name of app dispatch table, passed by reference */
+                sApplicationCommandDispatch,
+                /*
+                || optionally a context pointer using static_cast<void *>().
+                || normally only libraries (needing to be reentrant) need
+                || to use the context pointer.
+                */
+                nullptr
+                );
 
         /* trigger a join by sending the first packet */
         if (!(gCatena.GetOperatingFlags() &
@@ -712,25 +761,25 @@ static void settleDoneCb(
 #ifdef ARDUINO_ARCH_SAMD
         USBDevice.detach();
 #elif defined(ARDUINO_ARCH_STM32)
-	Serial.end();
+        Serial.end();
 #endif
-	Wire.end();
-	SPI.end();
+        Wire.end();
+        SPI.end();
 
         startTime = millis();
         uint32_t const sleepInterval = CATCFG_GetInterval(
                         fDeepSleepTest ? CATCFG_T_CYCLE_TEST : gTxCycle
                         );
 
-	gCatena.Sleep(sleepInterval);
+        gCatena.Sleep(sleepInterval);
 
 #ifdef ARDUINO_ARCH_SAMD
         USBDevice.attach();
 #elif defined(ARDUINO_ARCH_STM32)
-	Serial.begin();
+        Serial.begin();
 #endif
-	Wire.begin();
-	SPI.begin();
+        Wire.begin();
+        SPI.begin();
 
         /* and now... we're awake again. Go to next state. */
         sleepDoneCb(pSendJob);
@@ -822,4 +871,40 @@ void setTxCycleTime(
 
         gTxCycle = txCycle;
         gTxCycleCount = txCount;
+        }
+
+/* process "application tx-period" -- without args, display, with an arg set the value */
+// argv[0] is "tx-period"
+// argv[1] if present is the new value
+cCommandStream::CommandStatus setTransmitPeriod(
+        cCommandStream *pThis,
+        void *pContext,
+        int argc,
+        char **argv
+        )
+        {
+        if (argc > 2)
+                return cCommandStream::CommandStatus::kInvalidParameter;
+
+        if (argc < 2)
+                {
+                pThis->printf("%u s\n", (unsigned) gTxCycle);
+                return cCommandStream::CommandStatus::kSuccess;
+                }
+        else
+                {
+                // convert argv[1] to unsigned
+                cCommandStream::CommandStatus status;
+                uint32_t newTxPeriod;
+
+                // get arg 1 as tx period; default is irrelevant because
+                // we know that we have argv[1] from above.
+                status = cCommandStream::getuint32(argc, argv, 1, /* radix */ 0, newTxPeriod, 0);
+
+                if (status != cCommandStream::CommandStatus::kSuccess)
+                        return status;
+
+                gTxCycle = newTxPeriod;
+                return status;
+                }
         }
