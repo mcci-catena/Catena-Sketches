@@ -25,6 +25,14 @@ Author:
 || the command processor and functions are all external. It's also not
 || needed unless you're using Visual Micro.
 */
+// do a quick version check.
+#if ! defined(CATENA_ARDUINO_PLATFORM_VERSION)
+# error MCCI Catena Arduino Platform is out of date. Check CATENA_ARDUINO_PLATFORM_VERSION
+#elif (CATENA_ARDUINO_PLATFORM_VERSION < CATENA_ARDUINO_PLATFORM_VERSION_CALC(0, 14, 0, 50))
+# error MCCI Catena Arduino Platform is out of date. Check CATENA_ARDUINO_PLATFORM_VERSION
+#endif
+
+// load the fixup.
 #include <Catena_CommandStream_vmicro_fixup.h>
 
 #include <SPI.h>
@@ -863,22 +871,6 @@ void setTxCycleTime(
         gTxCycle = txCycle;
         gTxCycleCount = txCount;
         }
-
-//
-// at least with Visual Micro, it's necessary to hide these function bodies
-// from the Arduino environment. Arduino tries to insert prototypes for these
-// functions at the start of the file, and doesn't handle the return type
-// properly.
-//
-// By putting them in a #included CPP file, we avoid the deep scan, and thereby
-// avoid the problem.
-//
-
-#if ! defined(CATENA_ARDUINO_PLATFORM_VERSION)
-# error MCCI Catena Arduino Platform is out of date. Check CATENA_ARDUINO_PLATFORM_VERSION
-#elif (CATENA_ARDUINO_PLATFORM_VERSION < CATENA_ARDUINO_PLATFORM_VERSION_CALC(0, 14, 0, 50))
-# error MCCI Catena Arduino Platform is out of date. Check CATENA_ARDUINO_PLATFORM_VERSION
-#endif
 
 /* process "application tx-period" -- without args, display, with an arg set the value */
 // argv[0] is "tx-period"
