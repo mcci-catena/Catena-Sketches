@@ -105,7 +105,7 @@ enum    {
 static bool checkWaterSensorPresent(void);
 static void settleDoneCb(osjob_t *pSendJob);
 static void warmupDoneCb(osjob_t *pSendJob);
-static void txFailedDoneCb(osjob_t *pSendJob);
+static void txNotProvisionedCb(osjob_t *pSendJob);
 static void sleepDoneCb(osjob_t *pSendJob);
 static Arduino_LoRaWAN::SendBufferCbFn sendBufferDoneCb;
 
@@ -666,15 +666,21 @@ static void sendBufferDoneCb(
 	osjobcb_t pFn;
 
 	gLed.Set(LedPattern::Settling);
-	if (! fStatus)
-		{
-		gCatena.SafePrintf("send buffer failed\n");
-		pFn = txFailedDoneCb;
-		}
-	else
-		{
-		pFn = settleDoneCb;
-		}
+
+        if (!fStatus)
+               {
+                if (!gLoRaWAN.IsProvisioned())
+                        {
+                        // we'll talk about it at the callback.
+                        pFn = txNotProvisionedCb;
+
+                        // but prevent an attempt to join.
+                        gLoRaWAN.Shutdown();
+                        }
+                else
+                        gCatena.SafePrintf("send buffer failed\n");
+                }
+
 	os_setTimedCallback(
 		&sensorJob,
 		os_getTime()+sec2osticks(CATCFG_T_SETTLE),
@@ -682,12 +688,11 @@ static void sendBufferDoneCb(
 		);
 	}
 
-static void txFailedDoneCb(
+static void txNotProvisionedCb(
 	osjob_t *pSendJob
 	)
 	{
 	gCatena.SafePrintf("not provisioned, idling\n");
-	gLoRaWAN.Shutdown();
 	gLed.Set(LedPattern::NotProvisioned);
 	}
 

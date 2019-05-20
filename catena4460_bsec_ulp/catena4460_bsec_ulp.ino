@@ -88,7 +88,7 @@ using Catena = Catena4460;
 // other forwards
 static void settleDoneCb(osjob_t *pSendJob);
 static void warmupDoneCb(osjob_t *pSendJob);
-static void txFailedDoneCb(osjob_t *pSendJob);
+static void txNotProvisionedCb(osjob_t *pSendJob);
 static void sleepDoneCb(osjob_t *pSendJob);
 static Arduino_LoRaWAN::SendBufferCbFn sendBufferDoneCb;
 void fillBuffer(TxBuffer_t &b);
@@ -678,15 +678,21 @@ static void sendBufferDoneCb(
         osjobcb_t pFn;
 
         gLed.Set(LedPattern::Settling);
-        if (! fStatus)
-                {
-                gCatena.SafePrintf("send buffer failed\n");
-                pFn = txFailedDoneCb;
+
+        if (!fStatus)
+               {
+                if (!gLoRaWAN.IsProvisioned())
+                        {
+                        // we'll talk about it at the callback.
+                        pFn = txNotProvisionedCb;
+
+                        // but prevent an attempt to join.
+                        gLoRaWAN.Shutdown();
+                        }
+                else
+                        gCatena.SafePrintf("send buffer failed\n");
                 }
-        else
-                {
-                pFn = settleDoneCb;
-                }
+
         os_setTimedCallback(
                 &sensorJob,
                 os_getTime() + sec2osticks(CATCFG_T_SETTLE),
@@ -694,12 +700,11 @@ static void sendBufferDoneCb(
                 );
         }
 
-static void txFailedDoneCb(
+static void txNotProvisionedCb(
         osjob_t *pSendJob
         )
         {
         gCatena.SafePrintf("not provisioned, idling\n");
-        gLoRaWAN.Shutdown();
         gLed.Set(LedPattern::NotProvisioned);
         }
 
