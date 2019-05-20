@@ -93,7 +93,7 @@ enum    {
 // forwards
 static void settleDoneCb(osjob_t *pSendJob);
 static void warmupDoneCb(osjob_t *pSendJob);
-static void txFailedDoneCb(osjob_t *pSendJob);
+static void txNotProvisionedCb(osjob_t *pSendJob);
 static void sleepDoneCb(osjob_t *pSendJob);
 static Arduino_LoRaWAN::SendBufferCbFn sendBufferDoneCb;
 void fillBuffer(TxBuffer_t &b);
@@ -302,6 +302,7 @@ void setup_platform()
                 gCatena.registerObject(&gLoRaWAN);
                 }
 
+        // hook up downlink handler
         gLoRaWAN.SetReceiveBufferBufferCb(receiveMessage);
         setTxCycleTime(CATCFG_T_CYCLE_INITIAL, CATCFG_INTERVAL_COUNT_INITIAL);
 
@@ -614,15 +615,22 @@ static void sendBufferDoneCb(
         osjobcb_t pFn;
 
         gLed.Set(LedPattern::Settling);
+
+        pFn = settleDoneCb;
         if (!fStatus)
-                {
-                gCatena.SafePrintf("send buffer failed\n");
-                pFn = txFailedDoneCb;
+               {
+                if (!gLoRaWAN.IsProvisioned())
+                        {
+                        // we'll talk about it at the callback.
+                        pFn = txNotProvisionedCb;
+
+                        // but prevent an attempt to join.
+                        gLoRaWAN.Shutdown();
+                        }
+                else
+                        gCatena.SafePrintf("send buffer failed\n");
                 }
-        else
-                {
-                pFn = settleDoneCb;
-                }
+
         os_setTimedCallback(
                 &sensorJob,
                 os_getTime() + sec2osticks(CATCFG_T_SETTLE),
@@ -630,12 +638,11 @@ static void sendBufferDoneCb(
                 );
         }
 
-static void txFailedDoneCb(
+static void txNotProvisionedCb(
         osjob_t *pSendJob
         )
         {
         gCatena.SafePrintf("not provisioned, idling\n");
-        gLoRaWAN.Shutdown();
         gLed.Set(LedPattern::NotProvisioned);
         }
 
@@ -654,7 +661,6 @@ static void settleDoneCb(
         osjob_t *pSendJob
         )
         {
-        uint32_t startTime;
         bool const fDeepSleepTest = gCatena.GetOperatingFlags() & (1 << 19);
         bool fDeepSleep;
 
@@ -766,7 +772,6 @@ static void settleDoneCb(
         Wire.end();
         SPI.end();
 
-        startTime = millis();
         uint32_t const sleepInterval = CATCFG_GetInterval(
                         fDeepSleepTest ? CATCFG_T_CYCLE_TEST : gTxCycle
                         );
