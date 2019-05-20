@@ -514,6 +514,9 @@ static void sendBufferDoneCb(
                         {
                         // we'll talk about it at the callback.
                         pFn = txNotProvisionedCb;
+
+                        // but prevent join attempts now.
+                        gLoRaWAN.Shutdown();
                         }
                 else
                         gCatena.SafePrintf("send buffer failed\n");
