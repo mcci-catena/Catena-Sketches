@@ -422,6 +422,7 @@ static void sendBufferDoneCb(
 
     gLed.Set(LedPattern::Settling);
 
+    pFn = settleDoneCb;
     if (!fStatus)
         {
         if (!gLoRaWAN.IsProvisioned())
