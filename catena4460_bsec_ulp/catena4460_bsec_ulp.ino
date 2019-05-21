@@ -1,6 +1,6 @@
 /*
 
-Module:  catena4450_bsec_ulp.ino
+Module:  catena4460_bsec_ulp.ino
 
 Function:
         Code for the air-quality sensor with Catena 4460 using BSEC.
@@ -44,37 +44,41 @@ Author:
 
 using namespace McciCatena;
 
-#define STATE_SAVE_PERIOD  UINT32_C(3 * 60 * 1000) // 3 minutes: basically any change.
+constexpr uint32_t STATE_SAVE_PERIOD = UINT32_C(3 * 60 * 1000); // 3 minutes: basically any change.
 
 /* how long do we wait between transmissions? (in seconds) */
-enum    {
-        // set this to interval between transmissions, in seconds
-        // Actual time will be a little longer because have to
-        // add measurement and broadcast time, but we attempt
-        // to compensate for the gross effects below.
-        CATCFG_T_CYCLE = 6 * 60,        // every 6 minutes
-        CATCFG_T_CYCLE_TEST = 30,       // every 10 seconds
-        };
+enum	{
+	// set this to interval between transmissions, in seconds
+	// Actual time will be a little longer because have to
+	// add measurement and broadcast time, but we attempt
+	// to compensate for the gross effects below.
+	CATCFG_T_CYCLE =  6 * 60,        // every 6 minutes
+	CATCFG_T_CYCLE_TEST = 30,       // every 30 seconds
+	CATCFG_T_CYCLE_INITIAL = 30,    // every 30 seconds initially
+	CATCFG_INTERVAL_COUNT_INITIAL = 30,     // repeat for 15 minutes
+	};
 
 /* additional timing parameters; ususually you don't change these. */
-enum    {
-        CATCFG_T_WARMUP = 1,
-        CATCFG_T_SETTLE = 5,
-        CATCFG_T_OVERHEAD = (CATCFG_T_WARMUP + CATCFG_T_SETTLE),
-        };
+enum	{
+	CATCFG_T_WARMUP = 1,
+	CATCFG_T_SETTLE = 5,
+	CATCFG_T_OVERHEAD = (CATCFG_T_WARMUP + CATCFG_T_SETTLE + 4),
+	CATCFG_T_MIN = CATCFG_T_OVERHEAD,
+	CATCFG_T_MAX = CATCFG_T_CYCLE < 60 * 60 ? 60 * 60 : CATCFG_T_CYCLE,     // normally one hour max.
+	CATCFG_INTERVAL_COUNT = 30,
+	};
 
 constexpr uint32_t CATCFG_GetInterval(uint32_t tCycle)
-        {
-        return (tCycle < CATCFG_T_OVERHEAD)
-                ? CATCFG_T_OVERHEAD
-                : tCycle - CATCFG_T_OVERHEAD
-                ;
-        }
+	{
+	return (tCycle < CATCFG_T_OVERHEAD + 1)
+		? 1
+		: tCycle - CATCFG_T_OVERHEAD
+		;
+	}
 
-enum    {
-        CATCFG_T_INTERVAL = CATCFG_GetInterval(CATCFG_T_CYCLE),
-        };
-
+enum	{
+	CATCFG_T_INTERVAL = CATCFG_GetInterval(CATCFG_T_CYCLE),
+	};
 
 // Helper function declarations
 void checkIaqSensorStatus(void);
@@ -101,7 +105,7 @@ void sensorJob_cb(osjob_t *pJob);
 |
 \****************************************************************************/
 
-static const char sVersion[] = "0.2.1";
+static const char sVersion[] = "0.2.2";
 
 extern const uint8_t bsec_config_iaq[];
 //#include "bsec_serialized_configurations_iaq.h"
@@ -111,7 +115,6 @@ extern const uint8_t bsec_config_iaq[];
 |       Variables.
 |
 \****************************************************************************/
-
 
 // the Catena instance
 Catena gCatena;
@@ -162,15 +165,18 @@ float g_gas_resistance = 0.0;
 // debug flag for throttling sleep prints
 bool g_fPrintedSleeping = false;
 
+// the cycle time to use
+unsigned gTxCycle;
+// remaining before we reset to default
+unsigned gTxCycleCount;
 
+static Arduino_LoRaWAN::ReceivePortBufferCbFn receiveMessage;
 
 /****************************************************************************\
 |
 |       Code.
 |
 \****************************************************************************/
-
-
 
 /*
 
@@ -203,20 +209,7 @@ void setup(void)
         setup_platform();
         setup_bme680();
         run_bme680();
-
-        /* for 4551, we need wider tolerances, it seems */
-#if defined(ARDUINO_ARCH_STM32)
-        LMIC_setClockError(10 * 65536 / 100);
-#endif
-
-        /* trigger a join by sending the first packet */
-        if (! (gCatena.GetOperatingFlags() &
-                        static_cast<uint32_t>(gCatena.OPERATING_FLAGS::fManufacturingTest)))
-                {
-                g_dataValid = false;
-                run_bme680();
-                startSendingUplink();
-                }
+        setup_uplink();
         }
 
 void setup_platform(void)
@@ -264,6 +257,9 @@ void setup_platform(void)
                 gCatena.SafePrintf("succeeded\n");
                 gCatena.registerObject(&gLoRaWAN);
                 }
+
+        gLoRaWAN.SetReceiveBufferBufferCb(receiveMessage);
+        setTxCycleTime(CATCFG_T_CYCLE_INITIAL, CATCFG_INTERVAL_COUNT_INITIAL);
 
         /* find the platform */
         const Catena::EUI64_buffer_t *pSysEUI = gCatena.GetSysEUI();
@@ -321,7 +317,7 @@ void setup_bme680(void)
                 BSEC_OUTPUT_RAW_PRESSURE,
                 BSEC_OUTPUT_RAW_HUMIDITY,
                 BSEC_OUTPUT_RAW_GAS,
-                BSEC_OUTPUT_IAQ_ESTIMATE,
+                BSEC_OUTPUT_IAQ,
                 BSEC_OUTPUT_SENSOR_HEAT_COMPENSATED_TEMPERATURE,
                 BSEC_OUTPUT_SENSOR_HEAT_COMPENSATED_HUMIDITY,
                 };
@@ -339,7 +335,7 @@ void run_bme680(void)
                 g_pressure = iaqSensor.pressure;
                 g_humidity = iaqSensor.humidity;
                 g_iaq = iaqSensor.iaqEstimate;
-		g_iaqAccuracy = iaqSensor.iaqAccuracy;
+                g_iaqAccuracy = iaqSensor.iaqAccuracy;
                 g_gas_resistance = iaqSensor.gasResistance;
                 g_iaqValid = true;
 
@@ -359,6 +355,24 @@ void run_bme680(void)
         else
                 {
                 checkIaqSensorStatus();
+                }
+        }
+ 
+ void setup_uplink(void)
+        {
+        if (! (gCatena.GetOperatingFlags() &
+                static_cast<uint32_t>(gCatena.OPERATING_FLAGS::fManufacturingTest)))
+                {
+                if (! gLoRaWAN.IsProvisioned())
+                        gCatena.SafePrintf("LoRaWAN not provisioned yet. Use the commands to set it up.\n");
+                else
+                        {
+                        g_dataValid = false;
+                        run_bme680();
+
+                        /* trigger a join by sending the first packet */
+                        startSendingUplink();
+                        }
                 }
         }
 
@@ -425,7 +439,7 @@ void dumpCalibrationData(void)
         for (auto here = 0, nLeft = BSEC_MAX_STATE_BLOB_SIZE;
              nLeft != 0;)
                 {
-                char line[80];
+                char line[160];
                 size_t n;
 
                 n = 16;
@@ -484,8 +498,8 @@ void possiblySaveCalibrationData(void)
         bool update = false;
         if (stateUpdateCounter == 0)
                 {
-                /* First state update when IAQ accuracy is >= 3 (calibration complete) */
-                if (iaqSensor.iaqAccuracy >= 3)
+                /* First state update when IAQ accuracy is >= 1 (calibration complete) */
+                if (iaqSensor.iaqAccuracy >= 1)
                         {
                         update = true;
                         stateUpdateCounter++;
@@ -494,7 +508,7 @@ void possiblySaveCalibrationData(void)
         else
                 {
                 /* Update every STATE_SAVE_PERIOD milliseconds */
-                if (iaqSensor.iaqAccuracy >= 3 &&
+                if (iaqSensor.iaqAccuracy >= 1 &&
                     (uint32_t)(millis() - lastCalibrationWriteMillis) >= STATE_SAVE_PERIOD)
                         {
                         update = true;
@@ -638,11 +652,11 @@ void fillBuffer(TxBuffer_t &b)
                         b.put2u(encodedLogGasR);
                         flag |= FlagsSensor5::FlagLogGasR;
                         }
-		if (g_iaqValid)
-			{
-			b.put(g_iaqAccuracy & 0x03);
-			flag |= FlagsSensor5::FlagAqiAccuracyMisc;
-			}
+                if (g_iaqValid)
+                        {
+                        b.put(g_iaqAccuracy & 0x03);
+                        flag |= FlagsSensor5::FlagAqiAccuracyMisc;
+                        }
                 }
 
         *pFlag = uint8_t(flag);
@@ -678,9 +692,9 @@ static void sendBufferDoneCb(
         osjobcb_t pFn;
 
         gLed.Set(LedPattern::Settling);
-
-        if (!fStatus)
-               {
+        pFn = settleDoneCb;
+        if (! fStatus)
+                {
                 if (!gLoRaWAN.IsProvisioned())
                         {
                         // we'll talk about it at the callback.
@@ -692,7 +706,7 @@ static void sendBufferDoneCb(
                 else
                         gCatena.SafePrintf("send buffer failed\n");
                 }
-
+        
         os_setTimedCallback(
                 &sensorJob,
                 os_getTime() + sec2osticks(CATCFG_T_SETTLE),
@@ -707,17 +721,6 @@ static void txNotProvisionedCb(
         gCatena.SafePrintf("not provisioned, idling\n");
         gLed.Set(LedPattern::NotProvisioned);
         }
-
-
-//
-// the following API is added to delay.c, .h in the BSP. It adjusts millis()
-// forward after a deep sleep.
-//
-// extern "C" { void adjust_millis_forward(unsigned); };
-//
-// If you don't have it, make sure you're running the MCCI Board Support
-// Package for MCCI Catenas, https://github.com/mcci-catena/arduino-boards
-//
 
 static void settleDoneCb(
         osjob_t *pSendJob
@@ -784,10 +787,29 @@ static void settleDoneCb(
                         gCatena.SafePrintf("using light sleep\n");
                 }
 
+        // update the sleep parameters
+        if (gTxCycleCount > 1)
+                {
+                // values greater than one are decremented and ultimately reset to default.
+                --gTxCycleCount;
+                }
+        else if (gTxCycleCount == 1)
+                {
+                // it's now one (otherwise we couldn't be here.)
+                gCatena.SafePrintf("resetting tx cycle to default: %u\n", CATCFG_T_CYCLE);
+
+                gTxCycleCount = 0;
+                gTxCycle = CATCFG_T_CYCLE;
+                }
+        else
+                {
+                // it's zero. Leave it alone.
+                }
+        
         /* if we can't sleep deeply, then simply schedule the sleepDoneCb */
         if (! fDeepSleep)
                 {
-                uint32_t interval = sec2osticks(CATCFG_T_INTERVAL);
+                uint32_t interval = sec2osticks(CATCFG_GetInterval(gTxCycle));
 
                 if (gCatena.GetOperatingFlags() & (1 << 18))
                         interval = 1;
@@ -795,7 +817,7 @@ static void settleDoneCb(
                 gLed.Set(LedPattern::Sleeping);
                 os_setTimedCallback(
                         &sensorJob,
-                        os_getTime() + sec2osticks(CATCFG_T_INTERVAL),
+                        os_getTime() + interval,
                         sleepDoneCb
                         );
                 return;
@@ -866,4 +888,66 @@ static void warmupDoneCb(
         )
         {
         startSendingUplink();
+        }
+
+static void receiveMessage(
+        void *pContext,
+        uint8_t port,
+        const uint8_t *pMessage,
+        size_t nMessage
+        )
+        {
+        unsigned txCycle;
+        unsigned txCount;
+
+        if (port == 0)
+                {
+                // mac downlink mesage; do nothing.
+                return;
+                }
+        else if (! (port == 1 && 2 <= nMessage && nMessage <= 3))
+                {
+                gCatena.SafePrintf("invalid message port(%02x)/length(%x)\n",
+                        port, nMessage
+                        );
+                return;
+                }
+
+        txCycle = (pMessage[0] << 8) | pMessage[1];
+
+        if (txCycle < CATCFG_T_MIN || txCycle > CATCFG_T_MAX)
+                {
+                gCatena.SafePrintf("tx cycle time out of range: %u\n", txCycle);
+                return;
+                }
+
+        // byte [2], if present, is the repeat count.
+        // explicitly sending zero causes it to stick.
+        txCount = CATCFG_INTERVAL_COUNT;
+        if (nMessage >= 3)
+                {
+                txCount = pMessage[2];
+                }
+
+        setTxCycleTime(txCycle, txCount);
+        }
+
+void setTxCycleTime(
+        unsigned txCycle,
+        unsigned txCount
+        )
+        {
+        if (txCount > 0)
+                gCatena.SafePrintf(
+                        "message cycle time %u seconds for %u messages\n",
+                        txCycle, txCount
+                        );
+        else
+                gCatena.SafePrintf(
+                        "message cycle time %u seconds indefinitely\n",
+                        txCycle
+                        );
+
+        gTxCycle = txCycle;
+        gTxCycleCount = txCount;
         }
