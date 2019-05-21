@@ -44,7 +44,7 @@ Author:
 
 using namespace McciCatena;
 
-constexpr uint32_t STATE_SAVE_PERIOD = UINT32_C(3 * 60 * 1000); // 3 minutes: basically any change.
+constexpr uint32_t STATE_SAVE_PERIOD = 3 * 60 * 1000; // 3 minutes: basically any change.
 
 /* how long do we wait between transmissions? (in seconds) */
 enum	{
@@ -105,7 +105,7 @@ void sensorJob_cb(osjob_t *pJob);
 |
 \****************************************************************************/
 
-static const char sVersion[] = "0.2.2";
+static const char sVersion[] = "0.3.0";
 
 extern const uint8_t bsec_config_iaq[];
 //#include "bsec_serialized_configurations_iaq.h"
