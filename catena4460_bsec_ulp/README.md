@@ -15,6 +15,7 @@ We have tried this procedure with Arduino IDE 1.8.5, and we were successful. How
 - [ ] get the Bosch BSEC distribution (accepting the license) from [this page](https://www.bosch-sensortec.com/bst/products/all_products/bsec#). Scroll to the bottom to accept the license, and you'll get a download prompt.
 - [ ] Unzip to a work directory (outside the Arduino working area).
 - [ ] Unzip the nested `Arduino/bsec.zip` file into your user Arduino `libraries` directory as `libraries/bsec`.
+- [ ] By default, Integer version is used in the API. So, un-comment 'BME680_FLOAT_POINT_COMPENSATION' macro in 'bme680_defs.h' under 'libraries/bsec/src/bme680'.
 - [ ] Copy `algo/bin/Normal_version/gcc/Cortex_M0+/libalgobsec.a` to `libraries/bsec/src/cortex-m0plus`.
 - [ ] Copy `config/generic_33v_3s_4d/*.{c,h}` to `libraries/bsec/src`.  (If you prefer, you may copy these to the sketch directory, but generally we use a single configuration that's stored in the BSEC library directory.)
 - [ ] Edit `platform.txt` for your BSP. For SAMD21 in the MCCI BSP, change the `recipe.c.combine.pattern`:
