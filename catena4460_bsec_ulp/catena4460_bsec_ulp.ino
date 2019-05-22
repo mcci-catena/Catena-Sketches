@@ -691,7 +691,8 @@ static void sendBufferDoneCb(
         {
         osjobcb_t pFn;
 
-        gLed.Set(LedPattern::Settling);
+        gLed.Set(LedPattern::Settling)
+
         pFn = settleDoneCb;
         if (! fStatus)
                 {
