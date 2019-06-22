@@ -8,6 +8,7 @@
 // 2018-04-01 add format 0x17.
 // 2018-06-13 add air quality.
 // 2019-02-13 add simple sensor format (port 2).
+// 2019-06-28 add port 3 (no barometric pressure)
 
 // calculate dewpoint (degrees C) given temperature (C) and relative humidity (0..100)
 // from http://andrew.rsmas.miami.edu/bmcnoldy/Humidity.html
@@ -589,7 +590,7 @@ function Decoder(bytes, port) {
             // cmd value not recognized.
         }
     } else if (port === 2) {
-        // see catena-message-port-format.md
+        // see catena-message-port2-format.md
         // i is used as the index into the message. Start with the flag byte.
         // note that there's no discriminator.
         var i = 0;
@@ -635,6 +636,77 @@ function Decoder(bytes, port) {
             decoded.error = "none";
             decoded.p = pRaw * 4 / 100.0;
             decoded.rh = hRaw / 256 * 100;
+            decoded.tDewC = dewpoint(decoded.tempC, decoded.rh);
+        }
+
+        if (flags & 0x10) {
+            // we have IR, White, UV -- units are C * W/m2, 
+            // where C is a calibration constant.
+            var irradiance = { };
+            decoded.irradiance = irradiance;
+            var lightRaw = (bytes[i] << 8) + bytes[i + 1];
+            i += 2;
+            irradiance.IR = lightRaw;
+            lightRaw = (bytes[i] << 8) + bytes[i + 1];
+            i += 2;
+            irradiance.White = lightRaw;
+            lightRaw = (bytes[i] << 8) + bytes[i + 1];
+            i += 2;
+            irradiance.UV = lightRaw;
+        }
+
+        if (flags & 0x20) {
+            var vRawBus = (bytes[i] << 8) + bytes[i + 1];
+            i += 2;
+            if (vRawBus & 0x8000)
+                vRawBus += -0x10000;
+            decoded.vBus = vRawBus / 4096.0;
+        }
+    } else if (port === 3) {
+        // see catena-message-port3-format.md
+        // i is used as the index into the message. Start with the flag byte.
+        // note that there's no discriminator.
+        var i = 0;
+        // fetch the bitmap.
+        var flags = bytes[i++];
+
+        if (flags & 0x1) {
+            // set vRaw to a uint16, and increment pointer
+            var vRaw = (bytes[i] << 8) + bytes[i + 1];
+            i += 2;
+            // interpret uint16 as an int16 instead.
+            if (vRaw & 0x8000)
+                vRaw += -0x10000;
+            // scale and save in decoded.
+            decoded.vBat = vRaw / 4096.0;
+        }
+
+        if (flags & 0x2) {
+            var VDDRaw = (bytes[i] << 8) + bytes[i + 1];
+            i += 2;
+            if (VDDRaw & 0x8000)
+                VDDRaw += -0x10000;
+            decoded.VDD = VDDRaw / 4096.0;
+        }
+
+        if (flags & 0x4) {
+            var iBoot = bytes[i];
+            i += 1;
+            decoded.boot = iBoot;
+        }
+
+        if (flags & 0x8) {
+            // we have temp, RH (as u2)
+            var tRaw = (bytes[i] << 8) + bytes[i + 1];
+            if (tRaw & 0x8000)
+                tRaw = -0x10000 + tRaw;
+            i += 2;
+            var rhRaw = (bytes[i] << 8) + bytes[i + 1];
+            i += 2;
+
+            decoded.tempC = tRaw / 256;
+            decoded.error = "none";
+            decoded.rh = rhRaw / 65535 * 100;
             decoded.tDewC = dewpoint(decoded.tempC, decoded.rh);
         }
 
