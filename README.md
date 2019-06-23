@@ -1,6 +1,6 @@
 # Catena-Sketches
 
-This repository contains top-level Arduino sketches for the Catena 4xxx family of LoRaWAN remote sensors made by MCCI based on the [Adafruit LoRa Feather M0 LoRa](https://www.adafruit.com/products/3178), [Adafruit Feather M0 Basic](https://www.adafruit.com/products/2772) and so forth.
+This repository contains top-level Arduino sketches for the Catena family of LoRaWAN&reg; technology remote sensors made by MCCI.
 
 [![GitHub release](https://img.shields.io/github/release/mcci-catena/Catena-Sketches.svg)](https://github.com/mcci-catena/Catena-Sketches/releases/latest) [![GitHub commits](https://img.shields.io/github/commits-since/mcci-catena/Catena-Sketches/latest.svg)](https://github.com/mcci-catena/Catena-Sketches/compare/v0.3.4...master) [![Build Status](https://travis-ci.com/mcci-catena/Catena-Sketches.svg?branch=master)](https://travis-ci.com/mcci-catena/Catena-Sketches)
 
@@ -49,7 +49,7 @@ There are two kinds of sketches here:
 - test programs (catena4450_test01, catena461x_hwtest, catena461x_test01, etc.), and
 - full sensor programs (catena4450m101_sensor1, catena4450m102_pond, catena4460_aqi, catena4460_bsec_ulp, catena4612_simple, catena4617_simple, catea4618_simple, catena4410_sensor1).
 
-The sketches that use LoRaWAN take advantage of the [MCCI](http://www.mcci.com) [arduino-lorawan](https://github.com/mcci-catena/arduino-lorawan) library to cleanly separate the application from the network transport.
+The sketches that use LoRaWAN take advantage of the [MCCI](https://mcci.com) [arduino-lorawan](https://github.com/mcci-catena/arduino-lorawan) library to cleanly separate the application from the network transport.
 
 Most of these sketches also use the [Catena-Arduino-Platform](https://github.com/mcci-catena/Catena-Arduino-Platform) library to provide common services and make things a little more portable.
 
@@ -143,9 +143,9 @@ A number of libraries are required by this code. The top-level of this repositor
 
 ## Related Work
 
-* [MCCI's Fork of the Map The Things Arduino Sketch](https://github.com/mcci-catena/mapthethings-arduino) contains, on the MCCI-Catena branch, a port of that app supporting OTAA, using the Catena libraries.
-
 * [MCCI's Catena Hardware Repository](https://github.com/mcci-catena/HW-Designs) contains hardware design information and schematics.
+
+* [MCCI's Fork of the Map The Things Arduino Sketch](https://github.com/mcci-catena/mapthethings-arduino) contains, on the MCCI-Catena branch, a port of that app supporting OTAA, using the Catena libraries.
 
 ## Boilerplate
 
@@ -153,7 +153,7 @@ MCCI work is released under the MIT public license. All other work from contribu
 
 Support inquiries may be filed at [https:://portal.mcci.com](https:://portal.mcci.com) or as tickets on [github](https://github.com/mcci-catena). We are very busy, so we can't promise to help; but we'll do our best.
 
-Commercial support is also available; contact MCCI for more information via our [support portal](https://portal.mcci.com) or our [web site](http://www.mcci.com).
+Commercial support is also available; contact MCCI for more information via our [support portal](https://portal.mcci.com) or our [web site](https://mcci.com).
 
 ## Thanks, Acknowledgments, Notes
 
