@@ -5,7 +5,7 @@ This repository contains top-level Arduino sketches for the Catena 4xxx family o
 [![GitHub release](https://img.shields.io/github/release/mcci-catena/Catena-Sketches.svg)](https://github.com/mcci-catena/Catena-Sketches/releases/latest) [![GitHub commits](https://img.shields.io/github/commits-since/mcci-catena/Catena-Sketches/latest.svg)](https://github.com/mcci-catena/Catena-Sketches/compare/v0.3.4...master) [![Build Status](https://travis-ci.com/mcci-catena/Catena-Sketches.svg?branch=master)](https://travis-ci.com/mcci-catena/Catena-Sketches)
 
 
-![Picture of Catena 4410](extra/assets/MCCI-Catena-4410-1080x620.jpg)
+![Picture of Catena 4450](extra\assets\Catena4450-diy-1-1088x1024.jpg)
 
 This repository is the top-level repository for the software. In order to build, you will have to download a number of additional libraries from the [MCCI Catena github page](https://github.com/mcci-catena); the repositories needed vary depending on the sketch you want to build. A bash script is provided to simplify this process.
 
@@ -20,6 +20,9 @@ This repository is the top-level repository for the software. In order to build,
 		- [catena4450m102_waterlevel](#catena4450m102_waterlevel)
 		- [catena4460_aqi](#catena4460_aqi)
 		- [catena4460_bsec_ulp](#catena4460_bsec_ulp)
+		- [catena4612_simple](#catena4612_simple)
+		- [catena4617_simple](#catena4617_simple)
+		- [catena4618_simple](#catena4618_simple)
 		- [catena4410_sensor1](#catena4410_sensor1)
 	- [Test programs](#test-programs)
 		- [catena4410_test3](#catena4410_test3)
@@ -41,7 +44,10 @@ If you're getting started with Catenas, please check the detailed instructions a
 
 ## Sketch Overview
 
-There are two kinds of sketches here: test programs (catena4410_test1, catene4410_test2, catena4410_test3, catena4420_test1,catena4450_test1), and full sensor programs (catena4410_sensor1,  catena4450m101_sensor1, catena4450m102_pond, catena4460_aqi, catena4460_bsec_ulp).
+There are two kinds of sketches here:
+
+- test programs (catena4450_test01, catena461x_hwtest, catena461x_test01, etc.), and
+- full sensor programs (catena4450m101_sensor1, catena4450m102_pond, catena4460_aqi, catena4460_bsec_ulp, catena4612_simple, catena4617_simple, catea4618_simple, catena4410_sensor1).
 
 The sketches that use LoRaWAN take advantage of the [MCCI](http://www.mcci.com) [arduino-lorawan](https://github.com/mcci-catena/arduino-lorawan) library to cleanly separate the application from the network transport.
 
@@ -68,6 +74,18 @@ This sketch collects and transmits air-quality information using the Bosch BME68
 #### catena4460_bsec_ulp
 
 This sketch uses the official (but closed source) library from Bosch Sensortec for the BME680 sensor on the Catena 4460. It also transmits data in format 0x17.
+
+#### catena4612_simple
+
+This sketch uses the on-board sensors of the Catena 4612 (or 4610), and transmits the data to a LoRaWAN network. It doesn't support external sensors. It transmits on port 0x02, and doesn't use a format byte.
+
+#### catena4617_simple
+
+This sketch uses the on-board sensors of the Catena 4617, and transmits the data to a LoRaWAN network. It doesn't support external sensors. It transmits on port 0x03, and doesn't use a format byte.
+
+#### catena4618_simple
+
+This sketch uses the on-board sensors of the Catena 4618, and transmits the data to a LoRaWAN network. It doesn't support external sensors.  It transmits on port 0x03, and doesn't use a format byte.
 
 #### catena4410_sensor1
 
@@ -109,8 +127,6 @@ A number of libraries are required by this code. The top-level of this repositor
 
 * [MCCI's ADK](https://github.com/mcci-catena/Catena-mcciadk) is MCCI's general-purpose cross-platform "XDK" library, ported to the Arduino environment.
 
-* [MCCI's Fork of the SAMD RTCZero library](https://github.com/mcci-catena/RTCZero) has the somewhat more substantial changes needed to allow the various processor sleep modes to be accessed, and to allow for some debuggging of the sleep mode chosen.
-
 ## Libraries for sensor work
 
 * [MCCI's Adafruit BME280 library](https://github.com/mcci-catena/Adafruit_BME280_Library) is used to make temperature, humidity and barometric pressure measurements using the [Adafruit BME280 breakout board](https://www.adafruit.com/products/2652), which we connect via I2C. It's based on the Adafruit library, but updated so that temperature, humidity and pressure are all read at the same time, to avoid data instability.
@@ -120,6 +136,10 @@ A number of libraries are required by this code. The top-level of this repositor
 * The [Adafruit Sensor Library](https://github.com/mcci-catena/Adafruit_Sensor) and the [Adafruit TSL2561 Lux Sensor Library](https://github.com/mcci-catena/Adafruit_TSL2561) are used for making ambient light measurements with the Adafruit [TSL2561 Lux Sensor](https://www.adafruit.com/products/439)
 
 * The [SHT1x library](https://github.com/mcci-catena/SHT1x) is used for measuring soil temperature and humidity using the Adafruit [SHT10 sensor](https://www.adafruit.com/products/1298).
+
+* The [SHT3x library](https://github.com/mcci-catena-MCCI-Catena-SHT3x) is used for measuring temperature and humidity using the Sensirion SHT31, SHT32, or SHT35 sensors.
+
+* The [HS300x library](https://github.com/mcci-catena/MCCI-Catena-HS300x) is used for measuring temperature and humidity using the IDT HS3001 or HS3002 sensors.
 
 ## Related Work
 
@@ -145,6 +165,6 @@ MCCI and MCCI Catena are registered trademarks of MCCI Corporation.
 
 LoRa is a registered trademark of Semtech Corporation.
 
-LoRaWAN is a trademark of the LoRa Alliance.
+LoRaWAN is a registered trademark of the LoRa Alliance.
 
 All other trademarks are the property of their respective owners.

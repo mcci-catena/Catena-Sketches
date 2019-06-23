@@ -256,11 +256,11 @@ Enter the following commands in the serial monitor, substituting your _`DevEUI`_
 - <code>lorawan configure appkey <em>AppKey</em></code>
 - <code>lorawan configure join 1</code>
 
-After ea/codecommand you will see an `OK`.
+After each command you will see an `OK`.
 
 ![provisioned](./assets/provisioned.png)
 
-Then reboot your Catena (using the reset button on the upper board). You may have to close and re-open the  serial monitor after resetting the Catena.
+Then reboot your Catena (using the `system reset` command, or the reset button on the upper board). You may have to close and re-open the serial monitor after resetting the Catena.
 
 You should then see a series of messages including:
 
@@ -283,7 +283,7 @@ You need to enter a number of commands:
 - `lorawan configure netid 0`
 - `lorawan configure join 0`
 
-Then reset your device, and repeat [LoRaWAN Provisioning](#lorawan-provisioning) above.
+Then reset your device (using the reset button or `system reset`), and repeat [LoRaWAN Provisioning](#lorawan-provisioning) above.
 
 ### Starting Over
 
