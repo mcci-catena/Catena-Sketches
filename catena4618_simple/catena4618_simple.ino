@@ -144,7 +144,7 @@ Catena::LoRaWAN gLoRaWAN;
 StatusLed gLed (Catena::PIN_STATUS_LED);
 
 //   The temperature/humidity sensor
-cSHT_3x gSht3x {Wire};
+cSHT3x gSht3x {Wire};
 bool fSht3x;
 
 //   The LUX sensor
@@ -430,7 +430,7 @@ void fillBuffer(TxBuffer_t &b)
 
         if (fSht3x)
                 {
-                cSHT_3x::Measurements m;
+                cSHT3x::Measurements m;
                 bool fResult = gSht3x.getTemperatureHumidity(m);
 
                 if (fResult)
