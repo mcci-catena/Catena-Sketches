@@ -35,7 +35,7 @@ The Catena 4618 is a single-board LoRaWAN-enabled sensor device with the followi
 - Sensirion SHT-31-DIS-F temperature and humidity sensor
 - Silicon Labs Si1133 light sensor
 
-Hardware documents on the MCCI Catena 4618 are at https://github.com/mcci-catena/HW-Designs/tree/master/Boards/Catena-4618.
+Documents on the MCCI Catena 4618 are at https://github.com/mcci-catena/HW-Designs/tree/master/Boards/Catena-4618. You may also refer to the documents for the 4612, which are at https://github.com/mcci-catena/HW-Designs/tree/master/Boards/Catena-4611_4612.
 
 ## Getting Started
 
@@ -276,6 +276,10 @@ Then reset your Catena, and return to [Provision your Catena 4618](#provision-yo
 ### Setting up DFU on a Linux or Windows PC
 
 Early versions of the MCCI BSP do not include an INF file (Windows) or sample rules (Linux) to teach your system what to do. The procedures posted here show how to set things up manually: https://github.com/vpowar/LoRaWAN_SensorNetworks-Catena#uploading-code.
+
+Because the 4618 is essentially identical to the 4612 other than sensors, you may also refer to the detailed procedures that are part of the Catena 4612 user manual. Please see:
+
+* [Catena 4612 User Manual](https://github.com/mcci-catena/HW-Designs/blob/master/Boards/Catena-4611_4612/234001173a_(Catena-4612-User-Manual).pdf).
 
 ### Data Format
 

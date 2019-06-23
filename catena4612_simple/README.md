@@ -42,7 +42,13 @@ This sketch is compatible with either board. In this README, although we focus o
 
 Documents on the MCCI Catena 4612 are at https://github.com/mcci-catena/HW-Designs/tree/master/Boards/Catena-4612.
 
+* [Catena 4612 User Manual](https://github.com/mcci-catena/HW-Designs/blob/master/Boards/Catena-4611_4612/234001173a_(Catena-4612-User-Manual).pdf).
+* [Catena 4612 Pin Mapping Diagram](https://github.com/mcci-catena/HW-Designs/blob/master/Boards/Catena-4611_4612/234001124a_(Catena-4611_4612-PinMapping).png)
+
 Documents on the MCCI Catena 4610 are at https://github.com/mcci-catena/HW-Designs/tree/master/Boards/Catena-4610.
+
+* [Catena 4610 User Manual](https://github.com/mcci-catena/HW-Designs/blob/master/Boards/Catena-4610/234001177a_(Catena-4610-User-Manual).pdf)
+* [Catena 4610 Pin Mapping Diagram](https://github.com/mcci-catena/HW-Designs/blob/master/Boards/Catena-4610/Catena-4610-Pinmapping.png)
 
 ## Getting Started
 
@@ -292,6 +298,11 @@ Then reset your Catena, and return to [Provision your Catena 4612](#provision-yo
 Early versions of the MCCI BSP do not include an INF file (Windows) or sample rules (Linux) to teach your system what to do. The procedures posted here show how to set things up manually: https://github.com/vpowar/LoRaWAN_SensorNetworks-Catena#uploading-code.
 
 Note that the 4610, unlike the 4612, has a dedicated boot button as well as a reset button. You can use the boot button instead of a jumper to enable on-chip DFU mode. On the 4612, you must use a jumper to enable DFU mode.
+
+You may also refer to the detailed procedures that are part of the user manual. Please see:
+
+* [Catena 4612 User Manual](https://github.com/mcci-catena/HW-Designs/blob/master/Boards/Catena-4611_4612/234001173a_(Catena-4612-User-Manual).pdf).
+* [Catena 4610 User Manual](https://github.com/mcci-catena/HW-Designs/blob/master/Boards/Catena-4610/234001177a_(Catena-4610-User-Manual).pdf)
 
 ### Data Format
 
