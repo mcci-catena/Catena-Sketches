@@ -191,6 +191,13 @@ sApplicationCommandDispatch(
 |
 \****************************************************************************/
 
+u1_t readReg(u1_t addr) {
+        u1_t buf[1];
+        hal_spi_read(addr & 0x7f, buf, 1);
+        return buf[0];
+}
+
+
 /*
 
 Name:	setup()
@@ -616,6 +623,11 @@ static void sendBufferDoneCb(
 
         gLed.Set(LedPattern::Settling);
 
+        // dump some registers
+        gCatena.SafePrintf("RegPaConfig=%02x RegOcp=%02x RegPaDac=%02x\n",
+                readReg(0x09), readReg(0x0B), readReg(0x4D)
+                );
+
         pFn = settleDoneCb;
         if (!fStatus)
                {
@@ -828,6 +840,9 @@ static void receiveMessage(
                         gCatena.SafePrintf(" %02x", LMIC.frame[i]);
                         }
                 gCatena.SafePrintf("\n");
+
+                gCatena.SafePrintf("Transmit power now %d, ADR pow %d, datarate %d\n", LMIC.txpow, LMIC.adrTxPow, LMIC.datarate);
+
                 return;
                 }
 
