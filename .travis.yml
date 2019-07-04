@@ -119,6 +119,8 @@ install:
  - _clonelib github.com mcci-catena/OneWire
  - _clonelib github.com mcci-catena/RTCZero
  - _clonelib github.com mcci-catena/SHT1x
+ - _clonelib github.com mcci-catena/MCCI-Catena-HS300x
+ - _clonelib github.com mcci-catena/MCCI-Catena-SHT3x
 
  - _notsamd    || arduino --install-boards mcci:samd   || echo "assume mcci:samd already installed, continue"
  - _notstm32l0 || arduino --install-boards mcci:stm32  || echo "assume mcci:stm32 already installed, continue"
