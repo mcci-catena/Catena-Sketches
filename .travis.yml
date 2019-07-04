@@ -127,6 +127,8 @@ script:
  - _testsketch catena461x_test01  mcci_catena_4612 "$REGION"
  - _testsketch catena4612_simple  mcci_catena_4610 "$REGION"
  - _testsketch catena4612_simple  mcci_catena_4612 "$REGION"
+ - _testsketch catena4617_simple  mcci_catena_4617 "$REGION"
+ - _testsketch catena4618_simple  mcci_catena_4618 "$REGION"
 
  - _testsketch catena4410_sensor1 mcci_catena_4410 "$REGION"
  - _testsketch catena4410_test01  mcci_catena_4410 "$REGION"
