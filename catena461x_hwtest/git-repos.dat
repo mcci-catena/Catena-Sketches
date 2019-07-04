@@ -7,7 +7,7 @@ github.com	mcci-catena/Catena-mcciadk.git
 github.com	mcci-catena/arduino-lmic.git
 github.com	mcci-catena/Adafruit_FRAM_I2C.git
 github.com	mcci-catena/MCCI-Catena-SHT3x.git
+github.com	mcci-catena/MCCI-Catena-HS300x.git
 github.com	mcci-catena/Adafruit_BME280_Library.git
 github.com	mcci-catena/Adafruit_Sensor.git
-github.com	mcci-catena/BH1750.git
 github.com	mcci-catena/arduinounit
