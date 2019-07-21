@@ -1,4 +1,7 @@
 # Catena 4612 Sensor Sketch
+<!-- markdownlint-disable MD004 MD033 -->
+<!-- markdownlint-capture -->
+<!-- markdownlint-disable -->
 <!-- TOC depthFrom:2 updateOnSave:true -->
 
 - [Introduction](#introduction)
@@ -26,6 +29,8 @@
 	- [gitboot.sh and the other sketches](#gitbootsh-and-the-other-sketches)
 
 <!-- /TOC -->
+<!-- markdownlint-restore -->
+
 ## Introduction
 
 This sketch demonstrates the MCCI Catena&reg; 4612 (or 4610) as a remote temperature/humidity/light sensor using a LoRaWAN&reg;-techology network to transmit to a remote server.
@@ -40,12 +45,12 @@ The Catena 4610 is very similar to the 4612, except that it runs from USB or a *
 
 This sketch is compatible with either board. In this README, although we focus on the 4612, you can assume that the instructions also apply to the 4610 unless we specify otherwise.
 
-Documents on the MCCI Catena 4612 are at https://github.com/mcci-catena/HW-Designs/tree/master/Boards/Catena-4612.
+Documents on the MCCI Catena 4612 are at [github.com/mcci-catnea/HW-Designs](https://github.com/mcci-catena/HW-Designs/tree/master/Boards/Catena-4612).
 
 * [Catena 4612 User Manual](https://github.com/mcci-catena/HW-Designs/blob/master/Boards/Catena-4611_4612/234001173a_(Catena-4612-User-Manual).pdf).
 * [Catena 4612 Pin Mapping Diagram](https://github.com/mcci-catena/HW-Designs/blob/master/Boards/Catena-4611_4612/234001124a_(Catena-4611_4612-PinMapping).png)
 
-Documents on the MCCI Catena 4610 are at https://github.com/mcci-catena/HW-Designs/tree/master/Boards/Catena-4610.
+Documents on the MCCI Catena 4610 are at [github.com/mcci-catnea/HW-Designs](https://github.com/mcci-catena/HW-Designs/tree/master/Boards/Catena-4610).
 
 * [Catena 4610 User Manual](https://github.com/mcci-catena/HW-Designs/blob/master/Boards/Catena-4610/234001177a_(Catena-4610-User-Manual).pdf)
 * [Catena 4610 Pin Mapping Diagram](https://github.com/mcci-catena/HW-Designs/blob/master/Boards/Catena-4610/Catena-4610-Pinmapping.png)
@@ -118,7 +123,7 @@ This sketch uses several sensor libraries.
 
 The script [`git-boot.sh`](https://github.com/mcci-catena/Catena-Sketches/blob/master/git-boot.sh) in the top directory of this repo will get all the things you need.
 
-It's easy to run, provided you're on Windows, macOS, or Linux, and provided you have `git` installed. We tested on Windows with git bash from https://git-scm.org, on macOS 10.11.3 with the git and bash shipped by Apple, and on Ubuntu 16.0.4 LTS (64-bit) with the built-in bash and git from `apt-get install git`.
+It's easy to run, provided you're on Windows, macOS, or Linux, and provided you have `git` installed. We tested on Windows with git bash from [git-scm.org](https://git-scm.org), on macOS 10.11.3 with the git and bash shipped by Apple, and on Ubuntu 16.0.4 LTS (64-bit) with the built-in bash and git from `apt-get install git`.
 
 ```console
 $ cd Catena4410-Sketches/catena4612_simple
@@ -146,12 +151,12 @@ It has a number of advanced options; use `../git-boot.sh -h` to get help, or loo
 
 This sketch depends on the following libraries.
 
-*  https://github.com/mcci-catena/Catena4410-Arduino-Library
-*  https://github.com/mcci-catena/arduino-lorawan
-*  https://github.com/mcci-catena/Catena-mcciadk
-*  https://github.com/mcci-catena/arduino-lmic
-*  https://github.com/mcci-catena/Adafruit_FRAM_I2C
-*  https://github.com/mcci-catena/MCCI-Catena-HS300x
+* [github.com/mcci-catena/Catena4410-Arduino-Library](https://github.com/mcci-catena/Catena4410-Arduino-Library)
+* [github.com/mcci-catena/arduino-lorawan](https://github.com/mcci-catena/arduino-lorawan)
+* [github.com/mcci-catena/Catena-mcciadk](https://github.com/mcci-catena/Catena-mcciadk)
+* [github.com/mcci-catena/arduino-lmic](https://github.com/mcci-catena/arduino-lmic)
+* [github.com/mcci-catena/Adafruit_FRAM_I2C](https://github.com/mcci-catena/Adafruit_FRAM_I2C)
+* [github.com/mcci-catena/MCCI-Catena-HS300x](https://github.com/mcci-catena/MCCI-Catena-HS300x)
 
 ### Build and Download
 
@@ -181,13 +186,13 @@ At the bottom right side of the serial monitor window, set the dropdown to `Newl
 
 Enter the following command, and press enter:
 
-```
+```console
 system configure platformguid
 ```
 
 If the Catena is functioning at all, you'll either get an error message, or you'll get a long number like:
 
-```
+```console
 915decfa-d156-4d4f-bac5-70e7724726d8
 ```
 
@@ -295,7 +300,7 @@ Then reset your Catena, and return to [Provision your Catena 4612](#provision-yo
 
 ### Setting up DFU on a Linux or Windows PC
 
-Early versions of the MCCI BSP do not include an INF file (Windows) or sample rules (Linux) to teach your system what to do. The procedures posted here show how to set things up manually: https://github.com/vpowar/LoRaWAN_SensorNetworks-Catena#uploading-code.
+Early versions of the MCCI BSP do not include an INF file (Windows) or sample rules (Linux) to teach your system what to do. The procedures posted here show how to set things up manually: [vpowar/LoRaWAN_SensorNetworks-Catena#uploading-code](https://github.com/vpowar/LoRaWAN_SensorNetworks-Catena#uploading-code).
 
 Note that the 4610, unlike the 4612, has a dedicated boot button as well as a reset button. You can use the boot button instead of a jumper to enable on-chip DFU mode. On the 4612, you must use a jumper to enable DFU mode.
 
@@ -324,4 +329,4 @@ The workaround is use DFU boot mode to download the catena-hello sketch from [Ca
 
 ### gitboot.sh and the other sketches
 
-Many of the sketches in other directories in this tree are for engineering use at MCCI. The `git-repos.dat` file in this directory does not necessarily install all the required libraries needed for building the other directories. However, many sketches have a suitable `git-repos.dat`. In any case, all the libraries should be available from https://github.com/mcci-catena/; and we are working on getting `git-repos.dat` files in every sub-directory.
+Many of the sketches in other directories in this tree are for engineering use at MCCI. The `git-repos.dat` file in this directory does not necessarily install all the required libraries needed for building the other directories. However, many sketches have a suitable `git-repos.dat`. In any case, all the libraries should be available from [github.com/mcci-catena](https://github.com/mcci-catena/); and we are working on getting `git-repos.dat` files in every sub-directory.

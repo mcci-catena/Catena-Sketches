@@ -4,12 +4,14 @@ This repository contains top-level Arduino sketches for the Catena family of LoR
 
 [![GitHub release](https://img.shields.io/github/release/mcci-catena/Catena-Sketches.svg)](https://github.com/mcci-catena/Catena-Sketches/releases/latest) [![GitHub commits](https://img.shields.io/github/commits-since/mcci-catena/Catena-Sketches/latest.svg)](https://github.com/mcci-catena/Catena-Sketches/compare/v0.3.4...master) [![Build Status](https://travis-ci.com/mcci-catena/Catena-Sketches.svg?branch=master)](https://travis-ci.com/mcci-catena/Catena-Sketches)
 
-
 ![Picture of Catena 4450](extra/assets/Catena4450-diy-1-1088x1024.jpg)
 
 This repository is the top-level repository for the software. In order to build, you will have to download a number of additional libraries from the [MCCI Catena github page](https://github.com/mcci-catena); the repositories needed vary depending on the sketch you want to build. A bash script is provided to simplify this process.
 
 **Contents:**
+<!-- markdownlint-disable MD004 -->
+<!-- markdownlint-capture -->
+<!-- markdownlint-disable -->
 <!-- TOC depthFrom:2 updateOnSave:true -->
 
 - [Getting Started](#getting-started)
@@ -35,8 +37,10 @@ This repository is the top-level repository for the software. In order to build,
 - [Related Work](#related-work)
 - [Boilerplate](#boilerplate)
 - [Thanks, Acknowledgments, Notes](#thanks-acknowledgments-notes)
+- [Support Open Source Hardware and Software](#support-open-source-hardware-and-software)
 
 <!-- /TOC -->
+<!-- markdownlint-restore -->
 
 ## Getting Started
 
@@ -168,3 +172,9 @@ LoRa is a registered trademark of Semtech Corporation.
 LoRaWAN is a registered trademark of the LoRa Alliance.
 
 All other trademarks are the property of their respective owners.
+
+## Support Open Source Hardware and Software
+
+MCCI invests time and resources providing this open source code, please support MCCI and open-source hardware by purchasing products from MCCI, Adafruit and other open-source hardware/software vendors!
+
+For information about MCCI's products, please visit [store.mcci.com](https://store.mcci.com/).

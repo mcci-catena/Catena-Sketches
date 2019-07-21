@@ -1,6 +1,6 @@
 # catena4460_bsec_ulp
 
-MCCI LoRaWAN test program for the BME680, based on the Bosch Sensortec bsec library `bsec_config_state_ulp_plus.ino`example.
+MCCI LoRaWAN test program for the BME680, based on the Bosch Sensortec bsec library `bsec_config_state_ulp_plus.ino` example.
 
 ## What we changed
 

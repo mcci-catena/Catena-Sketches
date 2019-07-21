@@ -1,4 +1,4 @@
-# Understanding Catena 4450 format 0x14
+# Understanding Catena Message Format 0x14
 
 ## Overall Message Format
 
@@ -30,17 +30,23 @@ field number | length of field| encoding | description
 7 | n/a | n/a | reserved, must always be zero.
 
 ## Data Formats
+
 All multi-byte data is transmitted with the most significant byte first (big-endian format).  Comments on the individual formats follow.
 
 ### uint16
+
 an integer from 0 to 65536.
 
 ### int16
+
 a signed integer from -32,768 to 32,767, in two's complement form. (Thus 0..0x7FFF represent 0 to 32,767; 0x8000 to 0xFFFF represent -32,768 to -1).
 
 ### uint8
+
 an integer from 0 to 255.
+
 ### uflt16
+
 A unsigned floating point number, transmitted as a 16-bit number, with the following interpretation:
 
 bits | description
@@ -78,6 +84,7 @@ The following input data can be used to test decoders.
 |`14 7F 43 23 4F 01 11 19 52 5F 97 AE 03 01 C5 50 31 24 BF 54 D8 39` | 4.196 | 4.938 | 17 | 25.320 | 978.84 | 68.0 | 769 | 50,512 | 12,580 | 862.21 | 1850.1 |
 
 ## Node-RED Decoding Script
+
 The following Node-RED script will decode this data. You can download the latest version from github [in raw form](https://raw.githubusercontent.com/mcci-catena/Catena4410-Sketches/master/extra/catena-message-0x14-decoder-node-red.js) or [view it](https://github.com/mcci-catena/Catena4410-Sketches/blob/master/extra/catena-message-0x14-decoder-node-red.js) on github.
 
 ```javascript
@@ -347,7 +354,7 @@ function Decoder(bytes, port) {
             //  15 05 F8 00 42 ==> boot: 66, vBat: -0.5
             //  15 0D F8 00 42 17 80 59 35 80 ==> adds one temp of 23.5, rh = 50, p = 913.48, tDewC = 12.5
             //  15 7D 44 60 0D 15 9D 5F CD C3 00 00 1C 11 14 46 E4 ==>
-            //	{
+            //    {
             //    "boot": 13,
             //    "error": "none",
             //    "lux": 0,
@@ -474,7 +481,7 @@ function Decoder(bytes, port) {
             //  11 01 F8 00 ==> vBat = -0.5
             //  11 05 F8 00 17 80 59 35 80 ==> adds one temp of 23.5, rh = 50, p = 913.48, tDewC = 12.5
             //  11 3D 44 60 15 9D 5F CD C3 00 00 1C 11 14 46 E4 ==>
-            //	{
+            //    {
             //    "error": "none",
             //    "lux": 0,
             //    "p": 981,

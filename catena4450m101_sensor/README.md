@@ -1,4 +1,10 @@
 # Catena 4450 M101 Sensor Sketch
+
+This sketch is used for the Ithaca power project and other AC power management applications. It's also a great starting point for doing Catena 4450 work. Because of the portability features of the [Catena-Arduino-Platform](https://github.com/mcci-catena/Catena-Arduino-Platform) library, it also can be used on most other Catenas that are configured as M101 (pulse monitoring) devices.
+
+<!-- markdownlint-disable MD004 MD033 -->
+<!-- markdownlint-capture -->
+<!-- markdownlint-disable -->
 <!-- TOC depthFrom:2 -->
 
 - [Clone this repository into a suitable directory on your system](#clone-this-repository-into-a-suitable-directory-on-your-system)
@@ -24,7 +30,7 @@
 	- [gitboot.sh and the other sketches](#gitbootsh-and-the-other-sketches)
 
 <!-- /TOC -->
-This sketch is used for the Ithaca power project and other AC power management applications. It's also a great starting point for doing Catena 4450 work.
+<!-- markdownlint-restore -->
 
 It is designed for use with the [Catena 4450](https://github.com/mcci-catena/HW-Designs/tree/master/kicad/Catena-4450) in conjunction with the [Adafruit Feather M0 LoRa](https://www.adafruit.com/product/3178). In order to use this code, you must do several things:
 
@@ -86,7 +92,7 @@ This sketch uses several sensor libraries.
 
 The script [`git-boot.sh`](https://github.com/mcci-catena/Catena-Sketches/blob/master/git-boot.sh) in the top directory of this repo will get all the things you need.
 
-It's easy to run, provided you're on Windows, macOS, or Linux, and provided you have `git` installed. We tested on Windows with git bash from https://git-scm.org, on macOS 10.11.3 with the git and bash shipped by Apple, and on Ubuntu 16.0.4 LTS (64-bit) with the built-in bash and git from `apt-get install git`.
+It's easy to run, provided you're on Windows, macOS, or Linux, and provided you have `git` installed. We tested on Windows with git bash from [https://git-scm.org](https://git-scm.org), on macOS 10.11.3 with the git and bash shipped by Apple, and on Ubuntu 16.0.4 LTS (64-bit) with the built-in bash and git from `apt-get install git`.
 
 ```console
 $ cd Catena4410-Sketches/catena4450m101_sensor
@@ -150,15 +156,15 @@ It has a number of advanced options; use `../git-boot.sh -h` to get help, or loo
 
 This sketch depends on the following libraries.
 
-*  https://github.com/mcci-catena/Adafruit_FRAM_I2C
-*  https://github.com/mcci-catena/Catena4410-Arduino-Library
-*  https://github.com/mcci-catena/arduino-lorawan
-*  https://github.com/mcci-catena/Catena-mcciadk
-*  https://github.com/mcci-catena/arduino-lmic
-*  https://github.com/mcci-catena/Adafruit_BME280_Library
-*  https://github.com/mcci-catena/Adafruit_Sensor
-*  https://github.com/mcci-catena/RTCZero
-*  https://github.com/mcci-catena/BH1750
+* [github.com/mcci-catena/Adafruit_FRAM_I2C](https://github.com/mcci-catena/Adafruit_FRAM_I2C)
+* [github.com/mcci-catena/Catena4410-Arduino-Library](https://github.com/mcci-catena/Catena4410-Arduino-Library)
+* [github.com/mcci-catena/arduino-lorawan](https://github.com/mcci-catena/arduino-lorawan)
+* [github.com/mcci-catena/Catena-mcciadk](https://github.com/mcci-catena/Catena-mcciadk)
+* [github.com/mcci-catena/arduino-lmic](https://github.com/mcci-catena/arduino-lmic)
+* [github.com/mcci-catena/Adafruit_BME280_Library](https://github.com/mcci-catena/Adafruit_BME280_Library)
+* [github.com/mcci-catena/Adafruit_Sensor](https://github.com/mcci-catena/Adafruit_Sensor)
+* [github.com/mcci-catena/RTCZero](https://github.com/mcci-catena/RTCZero)
+* [github.com/mcci-catena/BH1750](https://github.com/mcci-catena/BH1750)
 
 ## Build and Download
 
@@ -188,13 +194,13 @@ At the bottom right side of the serial monitor window, set the dropdown to `Newl
 
 Enter the following command, and press enter:
 
-```
+```console
 system configure platformguid
 ```
 
 If the Catena is functioning at all, you'll either get an error message, or you'll get a long number like:
 
-```
+```consle
 82BF2661-70CB-45AE-B620-CAF695478BC1
 ```
 
@@ -319,4 +325,4 @@ The workaround is to "double tap" the reset button. As with any Feather M0, doub
 
 ### gitboot.sh and the other sketches
 
-The sketches in other directories in this tree are for engineering use at MCCI. The `git-repos.dat` file in this directory does not necessarily install all the required libraries needed for building the other directories. However, all the libraries should be available from https://github.com/mcci-catena/; and we are working on getting `git-repos.dat` files in every sub-directory.
+The sketches in other directories in this tree are for engineering use at MCCI. The `git-repos.dat` file in this directory does not necessarily install all the required libraries needed for building the other directories. However, all the libraries should be available from [github.com/mcci-catena](https://github.com/mcci-catena/); and we are working on getting `git-repos.dat` files in every sub-directory.

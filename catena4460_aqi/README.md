@@ -2,6 +2,9 @@
 
 This sketch captures a simple air-quality index, based on the gas resistance returned by the BME680 that resides in the MCCI Catena 4460. It then uses LoRaWAN technology to transmit the captured data over a suitable network, such as The Things Network.
 
+<!-- markdownlint-disable MD004 -->
+<!-- markdownlint-capture -->
+<!-- markdownlint-disable -->
 <!-- TOC depthFrom:2 updateOnSave:true -->
 
 - [Description](#description)
@@ -19,6 +22,7 @@ This sketch captures a simple air-quality index, based on the gas resistance ret
 	- [Trademarks](#trademarks)
 
 <!-- /TOC -->
+<!-- markdownlint-restore -->
 
 ## Description
 
@@ -34,9 +38,9 @@ You must provision the Catena as normal, and set up your application to understa
 
 ### Prerequisites
 
-- Make sure you're running the MCCI Board Support Package for the Catena 4460. See https://github.com/mcci-catena/arduino-boards for information on how to set up the Arduino IDE.
+- Make sure you're running the MCCI Board Support Package for the Catena 4460. See [mcci-catena/arduino-boards](https://github.com/mcci-catena/arduino-boards) for information on how to set up the Arduino IDE.
 - Select Catena 4460 as the target board in the Arduino IDE.
-- Use [`git-boot.sh`]() (at the top level of this repository) to fetch the required libraries, by using the command:
+- Use [`git-boot.sh`](https://github.com/mcci-catena/Catena-Sketches/blob/master/git-boot.sh) (at the top level of this repository) to fetch the required libraries, by using the command:
 
    ```shell
    cd catena4460_aqi
@@ -79,7 +83,7 @@ We reviewed several papers, of which the following seemed the most important:
 
 3. US Environmental Protection Agency, [EPA-450/3-82-019: Measurement of Volatile Organic Compunds - Supplement 1][EPA1982], July 1982 [[EPA1982]].
 
-4. Wang, C., Yin, L., Zhang, L., Xiang, D., & Gao, R. (2010). [Metal Oxide Gas Sensors: Sensitivity and Influencing Factors][Wang2010],  Sensors (Basel, Switzerland), 10(3), 2088–2106. http://doi.org/10.3390/s100302088 [[Wang2010]].
+4. Wang, C., Yin, L., Zhang, L., Xiang, D., & Gao, R. (2010). [Metal Oxide Gas Sensors: Sensitivity and Influencing Factors][Wang2010],  Sensors (Basel, Switzerland), 10(3), 2088–2106. [[Wang2010]].
 
 [[Pawar2009]] was peer-reviewed, [[Kamalsi2011]] was not, but the results looked consistent. [[EPA1982]] is a good overview of laboratory measurement techniques for VOCs and is useful background.
 
@@ -122,13 +126,13 @@ The Catena library defines operating flags bit 0 (mask 0x00000001) as "unattende
 
 To enable unattended mode during configuration:
 
-```
+```console
 system configure operatingflags 1
 ```
 
 To disable:
 
-```
+```console
 system configure operatingflags 0
 ```
 
@@ -138,13 +142,13 @@ This sketch honors the manufacturing-test bit of operating flags (bit 1, mask 0x
 
 To enable manufacturing test mode during configuration
 
-```
+```console
 system configure operatingflags 2
 ```
 
 To disable:
 
-```
+```console
 system configure operatingflags 0
 ```
 
@@ -152,7 +156,7 @@ system configure operatingflags 0
 
 Please set the platform GUID to `3037D9BE-8EBE-4AE7-970E-91915A2484F8` during configuration:
 
-```
+```console
 system configure platformguid 3037D9BE-8EBE-4AE7-970E-91915A2484F8
 ```
 
@@ -162,5 +166,5 @@ system configure platformguid 3037D9BE-8EBE-4AE7-970E-91915A2484F8
 
 - MCCI and MCCI Catena are registered trademarks of MCCI Corporation.
 - LoRa is a registered trademark of Semtech Corporation.
-- LoRaWAN is a trademark of the LoRa Alliance
+- LoRaWAN is a registered trademark of the LoRa Alliance
 - All other trademarks are properties of their respective owners.
