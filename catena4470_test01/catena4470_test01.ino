@@ -87,7 +87,7 @@ enum	{
 // forwards
 static void settleDoneCb(osjob_t *pSendJob);
 static void warmupDoneCb(osjob_t *pSendJob);
-static void txFailedDoneCb(osjob_t *pSendJob);
+static void txNotProvisionedCb(osjob_t *pSendJob);
 static void sleepDoneCb(osjob_t *pSendJob);
 static Arduino_LoRaWAN::SendBufferCbFn sendBufferDoneCb;
 void fillBuffer(TxBuffer_t &b);
@@ -762,40 +762,46 @@ void startSendingUplink(void)
 	gLoRaWAN.SendBuffer(b.getbase(), b.getn(), sendBufferDoneCb, NULL, fConfirmed);
 	}
 
-static void
-sendBufferDoneCb(
-	void *pContext,
-	bool fStatus
-	)
-	{
-	osjobcb_t pFn;
+static void sendBufferDoneCb(
+        void *pContext,
+        bool fStatus
+        )
+        {
+        osjobcb_t pFn;
 
-	gLed.Set(LedPattern::Settling);
-	if (!fStatus)
-		{
-		gCatena.SafePrintf("send buffer failed\n");
-		pFn = txFailedDoneCb;
-		}
-	else
-		{
-		pFn = settleDoneCb;
-		}
-	os_setTimedCallback(
-		&sensorJob,
-		os_getTime() + sec2osticks(CATCFG_T_SETTLE),
-		pFn
-		);
-	}
+        gLed.Set(LedPattern::Settling);
 
-static void
-txFailedDoneCb(
-	osjob_t *pSendJob
-	)
-	{
-	gCatena.SafePrintf("not provisioned, idling\n");
-	gLoRaWAN.Shutdown();
-	gLed.Set(LedPattern::NotProvisioned);
-	}
+        pFn = settleDoneCb;
+        if (!fStatus)
+               {
+                if (!gLoRaWAN.IsProvisioned())
+                        {
+                        // we'll talk about it at the callback.
+                        pFn = txNotProvisionedCb;
+
+                        // but prevent an attempt to join.
+                        gLoRaWAN.Shutdown();
+                        }
+                else
+                        gCatena.SafePrintf("send buffer failed\n");
+                }
+
+        os_setTimedCallback(
+                &sensorJob,
+                os_getTime() + sec2osticks(CATCFG_T_SETTLE),
+                pFn
+                );
+        }
+
+
+static void txNotProvisionedCb(
+        osjob_t *pSendJob
+        )
+        {
+        gCatena.SafePrintf("not provisioned, idling\n");
+        gLed.Set(LedPattern::NotProvisioned);
+        }
+
 
 
 //
@@ -812,7 +818,6 @@ static void settleDoneCb(
 	osjob_t *pSendJob
 	)
 	{
-	uint32_t startTime;
 	bool const fDeepSleepTest = gCatena.GetOperatingFlags() & (1 << 19);
 	bool fDeepSleep;
 
@@ -874,16 +879,22 @@ static void settleDoneCb(
 
 	// update the sleep parameters
 	if (gTxCycleCount > 1)
-		--gTxCycleCount;
-	else
-		{
-		if (gTxCycleCount > 0)
-		       gCatena.SafePrintf("resetting tx cycle to default: %u\n", CATCFG_T_CYCLE);
+                {
+                // values greater than one are decremented and ultimately reset to default.
+                --gTxCycleCount;
+                }
+        else if (gTxCycleCount == 1)
+                {
+                // it's now one (otherwise we couldn't be here.)
+                gCatena.SafePrintf("resetting tx cycle to default: %u\n", CATCFG_T_CYCLE);
 
-		gTxCycleCount = 0;
-		gTxCycle = CATCFG_T_CYCLE;
-		}
-
+                gTxCycleCount = 0;
+                gTxCycle = CATCFG_T_CYCLE;
+                }
+        else
+                {
+                // it's zero. Leave it alone.
+                }
 	// if connected to USB, don't sleep
 	// ditto if we're monitoring pulses.
 	if (! fDeepSleep)
@@ -908,27 +919,28 @@ static void settleDoneCb(
 	|| while we sleep. We can't poll if we're polling power.
 	*/
 	gLed.Set(LedPattern::Off);
-	USBDevice.detach();
-	powerOff();
+#ifdef ARDUINO_ARCH_SAMD
+        USBDevice.detach();
+#elif defined(ARDUINO_ARCH_STM32)
+        Serial.end();
+#endif
+        powerOff();
+	Wire.end();
+        SPI.end();
 
-	startTime = millis();
-	uint32_t const sleepInterval = CATCFG_GetInterval(
-			fDeepSleepTest ? CATCFG_T_CYCLE_TEST : gTxCycle
-			);
+        uint32_t const sleepInterval = CATCFG_GetInterval(
+                        fDeepSleepTest ? CATCFG_T_CYCLE_TEST : gTxCycle
+                        );
 
-	gRtc.SetAlarm(sleepInterval);
-	gRtc.SleepForAlarm(
-		gRtc.MATCH_HHMMSS,
-		// gRtc.SleepMode::IdleCpuAhbApb
-		gRtc.SleepMode::DeepSleep
-		);
+        gCatena.Sleep(sleepInterval);
 
-	// add the number of ms that we were asleep to the millisecond timer.
-	// we don't need extreme accuracy.
-	adjust_millis_forward(sleepInterval * 1000);
-
-	USBDevice.attach();
-	powerOn();
+#ifdef ARDUINO_ARCH_SAMD
+        USBDevice.attach();
+#elif defined(ARDUINO_ARCH_STM32)
+        Serial.begin();
+#endif
+        Wire.begin();
+        SPI.begin();
 
 	/* and now... we're awake again. Go to next state. */
 	sleepDoneCb(pSendJob);
@@ -964,13 +976,28 @@ static void receiveMessage(
 	unsigned txCycle;
 	unsigned txCount;
 
-	if (! (port == 1 && 2 <= nMessage && nMessage <= 3))
-		{
-		gCatena.SafePrintf("invalid message port(%02x)/length(%zx)\n",
-			port, nMessage
-			);
-		return;
-		}
+        if (port == 0)
+                {
+                gCatena.SafePrintf("MAC message:");
+                for (unsigned i = 0; i < LMIC.dataBeg; ++i)
+                        {
+                        gCatena.SafePrintf(" %02x", LMIC.frame[i]);
+                        }
+                gCatena.SafePrintf("\n");
+
+                gCatena.SafePrintf("Transmit power now %d, ADR pow %d, datarate %d\n", LMIC.txpow, LMIC.adrTxPow, LMIC.datarate);
+
+                return;
+                }
+
+        if (! (port == 1 && 2 <= nMessage && nMessage <= 3))
+                {
+                gCatena.SafePrintf("invalid message port(%02x)/length(%x)\n",
+                        port, (unsigned) nMessage
+                        );
+                return;
+                }
+
 
 	txCycle = (pMessage[0] << 8) | pMessage[1];
 
