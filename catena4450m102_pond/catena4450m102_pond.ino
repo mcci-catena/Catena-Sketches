@@ -107,7 +107,7 @@ static const char sVersion[] = "0.3.0";
 
 //
 // set this to the branch you're using, if this is a branch.
-static const char sBranch[] = "";
+static const char sBranch[] = "HUNTERPOINT-20190807";
 // keep by itself, more or less, for easy git rebasing.
 //
 
