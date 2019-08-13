@@ -98,7 +98,7 @@ As the animation shows, use `Tools>LoRaWAN Region...` and choose the appropriate
 
 ### Select the Serial interface
 
-When you select a board, the default Serial interface is set to `Generic serial`, which only uses First Hardware Serial of Catena 4801. As this sketch uses both hardware Serials, it is necessary to select the option `Two HW Serial`.
+When you select a board, the default Serial interface is set to `Generic serial`, which only uses first hardware serial of Catena 4801. The RS-485 module in Catena uses the second hardware serial for modbus(RTU) communication. As this sketch uses RS-485 communication, it is necessary to select `Two HW Serial` in Serial interface.
 
 ### Installing the required libraries
 
@@ -293,7 +293,7 @@ Then reset your Catena, and return to [Provision your Catena 4801](#provision-yo
 
 Catena 4801 uses ST-Link V2 programmer for programming the firmware. Below is the connection between 4801 and ST-Link programmer
 
-[ST-Link pinout](../extra/assets/st-link-pinout.png)
+![ST-Link pinout](../extra/assets/st-link-pinout.png)
 
 Catena 4801 (JP1) | ST-Link
 ----------------- | -------
