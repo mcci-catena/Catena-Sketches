@@ -164,7 +164,7 @@ u16CoilsNo = 13;		// number of elements (coils or registers) to read
 host.begin(&mySerial, 9600);	// baud-rate at 9600
 ```
 
-Connect your modbus slave’s A and B terminal to Catena 4801’s A and B terminal (JP3).
+Connect your modbus slaves A and B terminal to Catena 4801s A and B terminal (JP3).
 
 ### Load the sketch into the Catena
 
@@ -178,7 +178,7 @@ This can be done with any terminal emulator, but it's easiest to do it with the 
 
 ### Check platform amd serial number setup
 
-![Newline](./assets/serial-monitor-newline.png)
+![Newline](./assets/catena4801-serial-monitor-newline.png)
 
 At the bottom right side of the serial monitor window, set the dropdown to `Newline` and `115200 baud`.
 
