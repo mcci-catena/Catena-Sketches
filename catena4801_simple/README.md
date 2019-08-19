@@ -178,7 +178,7 @@ This can be done with any terminal emulator, but it's easiest to do it with the 
 
 ### Check platform amd serial number setup
 
-![Newline](./assets/catena4801-serial-monitor-newline.png)
+![Newline](../extra/assets/catena4801-serial-monitor-newline.png)
 
 At the bottom right side of the serial monitor window, set the dropdown to `Newline` and `115200 baud`.
 
