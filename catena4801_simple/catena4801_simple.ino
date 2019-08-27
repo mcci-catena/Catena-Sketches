@@ -172,44 +172,44 @@ uint8_t u16CoilsNo;
 cCatenaModbusRtu host(0, D12); // this is host and RS-232 or USB-FTDI
 ModbusSerial<decltype(Serial2)> mySerial(&Serial2);
 
-#define kPowerOn		D11
-#define kFRAMPowerOn		D10
-#define kBoostPowerOn		D5
+constexpr uint8_t kFramPowerOn = D10;
+constexpr uint8_t kRs485PowerOn = D11;
+constexpr uint8_t kBoosterPowerOn = D5;
 
 static inline void powerOn(void)
 	{
-	pinMode(kPowerOn, OUTPUT);
-	digitalWrite(kPowerOn, HIGH);
+	pinMode(kRs485PowerOn, OUTPUT);
+	digitalWrite(kRs485PowerOn, HIGH);
 	}
 
 static inline void powerOff(void)
 	{
-	pinMode(kPowerOn, INPUT);
-	digitalWrite(kPowerOn, LOW);
+	pinMode(kRs485PowerOn, INPUT);
+	digitalWrite(kRs485PowerOn, LOW);
 	}
 
 static inline void fRAMpowerOn(void)
 	{
-	pinMode(kFRAMPowerOn, OUTPUT);
-	digitalWrite(kFRAMPowerOn, HIGH);
+	pinMode(kFramPowerOn, OUTPUT);
+	digitalWrite(kFramPowerOn, HIGH);
 	}
 
 static inline void fRAMpowerOff(void)
 	{
-	pinMode(kFRAMPowerOn, INPUT);
-	digitalWrite(kFRAMPowerOn, LOW);
+	pinMode(kFramPowerOn, INPUT);
+	digitalWrite(kFramPowerOn, LOW);
 	}
 
 static inline void boostpowerOn(void)
 	{
-	pinMode(kBoostPowerOn, OUTPUT);
-	digitalWrite(kBoostPowerOn, HIGH);
+	pinMode(kBoosterPowerOn, OUTPUT);
+	digitalWrite(kBoosterPowerOn, HIGH);
 	}
 
 static inline void boostpowerOff(void)
 	{
-	pinMode(kBoostPowerOn, INPUT);
-	digitalWrite(kBoostPowerOn, LOW);
+	pinMode(kBoosterPowerOn, INPUT);
+	digitalWrite(kBoosterPowerOn, LOW);
 	}
 
 /**
