@@ -239,9 +239,7 @@ void setup_platform(void)
         gCatena.SafePrintf("Enter 'help' for a list of commands.\n");
         gCatena.SafePrintf("(remember to select 'Line Ending: Newline' at the bottom of the monitor window.)\n");
 
-#ifdef CATENA_CFG_SYSCLK
-        gCatena.SafePrintf("SYSCLK: %d MHz\n", CATENA_CFG_SYSCLK);
-#endif
+        gCatena.SafePrintf("SYSCLK: %u MHz\n", unsigned(gCatena.GetSystemClockRate() / (1000 * 1000)));
 
 #ifdef USBCON
         gCatena.SafePrintf("USB enabled\n");
