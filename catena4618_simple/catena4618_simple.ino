@@ -120,7 +120,7 @@ static Arduino_LoRaWAN::ReceivePortBufferCbFn receiveMessage;
 |
 \****************************************************************************/
 
-static const char sVersion[] = "0.1.0";
+static const char sVersion[] = "0.2.0";
 
 /****************************************************************************\
 |
