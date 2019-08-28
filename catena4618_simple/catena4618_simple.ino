@@ -239,9 +239,7 @@ void setup_platform(void)
         gCatena.SafePrintf("Enter 'help' for a list of commands.\n");
         gCatena.SafePrintf("(remember to select 'Line Ending: Newline' at the bottom of the monitor window.)\n");
 
-#ifdef CATENA_CFG_SYSCLK
-        gCatena.SafePrintf("SYSCLK: %d MHz\n", CATENA_CFG_SYSCLK);
-#endif
+        gCatena.SafePrintf("SYSCLK: %u MHz\n", unsigned(gCatena.GetSystemClockRate() / (1000 * 1000)));
 
 #ifdef USBCON
         gCatena.SafePrintf("USB enabled\n");
@@ -360,7 +358,12 @@ void setup_flash(void)
 
 void setup_uplink(void)
         {
+#if defined(_mcci_arduino_version) && _mcci_arduino_version >= _mcci_arduino_version_calc(2,4,0,90) && \
+    defined(CATENA_ARDUINO_PLATFORM_VERSION_CALC) && CATENA_ARDUINO_PLATFORM_VERSION >= CATENA_ARDUINO_PLATFORM_VERSION_CALC(0,17,0,10)
+        LMIC_setClockError(5*65536/100);
+#else
         LMIC_setClockError(10*65536/100);
+#endif
 
         /* trigger a join by sending the first packet */
         if (!(gCatena.GetOperatingFlags() &
