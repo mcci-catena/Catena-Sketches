@@ -774,7 +774,14 @@ static void receiveMessage(
                 gCatena.SafePrintf("\n");
                 return;
                 }
-
+        /* port 2, message = { 0x01 }: reset */
+        else if (port == 2 && nMessage == 1 && pMessage[0] == 0x01)
+                {
+                gCatena.SafePrintf("system reset requested\n");
+                delay(1000);
+                NVIC_SystemReset();
+                }
+        /* port 1, message { 0xHH, 0xLL, 0xNN }: set cycle time to HHLL for NN transmissions */
         else if (! (port == 1 && 2 <= nMessage && nMessage <= 3))
                 {
                 gCatena.SafePrintf("invalid message port(%02x)/length(%x)\n",
