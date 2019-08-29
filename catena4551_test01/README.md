@@ -1,4 +1,16 @@
-# Catena 4551 Sensor Sketch
+# Catena 4551 Test Sketch
+
+<!--
+  This TOC uses the VS Code markdown TOC extension AlanWalk.markdown-toc.
+  We strongly recommend updating using VS Code, the markdown-toc extension and the
+  bierner.markdown-preview-github-styles extension. Note that if you are using
+  VS Code 1.29 and Markdown TOC 1.5.6, https://github.com/AlanWalk/markdown-toc/issues/65
+  applies -- you must change your line-ending to some non-auto value in Settings>
+  Text Editor>Files.  `\n` works for me.
+-->
+<!-- markdownlint-disable MD033 MD004 -->
+<!-- markdownlint-capture -->
+<!-- markdownlint-disable -->
 <!-- TOC depthFrom:2 updateOnSave:true -->
 
 - [Introduction](#introduction)
@@ -7,11 +19,11 @@
 	- [Install the MCCI STM32 board support library](#install-the-mcci-stm32-board-support-library)
 	- [Select your desired band](#select-your-desired-band)
 	- [Installing the required libraries](#installing-the-required-libraries)
-        - [List of required libraries](#list-of-required-libraries)
-    - [Build and Download](#build-and-download)
+		- [List of required libraries](#list-of-required-libraries)
+	- [Build and Download](#build-and-download)
 	- [Load the sketch into the Catena](#load-the-sketch-into-the-catena)
 - [Set the identity of your Catena 4551](#set-the-identity-of-your-catena-4551)
-	- [Check platform amd serial number setup](#check-platform-amd-serial-number-setup)
+	- [Check platform and serial number setup](#check-platform-and-serial-number-setup)
 	- [Platform Provisioning](#platform-provisioning)
 - [LoRaWAN Provisioning](#lorawan-provisioning)
 	- [Preparing the network for your device](#preparing-the-network-for-your-device)
@@ -26,9 +38,12 @@
 	- [gitboot.sh and the other sketches](#gitbootsh-and-the-other-sketches)
 
 <!-- /TOC -->
+<!-- markdownlint-restore -->
+<!-- Due to a bug in Markdown TOC, the table is formatted incorrectly if tab indentation is set other than 4. Due to another bug, this comment must be *after* the TOC entry. -->
+
 ## Introduction
 
-This sketch demonstrates the MCCI Catena&reg; 4551 as a remote temperature/humidity/light sensor using a LoRaWAN&reg;-techology network to transmit to a remote server.
+This sketch demonstrates the MCCI Catena&reg; 4551 as a remote temperature/humidity/light sensor using a LoRaWAN&reg;-technology network to transmit to a remote server.
 
 The Catena 4551 is a single-board LoRaWAN-enabled sensor device with the following integrated sensors:
 
@@ -99,7 +114,7 @@ Then go to `Tools>Board:...` and scroll to the bottom. You should see `MCCI Cate
 
 When you select a board, the default LoRaWAN region is set to US-915, which is used in North America and much of South America. If you're elsewhere, you need to select your target region. You can do it in the IDE:
 
-![Select Bandplan](../extra/assets/select-band-plan.gif)
+![Select Band plan](../extra/assets/select-band-plan.gif)
 
 As the animation shows, use `Tools>LoRaWAN Region...` and choose the appropriate entry from the menu.
 
@@ -109,7 +124,7 @@ This sketch uses several sensor libraries.
 
 The script [`git-boot.sh`](https://github.com/mcci-catena/Catena-Sketches/blob/master/git-boot.sh) in the top directory of this repo will get all the things you need.
 
-It's easy to run, provided you're on Windows, macOS, or Linux, and provided you have `git` installed. We tested on Windows with git bash from https://git-scm.org, on macOS 10.11.3 with the git and bash shipped by Apple, and on Ubuntu 16.0.4 LTS (64-bit) with the built-in bash and git from `apt-get install git`.
+It's easy to run, provided you're on Windows, macOS, or Linux, and provided you have `git` installed. We tested on Windows with git bash from [git-scm.org](https://git-scm.org), on macOS 10.11.3 with the git and bash shipped by Apple, and on Ubuntu 16.0.4 LTS (64-bit) with the built-in bash and git from `apt-get install git`.
 
 ```console
 $ cd Catena-Sketches/catena4551_test01
@@ -145,15 +160,15 @@ It has a number of advanced options; use `../git-boot.sh -h` to get help, or loo
 
 This sketch depends on the following libraries.
 
-*  https://github.com/mcci-catena/Catena-Arduino-Library
-*  https://github.com/mcci-catena/arduino-lorawan
-*  https://github.com/mcci-catena/Catena-mcciadk
-*  https://github.com/mcci-catena/arduino-lmic
-*  https://github.com/mcci-catena/Adafruit_FRAM_I2C
-*  https://github.com/mcci-catena/Adafruit_BME280_Library
-*  https://github.com/mcci-catena/Arduino-Temperature-Control-Library
-*  https://github.com/mcci-catena/OneWire
-*  https://github.com/mcci-catena/SHT1x
+* [`github.com/mcci-catena/Catena-Arduino-Library`](https://github.com/mcci-catena/Catena-Arduino-Library)
+* [`github.com/mcci-catena/arduino-lorawan`](https://github.com/mcci-catena/arduino-lorawan)
+* [`github.com/mcci-catena/Catena-mcciadk`](https://github.com/mcci-catena/Catena-mcciadk)
+* [`github.com/mcci-catena/arduino-lmic`](https://github.com/mcci-catena/arduino-lmic)
+* [`github.com/mcci-catena/Adafruit_FRAM_I2C`](https://github.com/mcci-catena/Adafruit_FRAM_I2C)
+* [`github.com/mcci-catena/Adafruit_BME280_Library`](https://github.com/mcci-catena/Adafruit_BME280_Library)
+* [`github.com/mcci-catena/Arduino-Temperature-Control-Library`](https://github.com/mcci-catena/Arduino-Temperature-Control-Library)
+* [`github.com/mcci-catena/OneWire`](https://github.com/mcci-catena/OneWire)
+* [`github.com/mcci-catena/SHT1x`](https://github.com/mcci-catena/SHT1x)
 
 ### Build and Download
 
@@ -161,7 +176,7 @@ Shutdown the Arduino IDE and restart it, just in case.
 
 Ensure selected board is 'MCCI Catena 4551' (in the GUI, check that `Tools`>`Board "..."` says `"MCCI Catena 4551"`.
 
-In the IDE, use File>Open to load the `catena4551_test01.ino` sketch. (Remember, in step 1 you cloned `Catena-Sketches` -- find that, and navigate to `{somewhere}/Catena-Sketches/catena4551_test01`
+In the IDE, use File>Open to load the `catena4551_test01.ino` sketch. (Remember, in step 1 you cloned `Catena-Sketches` -- find that, and navigate to `{somewhere}/Catena-Sketches/catena4551_test01`.
 
 Follow normal Arduino IDE procedures to build the sketch: `Sketch`>`Verify/Compile`. If there are no errors, go to the next step.
 
@@ -173,9 +188,9 @@ Load the sketch into the Catena using `Sketch`>`Upload` and move on to provision
 
 ## Set the identity of your Catena 4551
 
-This can be done with any terminal emulator, but it's easiest to do it with the serial monitor built into the Arduino IDE or with the equivalent monitor that's part of the Visual Micro IDE. It can also be done usign Tera Term.
+This can be done with any terminal emulator, but it's easiest to do it with the serial monitor built into the Arduino IDE or with the equivalent monitor that's part of the Visual Micro IDE. It can also be done using Tera Term.
 
-### Check platform amd serial number setup
+### Check platform and serial number setup
 
 ![Newline](./assets/serial-monitor-newline.png)
 
@@ -183,13 +198,13 @@ At the bottom right side of the serial monitor window, set the dropdown to `Newl
 
 Enter the following command, and press enter:
 
-```
+```console
 system configure platformguid
 ```
 
 If the Catena is functioning at all, you'll either get an error message, or you'll get a long number like:
 
-```
+```console
 1de63656-2be7-45bd-a14c-c37086b09ab1
 ```
 
@@ -221,7 +236,7 @@ The operating flags control a number of features of the sketch and of the underl
 
 Some background: with LoRaWAN, you have to create a project on your target network, and then register your device with that project.
 
-Somewhat confusingly, the LoRaWAN specification uses the word "application" to refer to the group of devices in a project. We will therefore follow that convention. It's likely that your network provider follows taht convention too.
+Somewhat confusingly, the LoRaWAN specification uses the word "application" to refer to the group of devices in a project. We will therefore follow that convention. It's likely that your network provider follows that convention too.
 
 We'll be setting up the device for "over the air authentication" (or OTAA).
 
@@ -293,7 +308,7 @@ Then reset your Catena, and return to [Provision your Catena 4551](#provision-yo
 
 ### Setting up DFU on a Linux or Windows PC
 
-Early versions of the MCCI BSP do not include an INF file (Windows) or sample rules (Linux) to teach your system what to do. The procedures posted here show how to set things up manually: https://github.com/vpowar/LoRaWAN_SensorNetworks-Catena#uploading-code.
+Early versions of the MCCI BSP do not include an INF file (Windows) or sample rules (Linux) to teach your system what to do. The procedures posted [here](https://github.com/vpowar/LoRaWAN_SensorNetworks-Catena#uploading-code) show how to set things up manually.
 
 You may also refer to the detailed procedures that are part of the user manual. Please see:
 
@@ -307,16 +322,16 @@ Refer to the [Protocol Description](../extra/catena-message-port3-format.md) in 
 
 The Catena 4551 dynamically uses power from the USB cable if it's available, even if a battery is connected. This allows you to unplug the USB cable after booting the Catena 4551 without causing the Catena 4551 to restart.
 
-Unfortunately, the Arudino USB drivers for the Catena 4551 do not distinguish between cable unplug and USB suspend. Any `Serial.print()` operation referring to the USB port will hang if the cable is unplugged after being used during a boot. The easiest work-around is to reboot the Catena after unplugging the USB cable. You can avoid this by using the Arduino UI to turn off DTR before unplugging the cable... but then you must remember to turn DTR back on. This is very fragile in practice.
+Unfortunately, the Arduino USB drivers for the Catena 4551 do not distinguish between cable unplug and USB suspend. Any `Serial.print()` operation referring to the USB port will hang if the cable is unplugged after being used during a boot. The easiest work-around is to reboot the Catena after unplugging the USB cable. You can avoid this by using the Arduino UI to turn off DTR before unplugging the cable... but then you must remember to turn DTR back on. This is very fragile in practice.
 
 ### Deep sleep and USB
 
 When the Catena 4551 is in deep sleep, the USB port will not respond to cable attaches. When the 4551 wakes up, it will connect to the PC while it is doing its work, then disconnect to go back to sleep.
 
-While disconnected, you won't be able to select the COM port for the board from the Arduino UI. And depending on the various operatingflags settings, even after reset, you may have trouble catching the board to download a sketch before it goes to sleep.
+While disconnected, you won't be able to select the COM port for the board from the Arduino UI. And depending on the various `operatingflags` settings, even after reset, you may have trouble catching the board to download a sketch before it goes to sleep.
 
 The workaround is use DFU boot mode to download the catena-hello sketch from [Catena-Arduino-Platform](https://github.com/mcci-catena/Catena-Arduino-Platform), and use the serial port to reset any required flags so you can get control after boot.
 
 ### gitboot.sh and the other sketches
 
-Many of the sketches in other directories in this tree are for engineering use at MCCI. The `git-repos.dat` file in this directory does not necessarily install all the required libraries needed for building the other directories. However, many sketches have a suitable `git-repos.dat`. In any case, all the libraries should be available from https://github.com/mcci-catena/; and we are working on getting `git-repos.dat` files in every sub-directory.
+Many of the sketches in other directories in this tree are for engineering use at MCCI. The `git-repos.dat` file in this directory does not necessarily install all the required libraries needed for building the other directories. However, many sketches have a suitable `git-repos.dat`. In any case, all the libraries should be available from [`github.com/mcci-catena`](https://github.com/mcci-catena/); and we are working on getting `git-repos.dat` files in every sub-directory.
