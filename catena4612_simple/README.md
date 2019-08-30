@@ -1,5 +1,14 @@
 # Catena 4612 Sensor Sketch
-<!-- markdownlint-disable MD004 MD033 -->
+
+<!--
+  This TOC uses the VS Code markdown TOC extension AlanWalk.markdown-toc.
+  We strongly recommend updating using VS Code, the markdown-toc extension and the
+  bierner.markdown-preview-github-styles extension. Note that if you are using
+  VS Code 1.29 and Markdown TOC 1.5.6, https://github.com/AlanWalk/markdown-toc/issues/65
+  applies -- you must change your line-ending to some non-auto value in Settings>
+  Text Editor>Files.  `\n` works for me.
+-->
+<!-- markdownlint-disable MD033 MD004 -->
 <!-- markdownlint-capture -->
 <!-- markdownlint-disable -->
 <!-- TOC depthFrom:2 updateOnSave:true -->
@@ -8,13 +17,13 @@
 - [Getting Started](#getting-started)
 	- [Clone this repository into a suitable directory on your system](#clone-this-repository-into-a-suitable-directory-on-your-system)
 	- [Install the MCCI STM32 board support library](#install-the-mcci-stm32-board-support-library)
-	- [Select your desired band](#select-your-desired-band)
+	- [Select your desired region](#select-your-desired-region)
 	- [Installing the required libraries](#installing-the-required-libraries)
 		- [List of required libraries](#list-of-required-libraries)
 	- [Build and Download](#build-and-download)
 	- [Load the sketch into the Catena](#load-the-sketch-into-the-catena)
 - [Set the identity of your Catena 4612](#set-the-identity-of-your-catena-4612)
-	- [Check platform amd serial number setup](#check-platform-amd-serial-number-setup)
+	- [Check platform and serial number setup](#check-platform-and-serial-number-setup)
 	- [Platform Provisioning](#platform-provisioning)
 - [LoRaWAN Provisioning](#lorawan-provisioning)
 	- [Preparing the network for your device](#preparing-the-network-for-your-device)
@@ -30,10 +39,11 @@
 
 <!-- /TOC -->
 <!-- markdownlint-restore -->
+<!-- Due to a bug in Markdown TOC, the table is formatted incorrectly if tab indentation is set other than 4. Due to another bug, this comment must be *after* the TOC entry. -->
 
 ## Introduction
 
-This sketch demonstrates the MCCI Catena&reg; 4612 (or 4610) as a remote temperature/humidity/light sensor using a LoRaWAN&reg;-techology network to transmit to a remote server.
+This sketch demonstrates the MCCI Catena&reg; 4612 (or 4610) as a remote temperature/humidity/light sensor using a LoRaWAN&reg;-technology network to transmit to a remote server.
 
 The Catena 4612 is a single-board LoRaWAN-enabled sensor device with the following integrated sensors:
 
@@ -41,16 +51,16 @@ The Catena 4612 is a single-board LoRaWAN-enabled sensor device with the followi
 - Silicon Labs Si1133 light sensor
 - Runs from USB or a primary battery source.
 
-The Catena 4610 is very similar to the 4612, except that it runs from USB or a *rechargable* battery source. It includes a LiPo battery charger.
+The Catena 4610 is very similar to the 4612, except that it runs from USB or a *rechargeable* battery source. It includes a LiPo battery charger.
 
 This sketch is compatible with either board. In this README, although we focus on the 4612, you can assume that the instructions also apply to the 4610 unless we specify otherwise.
 
-Documents on the MCCI Catena 4612 are at [github.com/mcci-catnea/HW-Designs](https://github.com/mcci-catena/HW-Designs/tree/master/Boards/Catena-4612).
+Documents on the MCCI Catena 4612 are at [`github.com/mcci-catena/HW-Designs/Boards/Catena-4612`](https://github.com/mcci-catena/HW-Designs/tree/master/Boards/Catena-4612).
 
 * [Catena 4612 User Manual](https://github.com/mcci-catena/HW-Designs/blob/master/Boards/Catena-4611_4612/234001173a_(Catena-4612-User-Manual).pdf).
 * [Catena 4612 Pin Mapping Diagram](https://github.com/mcci-catena/HW-Designs/blob/master/Boards/Catena-4611_4612/234001124a_(Catena-4611_4612-PinMapping).png)
 
-Documents on the MCCI Catena 4610 are at [github.com/mcci-catnea/HW-Designs](https://github.com/mcci-catena/HW-Designs/tree/master/Boards/Catena-4610).
+Documents on the MCCI Catena 4610 are at [`github.com/mcci-catena/HW-Designs/Boards/Catena-4610`](https://github.com/mcci-catena/HW-Designs/tree/master/Boards/Catena-4610).
 
 * [Catena 4610 User Manual](https://github.com/mcci-catena/HW-Designs/blob/master/Boards/Catena-4610/234001177a_(Catena-4610-User-Manual).pdf)
 * [Catena 4610 Pin Mapping Diagram](https://github.com/mcci-catena/HW-Designs/blob/master/Boards/Catena-4610/Catena-4610-Pinmapping.png)
@@ -66,7 +76,7 @@ In order to use this code, you must do several things:
 
 After you have loaded the firmware, you have to set up the Catena 4612.
 
-This sketch uses the Catea-Arduino-Platform library to store critical information on the integrated FRAM. There are several kinds of information. Some things only have to be programmed once in the life of the board; other things must be programmed whenever you change network connections. Entering this information this involves entering USB commands via the Arduino serial monitor.
+This sketch uses the Catena-Arduino-Platform library to store critical information on the integrated FRAM. There are several kinds of information. Some things only have to be programmed once in the life of the board; other things must be programmed whenever you change network connections. Entering this information this involves entering USB commands via the Arduino serial monitor.
 
 - We call information about the 4612 that (theoretically) never changes "identity".
 - We call information about the LoRaWAN "provisioning".
@@ -109,11 +119,11 @@ Next, open the board manager. `Tools>Board:...`, and get up to the top of the me
 
 Then go to `Tools>Board:...` and scroll to the bottom. You should see `MCCI Catena 4612`; select that.
 
-### Select your desired band
+### Select your desired region
 
 When you select a board, the default LoRaWAN region is set to US-915, which is used in North America and much of South America. If you're elsewhere, you need to select your target region. You can do it in the IDE:
 
-![Select Bandplan](../extra/assets/select-band-plan.gif)
+![Select Region](../extra/assets/select-band-plan.gif)
 
 As the animation shows, use `Tools>LoRaWAN Region...` and choose the appropriate entry from the menu.
 
@@ -123,10 +133,10 @@ This sketch uses several sensor libraries.
 
 The script [`git-boot.sh`](https://github.com/mcci-catena/Catena-Sketches/blob/master/git-boot.sh) in the top directory of this repo will get all the things you need.
 
-It's easy to run, provided you're on Windows, macOS, or Linux, and provided you have `git` installed. We tested on Windows with git bash from [git-scm.org](https://git-scm.org), on macOS 10.11.3 with the git and bash shipped by Apple, and on Ubuntu 16.0.4 LTS (64-bit) with the built-in bash and git from `apt-get install git`.
+It's easy to run, provided you're on Windows, macOS, or Linux, and provided you have `git` installed. We tested on Windows with git bash from [`git-scm.org`](https://git-scm.org), on macOS 10.11.3 with the git and bash shipped by Apple, and on Ubuntu 16.0.4 LTS (64-bit) with the built-in bash and git from `apt-get install git`.
 
 ```console
-$ cd Catena4410-Sketches/catena4612_simple
+$ cd Catena-Sketches/catena4612_simple
 $ ../git-boot.sh
 Cloning into 'Catena-Arduino-Platform'...
 remote: Counting objects: 1201, done.
@@ -151,12 +161,12 @@ It has a number of advanced options; use `../git-boot.sh -h` to get help, or loo
 
 This sketch depends on the following libraries.
 
-* [github.com/mcci-catena/Catena4410-Arduino-Library](https://github.com/mcci-catena/Catena4410-Arduino-Library)
-* [github.com/mcci-catena/arduino-lorawan](https://github.com/mcci-catena/arduino-lorawan)
-* [github.com/mcci-catena/Catena-mcciadk](https://github.com/mcci-catena/Catena-mcciadk)
-* [github.com/mcci-catena/arduino-lmic](https://github.com/mcci-catena/arduino-lmic)
-* [github.com/mcci-catena/Adafruit_FRAM_I2C](https://github.com/mcci-catena/Adafruit_FRAM_I2C)
-* [github.com/mcci-catena/MCCI-Catena-HS300x](https://github.com/mcci-catena/MCCI-Catena-HS300x)
+* [`github.com/mcci-catena/Catena4410-Arduino-Library`](https://github.com/mcci-catena/Catena4410-Arduino-Library)
+* [`github.com/mcci-catena/arduino-lorawan`](https://github.com/mcci-catena/arduino-lorawan)
+* [`github.com/mcci-catena/Catena-mcciadk`](https://github.com/mcci-catena/Catena-mcciadk)
+* [`github.com/mcci-catena/arduino-lmic`](https://github.com/mcci-catena/arduino-lmic)
+* [`github.com/mcci-catena/Adafruit_FRAM_I2C`](https://github.com/mcci-catena/Adafruit_FRAM_I2C)
+* [`github.com/mcci-catena/MCCI-Catena-HS300x`](https://github.com/mcci-catena/MCCI-Catena-HS300x)
 
 ### Build and Download
 
@@ -176,9 +186,9 @@ Load the sketch into the Catena using `Sketch`>`Upload` and move on to provision
 
 ## Set the identity of your Catena 4612
 
-This can be done with any terminal emulator, but it's easiest to do it with the serial monitor built into the Arduino IDE or with the equivalent monitor that's part of the Visual Micro IDE. It can also be done usign Tera Term.
+This can be done with any terminal emulator, but it's easiest to do it with the serial monitor built into the Arduino IDE or with the equivalent monitor that's part of the Visual Micro IDE. It can also be done using Tera Term.
 
-### Check platform amd serial number setup
+### Check platform and serial number setup
 
 ![Newline](./assets/serial-monitor-newline.png)
 
@@ -228,7 +238,7 @@ The operating flags control a number of features of the sketch and of the underl
 
 Some background: with LoRaWAN, you have to create a project on your target network, and then register your device with that project.
 
-Somewhat confusingly, the LoRaWAN specification uses the word "application" to refer to the group of devices in a project. We will therefore follow that convention. It's likely that your network provider follows taht convention too.
+Somewhat confusingly, the LoRaWAN specification uses the word "application" to refer to the group of devices in a project. We will therefore follow that convention. It's likely that your network provider follows that convention too.
 
 We'll be setting up the device for "over the air authentication" (or OTAA).
 
@@ -263,7 +273,7 @@ After each command, you will see an `OK`.
 
 <!-- ![provisioned](./assets/provisioned.png) -->
 
-Then reboot your Catena using the command `system reset`. If you're using the Aruidno environment on Windows, you will have to close and re-open the serial monitor after resetting the Catena.
+Then reboot your Catena using the command `system reset`. If you're using the Arduino environment on Windows, you will have to close and re-open the serial monitor after resetting the Catena.
 
 You should then see a series of messages including:
 
@@ -300,7 +310,7 @@ Then reset your Catena, and return to [Provision your Catena 4612](#provision-yo
 
 ### Setting up DFU on a Linux or Windows PC
 
-Early versions of the MCCI BSP do not include an INF file (Windows) or sample rules (Linux) to teach your system what to do. The procedures posted here show how to set things up manually: [vpowar/LoRaWAN_SensorNetworks-Catena#uploading-code](https://github.com/vpowar/LoRaWAN_SensorNetworks-Catena#uploading-code).
+Early versions of the MCCI BSP do not include an INF file (Windows) or sample rules (Linux) to teach your system what to do. The procedures posted here show how to set things up manually: [`github.com/vpowar/LoRaWAN_SensorNetworks-Catena#uploading-code`](https://github.com/vpowar/LoRaWAN_SensorNetworks-Catena#uploading-code).
 
 Note that the 4610, unlike the 4612, has a dedicated boot button as well as a reset button. You can use the boot button instead of a jumper to enable on-chip DFU mode. On the 4612, you must use a jumper to enable DFU mode.
 
@@ -311,22 +321,22 @@ You may also refer to the detailed procedures that are part of the user manual. 
 
 ### Data Format
 
-Refer to the [Protocol Description](../extra/catena-message-port3-format.md) in the `extras` directory for information on how data is encoded.
+Refer to the [Protocol Description](../extra/catena-message-port2-format.md) in the `extras` directory for information on how data is encoded.
 
 ### Unplugging the USB Cable while running on batteries
 
 The Catena 4612 dynamically uses power from the USB cable if it's available, even if a battery is connected. This allows you to unplug the USB cable after booting the Catena 4612 without causing the Catena 4612 to restart.
 
-Unfortunately, the Arudino USB drivers for the Catena 4612 do not distinguish between cable unplug and USB suspend. Any `Serial.print()` operation referring to the USB port will hang if the cable is unplugged after being used during a boot. The easiest work-around is to reboot the Catena after unplugging the USB cable. You can avoid this by using the Arduino UI to turn off DTR before unplugging the cable... but then you must remember to turn DTR back on. This is very fragile in practice.
+Unfortunately, the Arduino USB drivers for the Catena 4612 do not distinguish between cable unplug and USB suspend. Any `Serial.print()` operation referring to the USB port will hang if the cable is unplugged after being used during a boot. The easiest work-around is to reboot the Catena after unplugging the USB cable. You can avoid this by using the Arduino UI to turn off DTR before unplugging the cable... but then you must remember to turn DTR back on. This is very fragile in practice.
 
 ### Deep sleep and USB
 
 When the Catena 4612 is in deep sleep, the USB port will not respond to cable attaches. When the 4612 wakes up, it will connect to the PC while it is doing its work, then disconnect to go back to sleep.
 
-While disconnected, you won't be able to select the COM port for the board from the Arduino UI. And depending on the various operatingflags settings, even after reset, you may have trouble catching the board to download a sketch before it goes to sleep.
+While disconnected, you won't be able to select the COM port for the board from the Arduino UI. And depending on the various `operatingflags` settings, even after reset, you may have trouble catching the board to download a sketch before it goes to sleep.
 
 The workaround is use DFU boot mode to download the catena-hello sketch from [Catena-Arduino-Platform](https://github.com/mcci-catena/Catena-Arduino-Platform), and use the serial port to reset any required flags so you can get control after boot.
 
 ### gitboot.sh and the other sketches
 
-Many of the sketches in other directories in this tree are for engineering use at MCCI. The `git-repos.dat` file in this directory does not necessarily install all the required libraries needed for building the other directories. However, many sketches have a suitable `git-repos.dat`. In any case, all the libraries should be available from [github.com/mcci-catena](https://github.com/mcci-catena/); and we are working on getting `git-repos.dat` files in every sub-directory.
+Many of the sketches in other directories in this tree are for engineering use at MCCI. The `git-repos.dat` file in this directory does not necessarily install all the required libraries needed for building the other directories. However, many sketches have a suitable `git-repos.dat`. In any case, all the libraries should be available from [`github.com/mcci-catena/`](https://github.com/mcci-catena/); and we are working on getting `git-repos.dat` files in every sub-directory.
