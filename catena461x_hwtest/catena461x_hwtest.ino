@@ -234,6 +234,10 @@ test(2_platform_05_check_platform_guid)
 			GUID_HW_CATENA_4611_M101(WIRE);
 #elif defined(ARDUINO_MCCI_CATENA_4612)
 			GUID_HW_CATENA_4612_M101(WIRE);
+#elif defined(ARDUINO_MCCI_CATENA_4617)
+			GUID_HW_CATENA_4617_M101(WIRE);
+#elif defined(ARDUINO_MCCI_CATENA_4618)
+			GUID_HW_CATENA_4618_M101(WIRE);
 #else
 # error not Catena 461x supported
 #endif
@@ -253,6 +257,10 @@ test(2_platform_05_check_platform_guid)
 			GUID_HW_CATENA_4611_M102(WIRE);
 #elif defined(ARDUINO_MCCI_CATENA_4612)
 			GUID_HW_CATENA_4612_M102(WIRE);
+#elif defined(ARDUINO_MCCI_CATENA_4617)
+			GUID_HW_CATENA_4617_M102(WIRE);
+#elif defined(ARDUINO_MCCI_CATENA_4618)
+			GUID_HW_CATENA_4618_M102(WIRE);
 #else
 # error not Catena 461x supported
 #endif
@@ -272,6 +280,10 @@ test(2_platform_05_check_platform_guid)
 			GUID_HW_CATENA_4611_M103(WIRE);
 #elif defined(ARDUINO_MCCI_CATENA_4612)
 			GUID_HW_CATENA_4612_M103(WIRE);
+#elif defined(ARDUINO_MCCI_CATENA_4617)
+			GUID_HW_CATENA_4617_M103(WIRE);
+#elif defined(ARDUINO_MCCI_CATENA_4618)
+			GUID_HW_CATENA_4618_M103(WIRE);
 #else
 # error not Catena 461x supported
 #endif
@@ -291,6 +303,10 @@ test(2_platform_05_check_platform_guid)
 			GUID_HW_CATENA_4611_M104(WIRE);
 #elif defined(ARDUINO_MCCI_CATENA_4612)
 			GUID_HW_CATENA_4612_M104(WIRE);
+#elif defined(ARDUINO_MCCI_CATENA_4617)
+			GUID_HW_CATENA_4617_M104(WIRE);
+#elif defined(ARDUINO_MCCI_CATENA_4618)
+			GUID_HW_CATENA_4618_M104(WIRE);
 #else
 # error not Catena 461x supported
 #endif
@@ -310,6 +326,10 @@ test(2_platform_05_check_platform_guid)
 			GUID_HW_CATENA_4611_BASE(WIRE);
 #elif defined(ARDUINO_MCCI_CATENA_4612)
 			GUID_HW_CATENA_4612_BASE(WIRE);
+#elif defined(ARDUINO_MCCI_CATENA_4617)
+			GUID_HW_CATENA_4617_BASE(WIRE);
+#elif defined(ARDUINO_MCCI_CATENA_4618)
+			GUID_HW_CATENA_4618_BASE(WIRE);
 #else
 # error not Catena 461x supported
 #endif
