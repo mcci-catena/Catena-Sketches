@@ -1,5 +1,16 @@
 # Understanding MCCI Catena data sent on port 2
 
+<!--
+  This TOC uses the VS Code markdown TOC extension AlanWalk.markdown-toc.
+  We strongly recommend updating using VS Code, the markdown-toc extension and the
+  bierner.markdown-preview-github-styles extension. Note that if you are using
+  VS Code 1.29 and Markdown TOC 1.5.6, https://github.com/AlanWalk/markdown-toc/issues/65
+  applies -- you must change your line-ending to some non-auto value in Settings>
+  Text Editor>Files.  `\n` works for me.
+-->
+<!-- markdownlint-disable MD033 MD004 -->
+<!-- markdownlint-capture -->
+<!-- markdownlint-disable -->
 <!-- TOC depthFrom:2 updateOnSave:true -->
 
 - [Overall Message Format](#overall-message-format)
@@ -19,10 +30,12 @@
 - [The Things Network Console decoding script](#the-things-network-console-decoding-script)
 
 <!-- /TOC -->
+<!-- markdownlint-restore -->
+<!-- Due to a bug in Markdown TOC, the table is formatted incorrectly if tab indentation is set other than 4. Due to another bug, this comment must be *after* the TOC entry. -->
 
 ## Overall Message Format
 
-Port 2 uplink messages are used by Catena4612_simple and related sketches. They're designed to minimize power use and maximize battery life; so instead of using a port code plus a message discrimintor, these simply use port 2.
+Port 2 uplink messages are used by `Catena4612_simple` and related sketches. They're designed to minimize power use and maximize battery life; so instead of using a port code plus a message discriminator, these simply use port 2.
 
 Each message has the following layout.
 
@@ -78,7 +91,7 @@ Field 4, if present, has three light readings as six bytes of data.
 
 - The first two bytes are a [`uint16`](#uint16) representing the IR measurement.
 - Bytes two and three are a [`uint16`](#uint16) representing the white light measurement.
-- Bytes four and five are a [`uint16`](#uint16) representing the UV light measurent.
+- Bytes four and five are a [`uint16`](#uint16) representing the UV light measurement.
 
 The measurements range from 0 to 65536, but must be calibrated to obtain engineering units.
 
@@ -106,25 +119,25 @@ an integer from 0 to 255.
 
 The following input data can be used to test decoders.
 
-|Input | vBat | VDD  | Boot | Temp (deg C) | P (mBar) | RH % |  IR | White |  UV | VBus |
-|:-----|-----:|-----:|-----:|-------------:|---------:|-----:|----:|------:|----:|-----:|
+|Input | vBat | VDD  | Boot | Temp (&deg;C) | P (mBar) | RH % |  IR | White |  UV | VBus |
+|:-----|-----:|-----:|-----:|--------------:|---------:|-----:|----:|------:|----:|-----:|
 | `01 18 00`  | +1.5 | | |  |            |           |      |     |       |     |      |
 | `01 F8 00`  | -0.5 | | |  |            |           |      |     |       |     |      |
 | `05 F8 00 42` | -0.5 |  | 66 |            |           |      |     |       |
-| `3D 43 A7 2B 19 8D 5F 88 8E 00 2E 00 49 00 03 21 23 ` | 4.229 |     |  43  | 25.550 | 978.24 | 55.5 |  46 | 73 | 3 | 2.071 |
+| `3D 43 A7 2B 19 8D 5F 88 8E 00 2E 00 49 00 03 21 23` | 4.229 |     |  43  | 25.550 | 978.24 | 55.5 |  46 | 73 | 3 | 2.071 |
 
 ## Node-RED Decoding Script
 
-A Node-RED script to decode this data is part of this repository. You can download the latest version from github:
+A Node-RED script to decode this data is part of this repository. You can download the latest version from GitHub:
 
-- in raw form: https://raw.githubusercontent.com/mcci-catena/Catena-Sketches/master/extra/catena-message-port2-decoder-node-red.js
-- or view it: https://github.com/mcci-catena/Catena-Sketches/blob/master/extra/catena-message-port2-decoder-node-red.js
+- in [raw form](https://raw.githubusercontent.com/mcci-catena/Catena-Sketches/master/extra/catena-message-port2-decoder-node-red.js)
+- or [view it](https://github.com/mcci-catena/Catena-Sketches/blob/master/extra/catena-message-port2-decoder-node-red.js)
 
 ## The Things Network Console decoding script
 
-The repository contains a generic script that decodes all formats, including port 2, for [The Things Network console](https://console.thethingsnetwork.org). 
+The repository contains a generic script that decodes all formats, including port 2, for [The Things Network console](https://console.thethingsnetwork.org).
 
-You can get the latest version on github:
+You can get the latest version on GitHub:
 
-- in raw form: https://raw.githubusercontent.com/mcci-catena/Catena-Sketches/master/extra/catena-message-generic-decoder-ttn.js
-- or view it: https://github.com/mcci-catena/Catena-Sketches/blob/master/extra/catena-message-generic-decoder-ttn.js
+- in [raw form](https://raw.githubusercontent.com/mcci-catena/Catena-Sketches/master/extra/catena-message-generic-decoder-ttn.js)
+- or [view it](https://github.com/mcci-catena/Catena-Sketches/blob/master/extra/catena-message-generic-decoder-ttn.js)
