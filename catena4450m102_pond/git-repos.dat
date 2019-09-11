@@ -11,3 +11,5 @@ github.com	mcci-catena/Adafruit_Sensor.git
 github.com	mcci-catena/RTCZero.git
 github.com	mcci-catena/BH1750.git
 github.com	mcci-catena/OneWire.git
+github.com	mcci-catena/SHT1x.git
+github.com	mcci-catena/Arduino-Temperature-Control-Library
