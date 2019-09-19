@@ -58,7 +58,7 @@ using namespace McciCatena;
 
 enum    {
         PIN_ONE_WIRE =  A2,        // XSDA1 == A2
-        PIN_SHT10_CLK = 8,         // XSCL0 == D8
+        PIN_SHT10_CLK = 5,         // XSCL0 == D5
         PIN_SHT10_DATA = 12,       // XSDA0 == D12
         };
 
