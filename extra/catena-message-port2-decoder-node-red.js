@@ -1,6 +1,28 @@
 // JavaScript source code
 // This Node-RED decoding function decodes the record sent by the Catena 4612
 // simple sensor app.
+
+// calculate dewpoint (degrees C) given temperature (C) and relative humidity (0..100)
+// from http://andrew.rsmas.miami.edu/bmcnoldy/Humidity.html
+// rearranged for efficiency and to deal sanely with very low (< 1%) RH
+function dewpoint(t, rh) {
+    var c1 = 243.04;
+    var c2 = 17.625;
+    var h = rh / 100;
+    if (h <= 0.01)
+        h = 0.01;
+    else if (h > 1.0)
+        h = 1.0;
+
+    var lnh = Math.log(h);
+    var tpc1 = t + c1;
+    var txc2 = t * c2;
+    var txc2_tpc1 = txc2 / tpc1;
+
+    var tdew = c1 * (lnh + txc2_tpc1) / (c2 - lnh - txc2_tpc1);
+    return tdew;
+}
+
 var b;
 
 if ("payload_raw" in msg) {
@@ -48,7 +70,7 @@ if (flags & 0x1) {
     if (vRaw & 0x8000)
         vRaw += -0x10000;
     // scale and save in result.
-    result.vBat = vRaw / 4096.0;
+    result.Vbat = vRaw / 4096.0;
 }
 
 if (flags & 0x2) {
@@ -78,6 +100,7 @@ if (flags & 0x8) {
     result.t = tRaw / 256;
     result.p = pRaw * 4 / 100.0;
     result.rh = hRaw / 256 * 100;
+    result.tDew = dewpoint(result.t, result.rh);
 }
 
 if (flags & 0x10) {

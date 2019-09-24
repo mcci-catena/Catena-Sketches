@@ -1,22 +1,10 @@
-//
-// Module:  catena-message-port3-decoder-node-red.js
-//
-// Function:
-//      This Node-RED decoding function decodes the record sent by the Catena 4617/4618
-//      simple sensor app.
-//
-// License:
-//      Copyright (C) 2019, MCCI Corporation.
-//      See LICENSE in accompanying git repository.
-//
-
-// begin catena-message-port3-decoder-ttn.js
 /*
 
-Name:   catena-message-port2-decoder-ttn.js
+Name:   catena-message-port3-decoder-ttn.js
 
 Function:
-    Decode MCCI port 0x02 messages for TTN console.
+    Decode MCCI port 0x03 messages for TTN console.  Usually the generic decoder is more
+    convenient (catena-message-generic-decoder-ttn.js)
 
 Copyright and License:
     See accompanying LICENSE file at https://github.com/mcci-catena/MCCI-Catena-PMS7003/
@@ -244,52 +232,3 @@ function Decoder(bytes, port) {
     // at this point, decoded has the real values.
     return decoded;
 }
-// end catnea-message-port3-decoder-ttn.js
-
-/*
-
-Node-RED function body.
-
-Input:
-    msg     the object to be decoded.
-
-            msg.payload_raw is taken
-            as the raw payload if present; otheriwse msg.payload
-            is taken to be a raw payload.
-
-            msg.port is taken to be the LoRaWAN port nubmer.
-
-
-Returns:
-    This function returns a message body. It's a mutation of the
-    input msg; msg.payload is changed to the decoded data, and
-    msg.local is set to additional application-specific information.
-
-*/
-
-var b;
-
-if ("payload_raw" in msg) {
-    // the console already decoded this
-    b = msg.payload_raw;  // pick up data for convenience
-    // msg.payload_fields still has the decoded data
-}
-else {
-    // no console debug
-    b = msg.payload;  // pick up data for conveneince
-}
-
-var result = Decoder(b, msg.port);
-
-// now update msg with the new payload and new .local field
-// the old msg.payload is overwritten.
-msg.payload = result;
-msg.local =
-    {
-        nodeType: "Catena 4617/4618",
-        platformType: "Catena 461x",
-        radioType: "Murata",
-        applicationName: "Simple sensor"
-    };
-
-return msg;
