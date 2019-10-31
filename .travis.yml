@@ -19,17 +19,17 @@ sudo: true
 
 env:
  global:
-  - IDE_VERSION=1.8.9
+  - IDE_VERSION=1.8.10
  matrix:
   - TARGET=samd REGION=us915
   - TARGET=samd REGION=eu868
-  - TARGET=samd REGION=au921
+  - TARGET=samd REGION=au915
   - TARGET=samd REGION=as923
   - TARGET=samd REGION=as923jp
   - TARGET=samd REGION=in866
   - TARGET=stm32l0 REGION=us915
   - TARGET=stm32l0 REGION=eu868
-  - TARGET=stm32l0 REGION=au921
+  - TARGET=stm32l0 REGION=au915
   - TARGET=stm32l0 REGION=as923
   - TARGET=stm32l0 REGION=as923jp
   - TARGET=stm32l0 REGION=in866
