@@ -319,7 +319,6 @@ void setup_light(void)
                 gSi1133.configure(0, CATENA_SI1133_MODE_SmallIR);
                 gSi1133.configure(1, CATENA_SI1133_MODE_White);
                 gSi1133.configure(2, CATENA_SI1133_MODE_UV);
-                gSi1133.start();
                 }
         else
                 {
@@ -393,7 +392,6 @@ void loop()
                 {
                 TxBuffer_t b;
                 fillBuffer(b);
-                gSi1133.start();
                 delay(1000);
                 // since the light sensor was stopped in fillbuffer, restart it.
                 }
@@ -401,6 +399,9 @@ void loop()
 
 void fillBuffer(TxBuffer_t &b)
         {
+        if (fLight)
+                gSi1133.start(true);
+
         b.begin();
         FlagsSensorPort3 flag;
 
@@ -461,6 +462,11 @@ void fillBuffer(TxBuffer_t &b)
                 {
                 /* Get a new sensor event */
                 uint16_t data[3];
+
+                while (! gSi1133.isOneTimeReady())
+                        {
+                        yield();
+                        }
 
                 gSi1133.readMultiChannelData(data, 3);
                 gSi1133.stop();
@@ -730,7 +736,6 @@ static void sleepDoneCb(
         )
         {
         gLed.Set(LedPattern::WarmingUp);
-        gSi1133.start();
 
         os_setTimedCallback(
                 &sensorJob,
