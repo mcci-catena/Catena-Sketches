@@ -15,12 +15,6 @@ Author:
 
 #include <Catena.h>
 
-#ifdef ARDUINO_ARCH_SAMD
-# include <CatenaRTC.h>
-#elif defined(ARDUINO_ARCH_STM32)
-# include <CatenaStm32L0Rtc.h>
-#endif
-
 #include <Catena_Led.h>
 #include <Catena_TxBuffer.h>
 #include <Catena_CommandStream.h>
@@ -96,11 +90,11 @@ void sensorJob_cb(osjob_t *pJob);
 void setTxCycleTime(unsigned txCycle, unsigned txCount);
 
 // function for scaling power
-static uint16_t
+/* static uint16_t
 dNdT_getFrac(
 	uint32_t deltaC,
 	uint32_t delta_ms
-	);
+	); */
 
 /****************************************************************************\
 |
@@ -119,7 +113,7 @@ static const char sVersion[] = "0.1.0";
 // the Catena instance
 Catena gCatena;
 
-#define EXCEPTION_CODE		5
+constexpr uint8_t kExceptionCode = 5;
 
 // data array for modbus network sharing
 uint16_t au16data[16];
@@ -159,13 +153,6 @@ Catena::LoRaWAN gLoRaWAN;
 // the LED instance object
 StatusLed gLed (Catena::PIN_STATUS_LED);
 
-// the RTC instance, used for sleeping
-#ifdef ARDUINO_ARCH_SAMD
-CatenaRTC gRtc;
-#elif defined(ARDUINO_ARCH_STM32)
-CatenaStm32L0Rtc gRtc;
-#endif
-
 // The BME280 instance, for the temperature/humidity sensor
 Adafruit_BME280 gBME280; // The default initalizer creates an I2C connection
 bool fBme;		// true if BME280 is in use
@@ -182,7 +169,7 @@ uint8_t kPinPower1P2;
 cTotalizer gPower1P1;
 cTotalizer gPower1P2;
 
-modbus_t telegram;
+modbus_datagram_t datagram;
 bool fModBusSlave;
 unsigned long u32wait;
 
@@ -260,11 +247,6 @@ void setup(void)
 	setup_sensors();	// set up in-built sensors
 	setup_modbus();		// set up Modbus Master
 
-	/* for STM32 devices, we need wider tolerances, it seems */
-#if defined(ARDUINO_ARCH_STM32)
-	LMIC_setClockError(10 * 65536 / 100);
-#endif
-
 	/* trigger a join by sending the first packet */
 	if (!(gCatena.GetOperatingFlags() &
 		static_cast<uint32_t>(gCatena.OPERATING_FLAGS::fManufacturingTest)))
@@ -315,9 +297,6 @@ void setup_platform()
 	gLed.begin();
 	gCatena.registerObject(&gLed);
 	gLed.Set(LedPattern::FastFlash);
-
-	// set up the RTC object
-	gRtc.begin();
 
 	gCatena.SafePrintf("LoRaWAN init: ");
 	if (!gLoRaWAN.begin(&gCatena))
@@ -446,7 +425,7 @@ void setup_flash(void)
 		{
 		fFlash = false;
 		gSPI2.end();
-	gCatena.SafePrintf("No FLASH found: check wiring\n");
+		gCatena.SafePrintf("No FLASH found: check hardware\n");
 		}
 	}
 
@@ -550,7 +529,7 @@ void loop()
 		}
 	}
 
-static uint16_t dNdT_getFrac(
+/* static uint16_t dNdT_getFrac(
 	uint32_t deltaC,
 	uint32_t delta_ms
 	)
@@ -582,11 +561,16 @@ static uint16_t dNdT_getFrac(
 
 		return (uint16_t)((iExp << 12u) + (unsigned) scalbnf(normalValue, 12));
 		}
-	}
+	} */
 
-	void fillBuffer(TxBuffer_t &b)
+void fillBuffer(TxBuffer_t &b)
 	{
 	uint32_t tLuxBegin;
+
+	ERR_LIST lastError;
+	uint8_t nIndex;
+	uint8_t errorStatus;
+	uint8_t flagModBus;
 
 	/* start a Lux measurement */
 	if (fLux)
@@ -657,35 +641,34 @@ static uint16_t dNdT_getFrac(
 		flag |= FlagsSensor3::FlagLux;
 		}
 
-	uint8_t nIndex;
-	ERR_LIST lastError;
-	uint8_t errorStatus;
+	flagModBus = 0;
 	errorStatus = 1;
 	u8state = 0;
 
-	while (u8state != EXCEPTION_CODE)
+	while (u8state != kExceptionCode)
 		{
 		switch( u8state ) {
 		case 0:
 			if (long(millis() - u32wait) > 0) u8state++; // wait state
 			break;
 		case 1:
-			telegram.u8id = u8addr; // device address
-			telegram.u8fct = u8fct; // function code (this one is registers read)
-			telegram.u16RegAdd = u16RegAdd; // start address in device
-			telegram.u16CoilsNo = u16CoilsNo; // number of elements (coils or registers) to read
-			telegram.au16reg = au16data; // pointer to a memory array in the Arduino
+			datagram.u8id = u8addr; // device address
+			datagram.u8fct = u8fct; // function code (this one is registers read)
+			datagram.u16RegAdd = u16RegAdd; // start address in device
+			datagram.u16CoilsNo = u16CoilsNo; // number of elements (coils or registers) to read
+			datagram.au16reg = au16data; // pointer to a memory array in the Arduino
 
 			host.setLastError(ERR_SUCCESS);
-			host.query( telegram ); // send query (only once)
+			host.query( datagram ); // send query (only once)
 			u8state++;
 			break;
 		case 2:
-			host.poll();
+			gCatena.poll();		// cyclic polling for device
+			
 			if (host.getState() == COM_IDLE)
 				{
 				flagModBus = 1;
-				u8state = EXCEPTION_CODE;	//Exception to break out of current WHILE loop.
+				u8state = kExceptionCode;	//Exception to break out of current WHILE loop.
 				
 				ERR_LIST lastError = host.getLastError();
 
@@ -697,7 +680,7 @@ static uint16_t dNdT_getFrac(
 					}
 				else {
 					Serial.print("Registers: ");
-					for (nIndex = 0; nIndex < 13; ++nIndex)
+					for (nIndex = 0; nIndex < u16CoilsNo; ++nIndex)
 						{
 						Serial.print(" ");
 						Serial.print(au16data[nIndex], 16);
@@ -724,15 +707,15 @@ static uint16_t dNdT_getFrac(
 		
 	if(flagModBus == 0)
 		{
-		if (lastError == -4)
+		if (int(lastError) == -4)
 			{
 			gCatena.SafePrintf("ERROR: BAD CRC\n");
 			}
-		if (lastError == -6)
+		if (int(lastError) == -6)
 			{
 			gCatena.SafePrintf("ERROR: NO REPLY (OR) MODBUS SLAVE UNAVAILABLE\n");
 			}
-		if (lastError == -7)
+		if (int(lastError) == -7)
 			{
 			gCatena.SafePrintf("ERROR: RUNT PACKET\n");
 			}

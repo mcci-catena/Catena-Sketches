@@ -1,6 +1,5 @@
 # Catena 4470 Sensor Sketch
 <!-- TOC depthFrom:2 -->
-
 - [Clone this repository into a suitable directory on your system](#clone-this-repository-into-a-suitable-directory-on-your-system)
 - [Install the MCCI SAMD board support library](#install-the-mcci-samd-board-support-library)
 - [Select your desired band](#select-your-desired-band)
@@ -9,23 +8,14 @@
 - [Build and Download](#build-and-download)
 - [Load the sketch into the Catena](#load-the-sketch-into-the-catena)
 - [Provision your Catena 4470](#provision-your-catena-4470)
-	- [Check platform provisioning](#check-platform-provisioning)
-	- [Platform Provisioning](#platform-provisioning)
-	- [LoRaWAN Provisioning](#lorawan-provisioning)
-		- [Preparing the network for your device](#preparing-the-network-for-your-device)
-		- [Preparing your device for the network](#preparing-your-device-for-the-network)
-	- [Changing registration](#changing-registration)
-	- [Starting Over](#starting-over)
-
 - [Notes](#notes)
 	- [Getting Started with The Things Network](#getting-started-with-the-things-network)
 	- [Data Format](#data-format)
 	- [Unplugging the USB Cable while running on batteries](#unplugging-the-usb-cable-while-running-on-batteries)
 	- [Deep sleep and USB](#deep-sleep-and-usb)
 	- [gitboot.sh and the other sketches](#gitbootsh-and-the-other-sketches)
-
 <!-- /TOC -->
-This sketch demonstrates Catena 4470 as a remote temperature/humidity/light sensor and modbus host using a LoRaWAN®-techology network to transmit to a remote server.
+This sketch demonstrates Catena 4470 as a remote temperature/humidity/light sensor and modbus host using a LoRaWAN&reg;-techology network to transmit to a remote server.
 
 It is designed for use with the [Catena 4470](https://github.com/mcci-catena/HW-Designs/tree/master/Boards/Catena-4470) in conjunction with the [Adafruit Feather M0 LoRa](https://www.adafruit.com/product/3178). In order to use this code, you must do several things:
 
@@ -86,7 +76,7 @@ As the animation shows, use `Tools>LoRaWAN Region...` and choose the appropriate
 
 This sketch uses several sensor libraries.
 
-The script `git-boot.sh`](https://github.com/mcci-catena/Catena-Sketches/blob/master/git-boot.sh) in the top directory of this repo will get all the things you need.
+The script [`git-boot.sh`](https://github.com/mcci-catena/Catena-Sketches/blob/master/git-boot.sh) in the top directory of this repo will get all the things you need.
 
 It's easy to run, provided you're on Windows, macOS, or Linux, and provided you have `git` installed. We tested on Windows with git bash from https://git-scm.org, on macOS 10.11.3 with the git and bash shipped by Apple, and on Ubuntu 16.0.4 LTS (64-bit) with the built-in bash and git from `apt-get install git`.
 
@@ -168,15 +158,15 @@ It has a number of advanced options; use `../git-boot.sh -h` to get help, or loo
 
 This sketch depends on the following libraries.
 
-*  https://github.com/mcci-catena/Adafruit_FRAM_I2C
-*  https://github.com/mcci-catena/Catena-Arduino-Platform
-*  https://github.com/mcci-catena/arduino-lorawan
-*  https://github.com/mcci-catena/Catena-mcciadk
-*  https://github.com/mcci-catena/arduino-lmic
 *  https://github.com/mcci-catena/Adafruit_BME280_Library
+*  https://github.com/mcci-catena/Adafruit_FRAM_I2C
 *  https://github.com/mcci-catena/Adafruit_Sensor
-*  https://github.com/mcci-catena/Modbus-for-Arduino
+*  https://github.com/mcci-catena/arduino-lmic
+*  https://github.com/mcci-catena/arduino-lorawan
 *  https://github.com/mcci-catena/BH1750
+*  https://github.com/mcci-catena/Catena-Arduino-Platform
+*  https://github.com/mcci-catena/Catena-mcciadk
+*  https://github.com/mcci-catena/Modbus-for-Arduino
 
 ## Build and Download
 
@@ -184,7 +174,7 @@ Shutdown the Arduino IDE and restart it, just in case.
 
 Ensure selected board is 'Catena 4470' (in the GUI, check that `Tools`>`Board "..."` says `"Catena 4470"`.
 
-In the IDE, use File>Open to load the `Catena4470m101_sensor.ino` sketch. (Remember, in step 1 you cloned `Catena-Sketches` -- find that, and navigate to `{somewhere}/Catena-Sketches/catena4470_m101/`)
+In the IDE, use File>Open to load the `Catena4470_test01.ino` sketch. (Remember, in step 1 you cloned `Catena-Sketches` -- find that, and navigate to `{somewhere}/Catena-Sketches/Catena4470_test01/`)
 
 Follow normal Arduino IDE procedures to build the sketch: `Sketch`>`Verify/Compile`. If there are no errors, go to the next step.
 
@@ -196,116 +186,7 @@ Load the sketch into the Catena using `Sketch`>`Upload` and move on to provision
 
 ## Provision your Catena 4470
 
-This can be done with any terminal emulator, but it's easiest to do it with the serial monitor built into the Arduino IDE or with the equivalent monitor that's part of the Visual Micro IDE.
-
-### Check platform provisioning
-
-![Newline](.assets/serial-monitor-newline.png)
-
-At the bottom right side of the serial monitor window, set the dropdown to `Newline` and `115200 baud`.
-
-Enter the following command, and press enter:
-
-```
-system configure platformguid
-```
-
-If the Catena is functioning at all, you'll either get an error message, or you'll get a long number like:
-
-```
-EA8568EC-5DAE-46EE-929A-A3F6B00A565E
-```
-
-(Several numbers are possible.)
-
-If you get an error message, please follow the **Platform Provisioning** instructions. Otherwise, skip to **LoRAWAN Provisioning**.
-
-### Platform Provisioning
-
-The Catena 4470 has a number of build options. We have a single firmware image to support the various options. The firmware figures out the build options by reading data stored in the FRAM, so if the factory settings are not present or have been lost, you need to do the following.
-
-If your Catena 4470 is fresh from the factory, you will need to enter the following commands.
-
-- <code>system configure syseui <strong><em>serialnumber</em></strong></code>
-
-You will find the serial number on the Catena 4470 assembly. If you can't find a serial number, please contact MCCI for assistance.
-
-Continue by entering the following commands.
-
-- `system configure operatingflags 1`
-- `system configure platformguid EA8568EC-5DAE-46EE-929A-A3F6B00A565E`
-
-### LoRaWAN Provisioning
-
-Some background: with LoRaWAN, you have to create a project on your target network, and then register your device with that project.
-
-Somewhat confusingly, the LoRaWAN specification uses the word "application" to refer to the group of devices in a project. We will therefore follow that convention. It's likely that your network provider follows taht convention too.
-
-We'll be setting up the device for "over the air authentication" (or OTAA).
-
-#### Preparing the network for your device
-
-For OTAA, we'll need to load three items into the device. (We'll use USB to load them in -- you don't have to edit any code.)  These items are:
-
-1. *The device extended unique identifier, or "devEUI"*. This is a 8-byte number.
-
-   For convenience, MCCI assigns a unique identifier to each Catena; you should be able to find it on a printed label on your device. It will be a number of the form "00-02-cc-01-??-??-??-??".
-
-2. *The application extended unique identifier, or "AppEUI"*. This is also an 8-byte number.
-
-3. *The application key, or "AppKey"*. This is a 16-byte number.
-
-If you're using The Things Network as your network provider, see the note below: [Getting Started with The Things Network](#getting-started-with-the-things-network). This walks you through the process of creating an application and registering a device. During that process, you will input the DevEUI (we suggest using the serial number printed on the Caten  a). At the end of the process, The Things Network will supply you with the required AppEUI and Application Key.
-
-For other networks, follow their instructions for determining the DevEUI and getting the AppEUI and AppKey.
-
-#### Preparing your device for the network
-
-Make sure your device is still connected to the Arduino IDE, and make sure the serial monitor is still open. (If needed, open it using Tools>Serial Monitor.)
-
-Enter the following commands in the serial monitor, substituting your _`DevEUI`_, _`AppEUI`_, and _`AppKey`_, one at a time.
-
-- <code>lorawan configure deveui <em>DevEUI</em></code>
-- <code>lorawan configure appeui <em>AppEUI</em></code>
-- <code>lorawan configure appkey <em>AppKey</em></code>
-- <code>lorawan configure join 1</code>
-
-After ea/codecommand you will see an `OK`.
-
-<!-- ![provisioned](./assets/provisioned.png) -->
-
-Then reboot your Catena (using the reset button on the upper board). You may have to close and re-open the  serial monitor after resetting the Catena.
-
-You should then see a series of messages including:
-
-```console
-EV_JOINED
-NetId ...
-```
-
-### Changing registration
-
-Once your device has joined the network, it's somewhat painful to unjoin.
-
-You need to enter a number of commands:
-
-- `lorawan configure appskey 0`
-- `lorawan configure nwkskey 0`
-- `lorawan configure fcntdown 0`
-- `lorawan configure fcntup 0`
-- `lorawan configure devaddr 0`
-- `lorawan configure netid 0`
-- `lorawan configure join 0`
-
-Then reset your device, and repeat [LoRaWAN Provisioning](#lorawan-provisioning) above.
-
-### Starting Over
-
-If all the typing in [Changing registration](#changing-registration) is too painful, or if you're in a real hurry, you can simply reset the Catena's non-volatile memory to it's initial state. The command for this is:
-
-- `fram reset hard`
-
-Then reset your Catena, and return to [Provision your Catena 4470](#provision-your-catena-4470).
+In order to provision the Catena, refer the following document: [How-To-Provision-Your-Catena-Device](https://github.com/mcci-catena/Catena-Sketches/blob/master/extra/How-To-Provision-Your-Catena-Device.md).
 
 ## Notes
 
@@ -333,4 +214,4 @@ The workaround is to "double tap" the reset button. As with any Feather M0, doub
 
 ### gitboot.sh and the other sketches
 
-The sketches in other directories in this tree are for engineering use at MCCI. The `git-repos.dat` file in this directory does not necessarily install all the required libraries needed for building the other directories. However, all the libraries should be available from https://github.com/mcci-catena/; and we are working on getting `git-repos.dat` files in every sub-directory.
+The sketches in other directories in this tree are for engineering use at MCCI. The `git-repos.dat` file in this directory does not necessarily install all the required libraries needed for building the other directories. However, all the libraries should be available from https://github.com/mcci-catena/;
