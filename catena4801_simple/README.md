@@ -12,14 +12,7 @@
 	- [Build and Download](#build-and-download)
 	- [Configure Modbus parameters](#configure-modbus-parameters)
 	- [Load the sketch into the Catena](#load-the-sketch-into-the-catena)
-- [Set the identity of your Catena 4801](#set-the-identity-of-your-catena-4801)
-	- [Check platform amd serial number setup](#check-platform-amd-serial-number-setup)
-	- [Platform Provisioning](#platform-provisioning)
-- [LoRaWAN Provisioning](#lorawan-provisioning)
-	- [Preparing the network for your device](#preparing-the-network-for-your-device)
-	- [Preparing your device for the network](#preparing-your-device-for-the-network)
-	- [Changing registration](#changing-registration)
-	- [Starting Over](#starting-over)
+- [Provision your Catena 4801](#provision-your-catena-4801)
 - [Notes](#notes)
 	- [Setting up ST-Link connection](#setting-up-st-link-connection)
 	- [Data Format](#data-format)
@@ -175,10 +168,6 @@ Load the sketch into the Catena using `Sketch`>`Upload` and move on to provision
 ## Provision your Catena 4801
 
 In order to provision the Catena, refer the following document: [How-To-Provision-Your-Catena-Device](https://github.com/mcci-catena/Catena-Sketches/blob/master/extra/How-To-Provision-Your-Catena-Device.md).
-
-### Getting Started with The Things Network
-
-These notes are in a separate file in this repository, [Getting Started with The Things Network](https://github.com/mcci-catena/Catena-Sketches/blob/master/extra/Getting-Started-With-The-Things-Network.md).
 
 ## Notes
 
