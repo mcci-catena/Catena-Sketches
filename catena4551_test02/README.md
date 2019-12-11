@@ -5,7 +5,6 @@
 - [Getting Started](#getting-started)
 	- [Clone this repository into a suitable directory on your system](#clone-this-repository-into-a-suitable-directory-on-your-system)
 	- [Install the MCCI STM32 board support library](#install-the-mcci-stm32-board-support-library)
-	- [Select your desired band](#select-your-desired-band)
 	- [Installing the required libraries](#installing-the-required-libraries)
         - [List of required libraries](#list-of-required-libraries)
     - [Build and Download](#build-and-download)
@@ -16,15 +15,13 @@
 	- [Starting Over](#starting-over)
 - [Notes](#notes)
 	- [Setting up DFU on a Linux or Windows PC](#setting-up-dfu-on-a-linux-or-windows-pc)
-	- [Data Format](#data-format)
 	- [Unplugging the USB Cable while running on batteries](#unplugging-the-usb-cable-while-running-on-batteries)
-	- [Deep sleep and USB](#deep-sleep-and-usb)
 	- [gitboot.sh and the other sketches](#gitbootsh-and-the-other-sketches)
 
 <!-- /TOC -->
 ## Introduction
 
-This sketch demonstrates the MCCI Catena&reg; 4551 as a remote temperature/humidity/light/soil sensor.
+This sketch demonstrates the MCCI Catena&reg; 4551 as a remote temperature/humidity/light/water/soil sensor.
 
 The Catena 4551 is a single-board LoRaWAN-enabled sensor device with the following integrated sensors:
 
@@ -90,14 +87,6 @@ If you already have entries in that list, use a comma (`,`) to separate the entr
 Next, open the board manager. `Tools>Board:...`, and get up to the top of the menu that pops out -- it will give you a list of boards. Search for `MCCI` in the search box and select `MCCI Catena STM32 Boards`. An `[Install]` button will appear to the right; click it.
 
 Then go to `Tools>Board:...` and scroll to the bottom. You should see `MCCI Catena 4551`; select that.
-
-### Select your desired band
-
-When you select a board, the default LoRaWAN region is set to US-915, which is used in North America and much of South America. If you're elsewhere, you need to select your target region. You can do it in the IDE:
-
-![Select Bandplan](../extra/assets/select-band-plan.gif)
-
-As the animation shows, use `Tools>LoRaWAN Region...` and choose the appropriate entry from the menu.
 
 ### Installing the required libraries
 
@@ -233,14 +222,6 @@ The Catena 4551 dynamically uses power from the USB cable if it's available, eve
 
 Unfortunately, the Arudino USB drivers for the Catena 4551 do not distinguish between cable unplug and USB suspend. Any `Serial.print()` operation referring to the USB port will hang if the cable is unplugged after being used during a boot. The easiest work-around is to reboot the Catena after unplugging the USB cable. You can avoid this by using the Arduino UI to turn off DTR before unplugging the cable... but then you must remember to turn DTR back on. This is very fragile in practice.
 
-### Deep sleep and USB
-
-When the Catena 4551 is in deep sleep, the USB port will not respond to cable attaches. When the 4551 wakes up, it will connect to the PC while it is doing its work, then disconnect to go back to sleep.
-
-While disconnected, you won't be able to select the COM port for the board from the Arduino UI. And depending on the various operatingflags settings, even after reset, you may have trouble catching the board to download a sketch before it goes to sleep.
-
-The workaround is use DFU boot mode to download the catena-hello sketch from [Catena-Arduino-Platform](https://github.com/mcci-catena/Catena-Arduino-Platform), and use the serial port to reset any required flags so you can get control after boot.
-
 ### gitboot.sh and the other sketches
 
-Many of the sketches in other directories in this tree are for engineering use at MCCI. The `git-repos.dat` file in this directory does not necessarily install all the required libraries needed for building the other directories. However, many sketches have a suitable `git-repos.dat`. In any case, all the libraries should be available from https://github.com/mcci-catena/; and we are working on getting `git-repos.dat` files in every sub-directory.
+The sketches in other directories in this tree are for engineering use at MCCI. The `git-repos.dat` file in this directory does not necessarily install all the required libraries needed for building the other directories. However, other directories might have unique `git-repos.dat` to clone the required libraries, also, all the libraries should be available from https://github.com/mcci-catena/;

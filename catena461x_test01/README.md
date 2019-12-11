@@ -10,14 +10,7 @@
 		- [List of required libraries](#list-of-required-libraries)
 	- [Build and Download](#build-and-download)
 	- [Load the sketch into the Catena](#load-the-sketch-into-the-catena)
-- [Set the identity of your Catena 4612](#set-the-identity-of-your-catena-4612)
-	- [Check platform amd serial number setup](#check-platform-amd-serial-number-setup)
-	- [Platform Provisioning](#platform-provisioning)
-- [LoRaWAN Provisioning](#lorawan-provisioning)
-	- [Preparing the network for your device](#preparing-the-network-for-your-device)
-	- [Preparing your device for the network](#preparing-your-device-for-the-network)
-	- [Changing registration](#changing-registration)
-	- [Starting Over](#starting-over)
+- [Provision your Catena 4612/4610](#provision-your-catena-4612/4610)
 - [Notes](#notes)
 	- [Setting up DFU on a Linux or Windows PC](#setting-up-dfu-on-a-linux-or-windows-pc)
 	- [Data Format](#data-format)
@@ -180,127 +173,9 @@ Make sure the correct port is selected in `Tools`>`Port`.
 
 Load the sketch into the Catena using `Sketch`>`Upload` and move on to provisioning.
 
-## Set the identity of your Catena 4612
+## Provision your Catena 4612/4610
 
-This can be done with any terminal emulator, but it's easiest to do it with the serial monitor built into the Arduino IDE or with the equivalent monitor that's part of the Visual Micro IDE. It can also be done usign Tera Term.
-
-### Check platform amd serial number setup
-
-![Newline](./assets/serial-monitor-newline.png)
-
-At the bottom right side of the serial monitor window, set the dropdown to `Newline` and `115200 baud`.
-
-Enter the following command, and press enter:
-
-```
-system configure platformguid
-```
-
-If the Catena is functioning at all, you'll either get an error message, or you'll get a long number like:
-
-```
-915decfa-d156-4d4f-bac5-70e7724726d8
-```
-
-(Several numbers are possible.)
-
-If you get an error message, please follow the **Platform Provisioning** instructions. Otherwise, skip to **LoRAWAN Provisioning**.
-
-### Platform Provisioning
-
-The Catena 4612 has a number of build options. We have a single firmware image to support the various options. The firmware learns the build options using the platform GUID data stored in the FRAM, so if the factory settings are not present or have been lost, you need to do the following.
-
-If your Catena 4612 is fresh from the factory, you will need to enter the following commands.
-
-- <code>system configure syseui <strong><em>serialnumber</em></strong></code>
-
-You will find the serial number on the bottom of the Catena 4612 PCB. It will be a 16-digit number of the form `00-02-cc-01-xx-xx-xx-xx`. If you can't find a serial number, please contact MCCI for assistance.
-
-Continue by entering the following commands.
-
-- `system configure operatingflags 1`
-
-For the Catena 4612, use:
-
-- `system configure platformguid 915decfa-d156-4d4f-bac5-70e7724726d8`
-
-For the Catena 4610, use:
-
-- `system configure platformguid 53ca094b-b888-465e-aa0e-e3064ec56d21`
-
-The operating flags control a number of features of the sketch and of the underlying platform. Values are given in the README for [Catena-Arduino-Platform](https://github.com/mcci-catena/Catena-Arduino-Platform).
-
-## LoRaWAN Provisioning
-
-Some background: with LoRaWAN, you have to create a project on your target network, and then register your device with that project.
-
-Somewhat confusingly, the LoRaWAN specification uses the word "application" to refer to the group of devices in a project. We will therefore follow that convention. It's likely that your network provider follows taht convention too.
-
-We'll be setting up the device for "over the air authentication" (or OTAA).
-
-### Preparing the network for your device
-
-For OTAA, we'll need to load three items into the device. (We'll use USB to load them in -- you don't have to edit any code.)  These items are:
-
-1. *The device extended unique identifier, or "devEUI"*. This is a 8-byte number.
-
-   For convenience, MCCI assigns a unique identifier to each Catena; you should be able to find it on a printed label on your device. It will be a number of the form "00-02-cc-01-??-??-??-??".
-
-2. *The application extended unique identifier, or "AppEUI"*. This is also an 8-byte number.
-
-3. *The application key, or "AppKey"*. This is a 16-byte number.
-
-If you're using The Things Network as your network provider, see the notes in the separate file in this repository: [Getting Started with The Things Network](../extra/Getting-Started-With-The-Things-Network.md). This walks you through the process of creating an application and registering a device. During that process, you will input the DevEUI (we suggest using the serial number printed on the Catena). At the end of the process, The Things Network will supply you with the required AppEUI and Application Key.
-
-For other networks, follow their instructions for determining the DevEUI and getting the AppEUI and AppKey.
-
-### Preparing your device for the network
-
-Make sure your device is still connected to the Arduino IDE, and make sure the serial monitor is still open. (If needed, open it using Tools>Serial Monitor.)
-
-Enter the following commands in the serial monitor, substituting your _`DevEUI`_, _`AppEUI`_, and _`AppKey`_, one at a time.
-
-- <code>lorawan configure deveui <em>DevEUI</em></code>
-- <code>lorawan configure appeui <em>AppEUI</em></code>
-- <code>lorawan configure appkey <em>AppKey</em></code>
-- <code>lorawan configure join 1</code>
-
-After each command, you will see an `OK`.
-
-<!-- ![provisioned](./assets/provisioned.png) -->
-
-Then reboot your Catena using the command `system reset`. If you're using the Aruidno environment on Windows, you will have to close and re-open the serial monitor after resetting the Catena.
-
-You should then see a series of messages including:
-
-```console
-EV_JOINED
-NetId ...
-```
-
-### Changing registration
-
-Once your device has joined the network, it's somewhat painful to unjoin.
-
-You need to enter a number of commands:
-
-- `lorawan configure appskey 0`
-- `lorawan configure nwkskey 0`
-- `lorawan configure fcntdown 0`
-- `lorawan configure fcntup 0`
-- `lorawan configure devaddr 0`
-- `lorawan configure netid 0`
-- `lorawan configure join 0`
-
-Then reset your device, and repeat [LoRaWAN Provisioning](#lorawan-provisioning) above.
-
-### Starting Over
-
-If all the typing in [Changing registration](#changing-registration) is too painful, or if you're in a real hurry, you can simply reset the Catena's non-volatile memory to it's initial state. The command for this is:
-
-- `fram reset hard`
-
-Then reset your Catena, and return to [Provision your Catena 4612](#provision-your-catena-4612).
+In order to provision the Catena, refer the following document: [How-To-Provision-Your-Catena-Device](https://github.com/mcci-catena/Catena-Sketches/blob/master/extra/How-To-Provision-Your-Catena-Device.md).
 
 ## Notes
 
@@ -335,4 +210,4 @@ The workaround is use DFU boot mode to download the catena-hello sketch from [Ca
 
 ### gitboot.sh and the other sketches
 
-Many of the sketches in other directories in this tree are for engineering use at MCCI. The `git-repos.dat` file in this directory does not necessarily install all the required libraries needed for building the other directories. However, many sketches have a suitable `git-repos.dat`. In any case, all the libraries should be available from https://github.com/mcci-catena/; and we are working on getting `git-repos.dat` files in every sub-directory.
+The sketches in other directories in this tree are for engineering use at MCCI. The `git-repos.dat` file in this directory does not necessarily install all the required libraries needed for building the other directories. However, other directories might have unique `git-repos.dat` to clone the required libraries, also, all the libraries should be available from https://github.com/mcci-catena/;
