@@ -567,7 +567,7 @@ void startSendingUplink(void)
 					if (host.getLastError() != ERR_SUCCESS) 
 						{
 						Serial.print("Error: ");
-						Serial.println(int(lastError));
+						Serial.println(int16_t(lastError));
 						flagModBus = 0;
 						break;
 						}
@@ -601,17 +601,21 @@ void startSendingUplink(void)
 
 	if(flagModBus == 0)
 		{
-		if (int(lastError) == -4)
+		if (int16_t(lastError) == ERR_BAD_CRC)
 			{
 			gCatena.SafePrintf("ERROR: BAD CRC\n");
 			}
-		if (int(lastError) == -6)
+		if (int16_t(lastError) == ERR_NO_REPLY)
 			{
 			gCatena.SafePrintf("ERROR: NO REPLY (OR) MODBUS SLAVE UNAVAILABLE\n");
 			}
-		if (int(lastError) == -7)
+		if (int16_t(lastError) == ERR_RUNT_PACKET)
 			{
 			gCatena.SafePrintf("ERROR: RUNT PACKET\n");
+			}
+		if (int16_t(lastError) == ERR_ILLEGAL_DEVICE_ADDRESS)
+			{
+			gCatena.SafePrintf("ERROR: ILLEGAL DEVICE ADDRESS\n");
 			}
 		}
 
