@@ -215,7 +215,7 @@ static inline void boostpowerOff(void)
 /**
  * This is a struct which contains a message to a device
  */
-modbus_t telegram;
+modbus_datagram_t datagram;
 
 unsigned long u32wait;
 
@@ -492,9 +492,9 @@ void startSendingUplink(void)
 	TxBuffer_t b;
 	LedPattern savedLed = gLed.Set(LedPattern::Measuring);
 
+	ERR_LIST lastError;
 	uint8_t nIndex;
 	uint8_t errorStatus;
-	ERR_LIST lastError;
 	uint8_t flagModBus;
 
 	flagModBus = 0;
@@ -544,30 +544,30 @@ void startSendingUplink(void)
 				break;
 
 			case 1:
-				telegram.u8id = u8addr; // device address
-				telegram.u8fct = u8fct; // function code (this one is registers read)
-				telegram.u16RegAdd = u16RegAdd; // start address in device
-				telegram.u16CoilsNo = u16CoilsNo; // number of elements (coils or registers) to read
-				telegram.au16reg = au16data; // pointer to a memory array in the Arduino
+				datagram.u8id = u8addr; // device address
+				datagram.u8fct = u8fct; // function code (this one is registers read)
+				datagram.u16RegAdd = u16RegAdd; // start address in device
+				datagram.u16CoilsNo = u16CoilsNo; // number of elements (coils or registers) to read
+				datagram.au16reg = au16data; // pointer to a memory array in the Arduino
 
 				host.setLastError(ERR_SUCCESS);
-				host.query( telegram ); // send query (only once)
+				host.query( datagram ); // send query (only once)
 				u8state++;
 				break;
 
 			case 2:
-				host.poll();
+				gCatena.poll();
 				if (host.getState() == COM_IDLE)
 					{
 					flagModBus = 1;
 					u8state = kExceptionCode;	//Exception to break out of current WHILE loop.
 
-					ERR_LIST lastError = host.getLastError();
+					lastError = host.getLastError();
 
 					if (host.getLastError() != ERR_SUCCESS) 
 						{
 						Serial.print("Error: ");
-						Serial.println(int(lastError));
+						Serial.println(int16_t(lastError));
 						flagModBus = 0;
 						break;
 						}
@@ -601,17 +601,21 @@ void startSendingUplink(void)
 
 	if(flagModBus == 0)
 		{
-		if (lastError == -4)
+		if (int16_t(lastError) == ERR_BAD_CRC)
 			{
 			gCatena.SafePrintf("ERROR: BAD CRC\n");
 			}
-		if (lastError == -6)
+		if (int16_t(lastError) == ERR_NO_REPLY)
 			{
 			gCatena.SafePrintf("ERROR: NO REPLY (OR) MODBUS SLAVE UNAVAILABLE\n");
 			}
-		if (lastError == -7)
+		if (int16_t(lastError) == ERR_RUNT_PACKET)
 			{
 			gCatena.SafePrintf("ERROR: RUNT PACKET\n");
+			}
+		if (int16_t(lastError) == ERR_ILLEGAL_DEVICE_ADDRESS)
+			{
+			gCatena.SafePrintf("ERROR: ILLEGAL DEVICE ADDRESS\n");
 			}
 		}
 
