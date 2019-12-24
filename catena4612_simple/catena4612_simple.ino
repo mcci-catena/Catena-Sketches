@@ -3,7 +3,7 @@
 Module:  catena4612_simple.ino
 
 Function:
-        Test program for Catena 4612 and variants.
+        Sensor program for Catena 4612 and variants.
 
 Copyright notice:
         This file copyright (C) 2019 by
@@ -81,6 +81,7 @@ enum    {
         CATCFG_T_CYCLE_TEST = 30,       // every 30 seconds
         CATCFG_T_CYCLE_INITIAL = 30,    // every 30 seconds initially
         CATCFG_INTERVAL_COUNT_INITIAL = 10,     // repeat for 5 minutes
+        CATCFG_T_REBOOT = 30 * 24 * 60 * 60,    // reboot every 30 days
         };
 
 /* additional timing parameters; ususually you don't change these. */
@@ -115,11 +116,32 @@ static Arduino_LoRaWAN::ReceivePortBufferCbFn receiveMessage;
 
 /****************************************************************************\
 |
+|   handy constexpr to extract the base name of a file
+|
+\****************************************************************************/
+
+// two-argument version: first arg is what to return if we don't find
+// a directory separator in the second part.
+static constexpr const char *filebasename(const char *s, const char *p)
+    {
+    return p[0] == '\0'                     ? s                            :
+           (p[0] == '/' || p[0] == '\\')    ? filebasename(p + 1, p + 1)   :
+                                              filebasename(s, p + 1)       ;
+    }
+
+static constexpr const char *filebasename(const char *s)
+    {
+    return filebasename(s, s);
+    }
+
+
+/****************************************************************************\
+|
 |	READ-ONLY DATA
 |
 \****************************************************************************/
 
-static const char sVersion[] = "0.1.1";
+static const char sVersion[] = "0.2.0";
 
 /****************************************************************************\
 |
@@ -227,7 +249,7 @@ void setup_platform(void)
 
         gCatena.SafePrintf("\n");
         gCatena.SafePrintf("-------------------------------------------------------------------------------\n");
-        gCatena.SafePrintf("This is the catena4612_simple program V%s.\n", sVersion);
+        gCatena.SafePrintf("This is %s V%s.\n", filebasename(__FILE__), sVersion);
                 {
                 char sRegion[16];
                 gCatena.SafePrintf("Target network: %s / %s\n",
@@ -238,9 +260,7 @@ void setup_platform(void)
         gCatena.SafePrintf("Enter 'help' for a list of commands.\n");
         gCatena.SafePrintf("(remember to select 'Line Ending: Newline' at the bottom of the monitor window.)\n");
 
-#ifdef CATENA_CFG_SYSCLK
-        gCatena.SafePrintf("SYSCLK: %d MHz\n", CATENA_CFG_SYSCLK);
-#endif
+        gCatena.SafePrintf("SYSCLK: %u MHz\n", unsigned(gCatena.GetSystemClockRate() / (1000 * 1000)));
 
 #ifdef USBCON
         gCatena.SafePrintf("USB enabled\n");
@@ -335,7 +355,7 @@ void setup_bme280(void)
         else
                 {
                 fBme = false;
-                gCatena.SafePrintf("No BME280 found: check wiring\n");
+                gCatena.SafePrintf("No BME280 found: check hardware\n");
                 }
         }
 
@@ -356,14 +376,14 @@ void setup_flash(void)
                 }
         }
 
+uint32_t gRebootMs;
+
 void setup_uplink(void)
         {
-#if defined(_mcci_arduino_version) && _mcci_arduino_version >= _mcci_arduino_version_calc(2,4,0,90) && \
-    defined(CATENA_ARDUINO_PLATFORM_VERSION_CALC) && CATENA_ARDUINO_PLATFORM_VERSION >= CATENA_ARDUINO_PLATFORM_VERSION_CALC(0,17,0,10)
-        LMIC_setClockError(5*65536/100);
-#else
-        LMIC_setClockError(10*65536/100);
-#endif
+        LMIC_setClockError(1*65536/100);
+
+        /* figure out when to reboot */
+        gRebootMs = (CATCFG_T_REBOOT + os_getRndU2() - 32768) * 1000;
 
         /* trigger a join by sending the first packet */
         if (!(gCatena.GetOperatingFlags() &
@@ -556,6 +576,12 @@ static void settleDoneCb(
         )
         {
         const bool fDeepSleep = checkDeepSleep();
+
+        if (uint32_t(millis()) > gRebootMs)
+                {
+                // time to reboot
+                NVIC_SystemReset();
+                }
 
         if (! g_fPrintedSleeping)
                 doSleepAlert(fDeepSleep);
