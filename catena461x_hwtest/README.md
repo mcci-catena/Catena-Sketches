@@ -109,7 +109,7 @@ Resolving deltas: 100% (900/900), done.
 No repos with errors
 No repos skipped.
 *** no repos were pulled ***
-Repos downloaded:      Catena-Arduino-Platform arduino-lorawan Catena-mcciadk arduino-lmic Adafruit_FRAM_I2C MCCI-Catena-HS300x MCCI-Catena-HS7000x Adafruit_BME280_Library Adafruit_Sensor arduinounit
+Repos downloaded:      Catena-Arduino-Platform arduino-lorawan Catena-mcciadk arduino-lmic MCCI_FRAM_I2C MCCI-Catena-HS300x MCCI-Catena-HS7000x Adafruit_BME280_Library Adafruit_Sensor arduinounit
 ```
 
 It has a number of advanced options; use `../git-boot.sh -h` to get help, or look at the source code [here](https://github.com/mcci-catena/Catena-Sketches/blob/master/git-boot.sh).
@@ -124,7 +124,7 @@ This sketch depends on the following libraries.
 *  https://github.com/mcci-catena/arduino-lorawan
 *  https://github.com/mcci-catena/Catena-mcciadk
 *  https://github.com/mcci-catena/arduino-lmic
-*  https://github.com/mcci-catena/Adafruit_FRAM_I2C
+*  https://github.com/mcci-catena/MCCI_FRAM_I2C
 *  https://github.com/mcci-catena/MCCI-Catena-HS300x
 *  https://github.com/mcci-catena/MCCI-Catena-SHT3x
 *  https://github.com/mcci-catena/MCCI-Catena-HS300x

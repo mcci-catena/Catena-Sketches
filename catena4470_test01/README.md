@@ -88,7 +88,7 @@ remote: Enumerating objects: 134, done.
 remote: Total 134 (delta 0), reused 0 (delta 0), pack-reused 134
 Receiving objects: 100% (134/134), 39.31 KiB | 1.46 MiB/s, done.
 Resolving deltas: 100% (68/68), done.
-Cloning into 'Adafruit_FRAM_I2C'...
+Cloning into 'MCCI_FRAM_I2C'...
 remote: Enumerating objects: 96, done.
 remote: Total 96 (delta 0), reused 0 (delta 0), pack-reused 96
 Unpacking objects: 100% (96/96), done.
@@ -146,7 +146,7 @@ Checking out files: 100% (44/44), done.
 
 New repos cloned:
 Adafruit_BME280_Library BH1750                  Modbus-for-Arduino
-Adafruit_FRAM_I2C       Catena-Arduino-Platform arduino-lmic
+MCCI_FRAM_I2C           Catena-Arduino-Platform arduino-lmic
 Adafruit_Sensor         Catena-mcciadk          arduino-lorawan
 ```
 
@@ -159,7 +159,7 @@ It has a number of advanced options; use `../git-boot.sh -h` to get help, or loo
 This sketch depends on the following libraries.
 
 *  https://github.com/mcci-catena/Adafruit_BME280_Library
-*  https://github.com/mcci-catena/Adafruit_FRAM_I2C
+*  https://github.com/mcci-catena/MCCI_FRAM_I2C
 *  https://github.com/mcci-catena/Adafruit_Sensor
 *  https://github.com/mcci-catena/arduino-lmic
 *  https://github.com/mcci-catena/arduino-lorawan
