@@ -22,7 +22,7 @@
 		- [List of required libraries](#list-of-required-libraries)
 	- [Build and Download](#build-and-download)
 	- [Load the sketch into the Catena](#load-the-sketch-into-the-catena)
-- [Set the identity of your Catena 4612](#set-the-identity-of-your-catena-4612)
+- [Set the identity of your Catena 461x](#set-the-identity-of-your-catena-4612)
 	- [Check platform and serial number setup](#check-platform-and-serial-number-setup)
 	- [Platform Provisioning](#platform-provisioning)
 - [LoRaWAN Provisioning](#lorawan-provisioning)
@@ -184,9 +184,15 @@ Make sure the correct port is selected in `Tools`>`Port`.
 
 Load the sketch into the Catena using `Sketch`>`Upload` and move on to provisioning.
 
-## Set the identity of your Catena 4612
+## Set the identity of your Catena 461x
+
+This sketch has a command interpreter connected to the system console, normally the USB serial port. You can enter commands and get status from the Catena interactively, and you can set it up for the network without modifying the C++ code of the sketch.
 
 This can be done with any terminal emulator, but it's easiest to do it with the serial monitor built into the Arduino IDE or with the equivalent monitor that's part of the Visual Micro IDE. It can also be done using Tera Term.
+
+We recommend setting the terminal emulator for 115200, no parity, 8 data bits, 1 stop bit. Disable local echo in the terminal emulator, because the Catena will echo your commands as you type. Select `\r` or `\n` as your line ending character.
+
+Commmands are entered by typing them just as you would in a terminal window on Windows, macOS, or Linux. Limited editing is supported; backspace or delete will delete a character, `^R` retypes the input line, `^U` cancels. The Catena sketch gathers your input asynchronously, so output may come from sketch while you're typing. If you get confused, just press `^R` to see what the Catena thinks you've typed, or `^U` to start over.
 
 ### Check platform and serial number setup
 
@@ -212,17 +218,31 @@ If you get an error message, please follow the **Platform Provisioning** instruc
 
 ### Platform Provisioning
 
-The Catena 4612 has a number of build options. We have a single firmware image to support the various options. The firmware learns the build options using the platform GUID data stored in the FRAM, so if the factory settings are not present or have been lost, you need to do the following.
+The Catena 4610 and 4612 have number of build options. We have a single firmware image to support the various options. The firmware learns the build options using the platform GUID data stored in the FRAM, so if the factory settings are not present or have been lost, you need to do the following.
 
-If your Catena 4612 is fresh from the factory, you will need to enter the following commands.
+If your Catena 4610 or 4612 is fresh from the factory, you may need to enter the following commands. As of December 2019, we do this during test.
+
+First, check that your serial number is set by connecting via USB and a terminal emulator, and typing:
+
+- <code>system configure syseui</code>
+
+Then press enter.
+
+If provisioned, the Catena will reply with a 16-digit number. If not provisioned, you will have to enter the serial number.
 
 - <code>system configure syseui <strong><em>serialnumber</em></strong></code>
 
-You will find the serial number on the bottom of the Catena 4612 PCB. It will be a 16-digit number of the form `00-02-cc-01-xx-xx-xx-xx`. If you can't find a serial number, please contact MCCI for assistance.
+You will find the serial number on the bottom of the Catena 4610 or 4612 PCB. It will be a 16-digit number of the form `00-02-cc-01-xx-xx-xx-xx`. If you can't find a serial number, please contact MCCI for assistance.
 
 Continue by entering the following commands.
 
-- `system configure operatingflags 1`
+- `system configure operatingflags`
+
+This should display a number, `0` or `1` normally. This is a bitmask. If the low order bit is clear, then the Catena will wait for a USB computer connection before starting the sketch. If set, then the Catena will proceed, discarding output that occurs when USB is not connected. A USB charger connection *does not* count as a USB computer connection. During initial test, we suggest you leave this at `0`; but when deploying a sensor for unattended operation, you'll want to set this to `1`.
+
+The operating flags control a number of features of the sketch and of the underlying platform. Values are given in the README for [Catena-Arduino-Platform](https://github.com/mcci-catena/Catena-Arduino-Platform).
+
+Next, you may need to enter a platform GUID to tell the software how the hardware is provisioned. Again, this probably is already set, but if you need to, here's how to set it.
 
 For the Catena 4612, use:
 
@@ -232,7 +252,6 @@ For the Catena 4610, use:
 
 - `system configure platformguid 53ca094b-b888-465e-aa0e-e3064ec56d21`
 
-The operating flags control a number of features of the sketch and of the underlying platform. Values are given in the README for [Catena-Arduino-Platform](https://github.com/mcci-catena/Catena-Arduino-Platform).
 
 ## LoRaWAN Provisioning
 
@@ -241,6 +260,8 @@ Some background: with LoRaWAN, you have to create a project on your target netwo
 Somewhat confusingly, the LoRaWAN specification uses the word "application" to refer to the group of devices in a project. We will therefore follow that convention. It's likely that your network provider follows that convention too.
 
 We'll be setting up the device for "over the air authentication" (or OTAA).
+
+Unlike some other Arduino projects, you **do not** edit code to set up your device for the network. Instead, you use the USB serial port to enter the data, and it is stored in the Catena FRAM.
 
 ### Preparing the network for your device
 
@@ -325,9 +346,9 @@ Refer to the [Protocol Description](../extra/catena-message-port2-format.md) in 
 
 ### Unplugging the USB Cable while running on batteries
 
-The Catena 4612 dynamically uses power from the USB cable if it's available, even if a battery is connected. This allows you to unplug the USB cable after booting the Catena 4612 without causing the Catena 4612 to restart.
+The Catena 4610/4612 dynamically uses power from the USB cable if it's available, even if a battery is connected. This allows you to unplug the USB cable after booting the Catena 4610/4612 without causing the Catena to restart.
 
-Unfortunately, the Arduino USB drivers for the Catena 4612 do not distinguish between cable unplug and USB suspend. Any `Serial.print()` operation referring to the USB port will hang if the cable is unplugged after being used during a boot. The easiest work-around is to reboot the Catena after unplugging the USB cable. You can avoid this by using the Arduino UI to turn off DTR before unplugging the cable... but then you must remember to turn DTR back on. This is very fragile in practice.
+Unfortunately, the Arduino USB drivers for the Catena 4610/4612 do not distinguish between cable unplug and USB suspend. Any `Serial.print()` operation referring to the USB port will hang if the cable is unplugged after being used during a boot. The easiest work-around is to reboot the Catena after unplugging the USB cable. You can avoid this by using the Arduino UI to turn off DTR before unplugging the cable... but then you must remember to turn DTR back on. This is very fragile in practice.
 
 ### Deep sleep and USB
 
