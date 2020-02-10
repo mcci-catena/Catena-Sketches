@@ -1,4 +1,4 @@
-# Catena 4612 Sensor Sketch
+# Catena 4612/4610 Sensor Sketch
 
 <!--
   This TOC uses the VS Code markdown TOC extension AlanWalk.markdown-toc.
@@ -15,27 +15,27 @@
 
 - [Introduction](#introduction)
 - [Getting Started](#getting-started)
-	- [Clone this repository into a suitable directory on your system](#clone-this-repository-into-a-suitable-directory-on-your-system)
-	- [Install the MCCI STM32 board support library](#install-the-mcci-stm32-board-support-library)
-	- [Select your desired region](#select-your-desired-region)
-	- [Installing the required libraries](#installing-the-required-libraries)
-		- [List of required libraries](#list-of-required-libraries)
-	- [Build and Download](#build-and-download)
-	- [Load the sketch into the Catena](#load-the-sketch-into-the-catena)
-- [Set the identity of your Catena 461x](#set-the-identity-of-your-catena-4612)
-	- [Check platform and serial number setup](#check-platform-and-serial-number-setup)
-	- [Platform Provisioning](#platform-provisioning)
+    - [Clone this repository into a suitable directory on your system](#clone-this-repository-into-a-suitable-directory-on-your-system)
+    - [Install the MCCI STM32 board support library](#install-the-mcci-stm32-board-support-library)
+    - [Select your desired region](#select-your-desired-region)
+    - [Installing the required libraries](#installing-the-required-libraries)
+        - [List of required libraries](#list-of-required-libraries)
+    - [Build and Download](#build-and-download)
+    - [Load the sketch into the Catena](#load-the-sketch-into-the-catena)
+- [Set the identity of your Catena 461x](#set-the-identity-of-your-catena-461x)
+    - [Check platform and serial number setup](#check-platform-and-serial-number-setup)
+    - [Platform Provisioning](#platform-provisioning)
 - [LoRaWAN Provisioning](#lorawan-provisioning)
-	- [Preparing the network for your device](#preparing-the-network-for-your-device)
-	- [Preparing your device for the network](#preparing-your-device-for-the-network)
-	- [Changing registration](#changing-registration)
-	- [Starting Over](#starting-over)
+    - [Preparing the network for your device](#preparing-the-network-for-your-device)
+    - [Preparing your device for the network](#preparing-your-device-for-the-network)
+    - [Changing registration](#changing-registration)
+    - [Starting Over](#starting-over)
 - [Notes](#notes)
-	- [Setting up DFU on a Linux or Windows PC](#setting-up-dfu-on-a-linux-or-windows-pc)
-	- [Data Format](#data-format)
-	- [Unplugging the USB Cable while running on batteries](#unplugging-the-usb-cable-while-running-on-batteries)
-	- [Deep sleep and USB](#deep-sleep-and-usb)
-	- [gitboot.sh and the other sketches](#gitbootsh-and-the-other-sketches)
+    - [Setting up DFU on a Linux or Windows PC](#setting-up-dfu-on-a-linux-or-windows-pc)
+    - [Data Format](#data-format)
+    - [Unplugging the USB Cable while running on batteries](#unplugging-the-usb-cable-while-running-on-batteries)
+    - [Deep sleep and USB](#deep-sleep-and-usb)
+    - [gitboot.sh and the other sketches](#gitbootsh-and-the-other-sketches)
 
 <!-- /TOC -->
 <!-- markdownlint-restore -->
@@ -192,11 +192,11 @@ This can be done with any terminal emulator, but it's easiest to do it with the 
 
 We recommend setting the terminal emulator for 115200, no parity, 8 data bits, 1 stop bit. Disable local echo in the terminal emulator, because the Catena will echo your commands as you type. Select `\r` or `\n` as your line ending character.
 
-Commmands are entered by typing them just as you would in a terminal window on Windows, macOS, or Linux. Limited editing is supported; backspace or delete will delete a character, `^R` retypes the input line, `^U` cancels. The Catena sketch gathers your input asynchronously, so output may come from sketch while you're typing. If you get confused, just press `^R` to see what the Catena thinks you've typed, or `^U` to start over.
+Commands are entered by typing them just as you would in a terminal window on Windows, macOS, or Linux. Limited editing is supported; backspace or delete will delete a character, `^R` retypes the input line, `^U` cancels. The Catena sketch gathers your input asynchronously, so output may come from sketch while you're typing. If you get confused, just press `^R` to see what the Catena thinks you've typed, or `^U` to start over.
 
 ### Check platform and serial number setup
 
-![Newline](./assets/serial-monitor-newline.png)
+![Newline](/extra/assets/serial-monitor-newline.png)
 
 At the bottom right side of the serial monitor window, set the dropdown to `Newline` and `115200 baud`.
 
