@@ -116,9 +116,9 @@ Resolving deltas: 100% (900/900), done.
 
 New repos cloned:
 Adafruit_BME280_Library                 Catena-mcciadk
-Adafruit_FRAM_I2C                       OneWire
+MCCI_FRAM_I2C                           OneWire
 Arduino-Temperature-Control-Library     SHT1x
-Catena-Arduino-Platform                 BH1750                                   
+Catena-Arduino-Platform                 BH1750
 ```
 
 It has a number of advanced options; use `../git-boot.sh -h` to get help, or look at the source code [here](https://github.com/mcci-catena/Catena-Sketches/blob/master/git-boot.sh).
