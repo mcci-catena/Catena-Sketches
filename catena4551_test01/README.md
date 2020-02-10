@@ -4,20 +4,20 @@
 
 - [Introduction](#introduction)
 - [Getting Started](#getting-started)
-	- [Clone this repository into a suitable directory on your system](#clone-this-repository-into-a-suitable-directory-on-your-system)
-	- [Install the MCCI STM32 board support library](#install-the-mcci-stm32-board-support-library)
-	- [Select your desired band](#select-your-desired-band)
-	- [Installing the required libraries](#installing-the-required-libraries)
-		- [List of required libraries](#list-of-required-libraries)
-	- [Build and Download](#build-and-download)
-	- [Load the sketch into the Catena](#load-the-sketch-into-the-catena)
+    - [Clone this repository into a suitable directory on your system](#clone-this-repository-into-a-suitable-directory-on-your-system)
+    - [Install the MCCI STM32 board support library](#install-the-mcci-stm32-board-support-library)
+    - [Select your desired band](#select-your-desired-band)
+    - [Installing the required libraries](#installing-the-required-libraries)
+        - [List of required libraries](#list-of-required-libraries)
+    - [Build and Download](#build-and-download)
+    - [Load the sketch into the Catena](#load-the-sketch-into-the-catena)
 - [Provision your Catena 4551](#provision-your-catena-4551)
 - [Notes](#notes)
-	- [Setting up DFU on a Linux or Windows PC](#setting-up-dfu-on-a-linux-or-windows-pc)
-	- [Data Format](#data-format)
-	- [Unplugging the USB Cable while running on batteries](#unplugging-the-usb-cable-while-running-on-batteries)
-	- [Deep sleep and USB](#deep-sleep-and-usb)
-	- [gitboot.sh and the other sketches](#gitbootsh-and-the-other-sketches)
+    - [Setting up DFU on a Linux or Windows PC](#setting-up-dfu-on-a-linux-or-windows-pc)
+    - [Data Format](#data-format)
+    - [Unplugging the USB Cable while running on batteries](#unplugging-the-usb-cable-while-running-on-batteries)
+    - [Deep sleep and USB](#deep-sleep-and-usb)
+    - [gitboot.sh and the other sketches](#gitbootsh-and-the-other-sketches)
 
 <!-- /TOC -->
 
@@ -126,7 +126,7 @@ Resolving deltas: 100% (900/900), done.
 
 New repos cloned:
 Adafruit_BME280_Library                 Catena-mcciadk
-Adafruit_FRAM_I2C                       OneWire
+MCCI_FRAM_I2C                           OneWire
 Arduino-Temperature-Control-Library     arduino-lmic
 Catena-Arduino-Platform                 arduino-lorawan
 SHT1x
@@ -144,7 +144,7 @@ This sketch depends on the following libraries.
 * [`github.com/mcci-catena/arduino-lorawan`](https://github.com/mcci-catena/arduino-lorawan)
 * [`github.com/mcci-catena/Catena-mcciadk`](https://github.com/mcci-catena/Catena-mcciadk)
 * [`github.com/mcci-catena/arduino-lmic`](https://github.com/mcci-catena/arduino-lmic)
-* [`github.com/mcci-catena/Adafruit_FRAM_I2C`](https://github.com/mcci-catena/Adafruit_FRAM_I2C)
+* [`github.com/mcci-catena/MCCI_FRAM_I2C`](https://github.com/mcci-catena/MCCI_FRAM_I2C)
 * [`github.com/mcci-catena/Adafruit_BME280_Library`](https://github.com/mcci-catena/Adafruit_BME280_Library)
 * [`github.com/mcci-catena/Arduino-Temperature-Control-Library`](https://github.com/mcci-catena/Arduino-Temperature-Control-Library)
 * [`github.com/mcci-catena/OneWire`](https://github.com/mcci-catena/OneWire)

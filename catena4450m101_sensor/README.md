@@ -97,7 +97,7 @@ It's easy to run, provided you're on Windows, macOS, or Linux, and provided you 
 ```console
 $ cd Catena4410-Sketches/catena4450m101_sensor
 $ ../git-boot.sh
-Cloning into 'Adafruit_FRAM_I2C'...
+Cloning into 'MCCI_FRAM_I2C'...
 remote: Counting objects: 96, done.
 remote: Total 96 (delta 0), reused 0 (delta 0), pack-reused 96
 Unpacking objects: 100% (96/96), done.
@@ -145,7 +145,7 @@ Unpacking objects: 100% (58/58), done.
 No repos with errors
 No repos skipped.
 *** no repos were pulled ***
-Repos downloaded:      Adafruit_FRAM_I2C Catena-Arduino-Platform arduino-lorawan Catena-mcciadk arduino-lmic Adafruit_BME280_Library Adafruit_Sensor RTCZero BH1750
+Repos downloaded:      MCCI_FRAM_I2C Catena-Arduino-Platform arduino-lorawan Catena-mcciadk arduino-lmic Adafruit_BME280_Library Adafruit_Sensor RTCZero BH1750
 ```
 
 It has a number of advanced options; use `../git-boot.sh -h` to get help, or look at the source code [here](https://github.com/mcci-catena/Catena-Sketches/blob/master/git-boot.sh).
@@ -156,7 +156,7 @@ It has a number of advanced options; use `../git-boot.sh -h` to get help, or loo
 
 This sketch depends on the following libraries.
 
-* [github.com/mcci-catena/Adafruit_FRAM_I2C](https://github.com/mcci-catena/Adafruit_FRAM_I2C)
+* [github.com/mcci-catena/MCCI_FRAM_I2C](https://github.com/mcci-catena/MCCI_FRAM_I2C)
 * [github.com/mcci-catena/Catena4410-Arduino-Library](https://github.com/mcci-catena/Catena4410-Arduino-Library)
 * [github.com/mcci-catena/arduino-lorawan](https://github.com/mcci-catena/arduino-lorawan)
 * [github.com/mcci-catena/Catena-mcciadk](https://github.com/mcci-catena/Catena-mcciadk)

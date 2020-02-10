@@ -36,7 +36,7 @@ Revision history:
 #include <BH1750.h>
 #include <stdio.h>
 #include <stdarg.h>
-#include <Adafruit_FRAM_I2C.h>
+#include <MCCI_FRAM_I2C.h>
 #include <Catena4450.h>
 
 /****************************************************************************\
