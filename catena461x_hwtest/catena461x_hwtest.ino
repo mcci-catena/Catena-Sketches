@@ -382,7 +382,6 @@ test(2_platform_30_init_lux)
 		gSi1133.configure(0, CATENA_SI1133_MODE_SmallIR);
 		gSi1133.configure(1, CATENA_SI1133_MODE_White);
 		gSi1133.configure(2, CATENA_SI1133_MODE_UV);
-		gSi1133.start();
 		}
 	else
 		{
@@ -417,8 +416,16 @@ testing(3_platform_50_lux)
 		{
 		lasttime = now;
 
+		gSi1133.start(true);
+		delay(300);
+		
 		/* Get a new sensor event */
 		uint16_t data[3];
+		
+		while (! gSi1133.isOneTimeReady())
+			{
+			yield();
+			}
 
 		gSi1133.readMultiChannelData(data, 3);
 		assertLess(data[1], 0xFFFF / 1.2, "Oops: light value pegged: " << data[1]);

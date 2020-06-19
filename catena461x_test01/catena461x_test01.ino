@@ -288,7 +288,6 @@ void setup(void)
 			gSi1133.configure(0, CATENA_SI1133_MODE_SmallIR);
 			gSi1133.configure(1, CATENA_SI1133_MODE_White);
 			gSi1133.configure(2, CATENA_SI1133_MODE_UV);
-			gSi1133.start();
 			}
 		else
 			{
@@ -488,9 +487,12 @@ static uint16_t dNdT_getFrac(
 	}
 
 void startSendingUplink(void)
-{
+	{
 	TxBuffer_t b;
 	LedPattern savedLed = gLed.Set(LedPattern::Measuring);
+
+	if (fLux)
+		gSi1133.start(true);
 
 	b.begin();
 	FlagsSensor2 flag;
@@ -542,6 +544,11 @@ void startSendingUplink(void)
 		{
 		/* Get a new sensor event */
 		uint16_t data[3];
+
+		while (! gSi1133.isOneTimeReady())
+			{
+			yield();
+			}
 
 		gSi1133.readMultiChannelData(data, 3);
 		gSi1133.stop();
@@ -723,7 +730,6 @@ static void sleepDoneCb(
 	)
 	{
 	gLed.Set(LedPattern::WarmingUp);
-	gSi1133.start();
 
 	os_setTimedCallback(
 		&sensorJob,
