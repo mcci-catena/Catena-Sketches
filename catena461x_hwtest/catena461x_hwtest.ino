@@ -1,36 +1,24 @@
-/* catena461x_hwtest.ino	Wed Feb 13 2019 12:40:49 chwon */
-
 /*
 
 Module:  catena461x_hwtest.ino
 
 Function:
-	 Hardware test app for Catena-461x
-
-Version:
-	V0.14.0	Wed Feb 13 2019 12:40:49 chwon	Edit level 2
+        Hardware test app for Catena-461x.
 
 Copyright notice:
-	This file copyright (C) 2018-2019 by
+        This file copyright (C) 2018 by
 
-		MCCI Corporation
-		3520 Krums Corners Road
-		Ithaca, NY  14850
+                MCCI Corporation
+                3520 Krums Corners Road
+                Ithaca, NY  14850
 
-	An unpublished work.  All rights reserved.
-
-	This file is proprietary information, and may not be disclosed or
-	copied without the prior permission of MCCI Corporation
+        See project LICENSE file for license information.
 
 Author:
-	ChaeHee Won, MCCI Corporation	December 2018
+        ChaeHee Won, MCCI Corporation	December 2018
 
 Revision history:
-   0.12.0  Thu Dec 06 2018 09:58:51  chwon
-	Module created.
-
-   0.14.0  Wed Feb 13 2019 12:40:49  chwon
-	Use gCatena.ReadXxx() instead of analogRead().
+        See https://github.com/mcci-catena/Catena-Sketches
 
 */
 
