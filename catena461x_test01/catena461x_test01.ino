@@ -1,33 +1,24 @@
-/* catena461x_test01.ino	Mon Nov 19 2018 15:52:04 chwon */
-
 /*
 
 Module:  catena461x_test01.ino
 
 Function:
-	Test program for Catena 4612 and variants.
-
-Version:
-	V0.11.0	Mon Nov 19 2018 15:52:04 chwon	Edit level 1
+        Test program for Catena 4612 and variants.
 
 Copyright notice:
-	This file copyright (C) 2018 by
+        This file copyright (C) 2018 by
 
-		MCCI Corporation
-		3520 Krums Corners Road
-		Ithaca, NY  14850
+                MCCI Corporation
+                3520 Krums Corners Road
+                Ithaca, NY  14850
 
-	An unpublished work.  All rights reserved.
-
-	This file is proprietary information, and may not be disclosed or
-	copied without the prior permission of MCCI Corporation
+        See project LICENSE file for license information.
 
 Author:
-	ChaeHee Won, MCCI Corporation	November 2018
+        ChaeHee Won, MCCI Corporation	November 2018
 
 Revision history:
-   0.11.0  Mon Nov 19 2018 15:52:04  chwon
-	Module created.
+        See https://github.com/mcci-catena/Catena-Sketches
 
 */
 
@@ -103,7 +94,7 @@ static Arduino_LoRaWAN::SendBufferCbFn sendBufferDoneCb;
 |
 \****************************************************************************/
 
-static const char sVersion[] = "0.1.0";
+static const char sVersion[] = "0.1.2";
 
 /****************************************************************************\
 |
@@ -288,7 +279,6 @@ void setup(void)
 			gSi1133.configure(0, CATENA_SI1133_MODE_SmallIR);
 			gSi1133.configure(1, CATENA_SI1133_MODE_White);
 			gSi1133.configure(2, CATENA_SI1133_MODE_UV);
-			gSi1133.start();
 			}
 		else
 			{
@@ -488,9 +478,12 @@ static uint16_t dNdT_getFrac(
 	}
 
 void startSendingUplink(void)
-{
+	{
 	TxBuffer_t b;
 	LedPattern savedLed = gLed.Set(LedPattern::Measuring);
+
+	if (fLux)
+		gSi1133.start(true);
 
 	b.begin();
 	FlagsSensor2 flag;
@@ -542,6 +535,11 @@ void startSendingUplink(void)
 		{
 		/* Get a new sensor event */
 		uint16_t data[3];
+
+		while (! gSi1133.isOneTimeReady())
+			{
+			yield();
+			}
 
 		gSi1133.readMultiChannelData(data, 3);
 		gSi1133.stop();
@@ -723,7 +721,6 @@ static void sleepDoneCb(
 	)
 	{
 	gLed.Set(LedPattern::WarmingUp);
-	gSi1133.start();
 
 	os_setTimedCallback(
 		&sensorJob,

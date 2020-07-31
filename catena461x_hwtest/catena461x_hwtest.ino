@@ -1,36 +1,24 @@
-/* catena461x_hwtest.ino	Wed Feb 13 2019 12:40:49 chwon */
-
 /*
 
 Module:  catena461x_hwtest.ino
 
 Function:
-	 Hardware test app for Catena-461x
-
-Version:
-	V0.14.0	Wed Feb 13 2019 12:40:49 chwon	Edit level 2
+        Hardware test app for Catena-461x.
 
 Copyright notice:
-	This file copyright (C) 2018-2019 by
+        This file copyright (C) 2018 by
 
-		MCCI Corporation
-		3520 Krums Corners Road
-		Ithaca, NY  14850
+                MCCI Corporation
+                3520 Krums Corners Road
+                Ithaca, NY  14850
 
-	An unpublished work.  All rights reserved.
-
-	This file is proprietary information, and may not be disclosed or
-	copied without the prior permission of MCCI Corporation
+        See project LICENSE file for license information.
 
 Author:
-	ChaeHee Won, MCCI Corporation	December 2018
+        ChaeHee Won, MCCI Corporation	December 2018
 
 Revision history:
-   0.12.0  Thu Dec 06 2018 09:58:51  chwon
-	Module created.
-
-   0.14.0  Wed Feb 13 2019 12:40:49  chwon
-	Use gCatena.ReadXxx() instead of analogRead().
+        See https://github.com/mcci-catena/Catena-Sketches
 
 */
 
@@ -382,7 +370,6 @@ test(2_platform_30_init_lux)
 		gSi1133.configure(0, CATENA_SI1133_MODE_SmallIR);
 		gSi1133.configure(1, CATENA_SI1133_MODE_White);
 		gSi1133.configure(2, CATENA_SI1133_MODE_UV);
-		gSi1133.start();
 		}
 	else
 		{
@@ -417,8 +404,16 @@ testing(3_platform_50_lux)
 		{
 		lasttime = now;
 
+		gSi1133.start(true);
+		delay(300);
+		
 		/* Get a new sensor event */
 		uint16_t data[3];
+		
+		while (! gSi1133.isOneTimeReady())
+			{
+			yield();
+			}
 
 		gSi1133.readMultiChannelData(data, 3);
 		assertLess(data[1], 0xFFFF / 1.2, "Oops: light value pegged: " << data[1]);
