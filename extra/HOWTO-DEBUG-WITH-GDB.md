@@ -19,8 +19,8 @@
 - [Setting up `st-util`](#setting-up-st-util)
 - [Build your sketch](#build-your-sketch)
 - [Download and debug](#download-and-debug)
-	- [Windows](#windows)
-	- [Linux](#linux)
+        - [Windows](#windows)
+        - [Linux](#linux)
 
 <!-- /TOC -->
 <!-- markdownlint-restore -->
@@ -122,7 +122,9 @@ The `st-util` tool connects to the STLINK, and exports a local TCP socket compat
 
    From the above, the path to the tools is: `C:\\Users\\tmm\\AppData\\Local\\Arduino15\\packages\\mcci\\tools\\arm-none-eabi-gcc\\6-2017-q2-update/bin`
 
-   And the path to the build directory (where your sketch .elf file was created): `c:\\tmp\\build-vscode-lmic/compliance-otaa-halconfig.ino.elf`.
+   The path of your sketch `.elf` file is: `c:\\tmp\\build-vscode-lmic/compliance-otaa-halconfig.ino.elf`
+
+   The path of the build directory (where your sketch .elf file was created): `c:\\tmp\\build-vscode-lmic`.
 
 ## Download and debug
 
