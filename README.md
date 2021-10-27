@@ -2,7 +2,7 @@
 
 This repository contains top-level Arduino sketches for the Catena family of LoRaWAN&reg; technology remote sensors made by MCCI.
 
-[![GitHub release](https://img.shields.io/github/release/mcci-catena/Catena-Sketches.svg)](https://github.com/mcci-catena/Catena-Sketches/releases/latest) [![GitHub commits](https://img.shields.io/github/commits-since/mcci-catena/Catena-Sketches/latest.svg)](https://github.com/mcci-catena/Catena-Sketches/compare/v0.3.4...master) [![Build Status](https://travis-ci.com/mcci-catena/Catena-Sketches.svg?branch=master)](https://travis-ci.com/mcci-catena/Catena-Sketches)
+[![GitHub release](https://img.shields.io/github/release/mcci-catena/Catena-Sketches.svg)](https://github.com/mcci-catena/Catena-Sketches/releases/latest) [![GitHub commits](https://img.shields.io/github/commits-since/mcci-catena/Catena-Sketches/latest.svg)](https://github.com/mcci-catena/Catena-Sketches/compare/v1.2.0...master) [![Build Status](https://travis-ci.com/mcci-catena/Catena-Sketches.svg?branch=master)](https://travis-ci.com/mcci-catena/Catena-Sketches)
 
 ![Picture of Catena 4450](extra/assets/Catena4450-diy-1-1088x1024.jpg)
 
