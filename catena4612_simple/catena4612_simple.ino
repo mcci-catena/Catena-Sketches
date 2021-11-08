@@ -6,7 +6,7 @@ Function:
         Sensor program for Catena 4612 and variants.
 
 Copyright notice:
-        This file copyright (C) 2019 by
+        This file copyright (C) 2019, 2021 by
 
                 MCCI Corporation
                 3520 Krums Corners Road
@@ -167,7 +167,7 @@ static constexpr const char *filebasename(const char *s)
 |
 \****************************************************************************/
 
-static const char sVersion[] = "0.2.0";
+static const char sVersion[] = "0.3.0";
 
 /****************************************************************************\
 |
