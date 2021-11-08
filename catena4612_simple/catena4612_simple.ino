@@ -480,12 +480,17 @@ void fillBuffer(TxBuffer_t &b)
                 {
                 /* Get a new sensor event */
                 uint16_t data[3];
+                uint32_t tBegin = millis();
 
                 while (! gSi1133.isOneTimeReady())
                         {
+                        if (millis() - tBegin > 1000)
+                                break;
+
                         yield();
                         }
 
+                /* TODO(tmm@mcci.com): change to 24-bit float */
                 gSi1133.readMultiChannelData(data, 3);
                 gSi1133.stop();
                 gCatena.SafePrintf(
