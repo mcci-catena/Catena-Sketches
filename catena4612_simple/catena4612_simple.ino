@@ -233,7 +233,8 @@ unsigned gTxCycle;
 // remaining before we reset to default
 unsigned gTxCycleCount;
 
-
+// reboot time: we force a reboot once a month.
+uint32_t gRebootMs;
 
 /*
 
@@ -426,8 +427,6 @@ bool setup_flash(void)
 
         return fFlashFound;
         }
-
-uint32_t gRebootMs;
 
 void setup_uplink(void)
         {
