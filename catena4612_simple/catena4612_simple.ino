@@ -620,6 +620,7 @@ void fillBuffer(TxBuffer_t &b)
                 // temperature is 2 bytes from -0x80.00 to +0x7F.FF degrees C
                 // pressure is 2 bytes, hPa * 10.
                 // humidity is one byte, where 0 == 0/256 and 0xFF == 255/256.
+                /* TODO(tmm@mcci.com): change RH to 2 bytes */
                 gCatena.SafePrintf(
                         "BME280:  T: %d P: %d RH: %d\n",
                         (int) m.Temperature,
