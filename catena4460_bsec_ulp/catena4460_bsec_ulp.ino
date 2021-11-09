@@ -107,7 +107,9 @@ void sensorJob_cb(osjob_t *pJob);
 
 static const char sVersion[] = "0.3.0";
 
-extern const uint8_t bsec_config_iaq[];
+extern const uint8_t bsec_config_iaq[] = {
+#include "bsec_config.h"
+};
 //#include "bsec_serialized_configurations_iaq.h"
 
 /****************************************************************************\
@@ -334,7 +336,7 @@ void run_bme680(void)
                 g_temperature = iaqSensor.temperature;
                 g_pressure = iaqSensor.pressure;
                 g_humidity = iaqSensor.humidity;
-                g_iaq = iaqSensor.iaqEstimate;
+                g_iaq = iaqSensor.iaq;
                 g_iaqAccuracy = iaqSensor.iaqAccuracy;
                 g_gas_resistance = iaqSensor.gasResistance;
                 g_iaqValid = true;
@@ -344,7 +346,7 @@ void run_bme680(void)
                 output += ", " + String(iaqSensor.pressure);
                 output += ", " + String(iaqSensor.rawHumidity);
                 output += ", " + String(iaqSensor.gasResistance);
-                output += ", " + String(iaqSensor.iaqEstimate);
+                output += ", " + String(iaqSensor.iaq);
                 output += ", " + String(iaqSensor.iaqAccuracy);
                 output += ", " + String(iaqSensor.temperature);
                 output += ", " + String(iaqSensor.humidity);
@@ -691,7 +693,7 @@ static void sendBufferDoneCb(
         {
         osjobcb_t pFn;
 
-        gLed.Set(LedPattern::Settling)
+        gLed.Set(LedPattern::Settling);
 
         pFn = settleDoneCb;
         if (! fStatus)
