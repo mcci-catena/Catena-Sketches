@@ -1,6 +1,6 @@
 # Catena 4420 Test01 Sketch
 
-This sketch is used for the Ithaca power project and other AC power management applications. It's also a great starting point for doing Catena 4420 work. Because of the portability features of the [Catena-Arduino-Platform](https://github.com/mcci-catena/Catena-Arduino-Platform) library. And also this sketch demonstrates the MCCI Catena&reg; 4420 as a remote temperature/humidity/light/water/soil sensor.
+This sketch is used for demo of 4420 work.
 
 <!-- markdownlint-disable MD004 MD033 -->
 <!-- markdownlint-capture -->
@@ -19,6 +19,8 @@ This sketch is used for the Ithaca power project and other AC power management a
 	- [Starting Over](#starting-over)
 - [Notes](#notes)
 	- [Getting Started with The Things Network](#getting-started-with-the-things-network)
+- [Boilerplate and acknowledgements](#boilerplate-and-acknowledgements)
+	- [Trademarks](#trademarks)
 
 <!-- /TOC -->
 <!-- markdownlint-restore -->
@@ -177,3 +179,12 @@ In order to provision the Catena, refer the following document: [How-To-Provisio
 ### Getting Started with The Things Network
 
 These notes are in a separate file in this repository, [Getting Started with The Things Network](../extra/Getting-Started-with-The-Things-Network.md).
+
+## Boilerplate and acknowledgements
+
+### Trademarks
+
+- MCCI and MCCI Catena are registered trademarks of MCCI Corporation.
+- LoRa is a registered trademark of Semtech Corporation.
+- LoRaWAN is a registered trademark of the LoRa Alliance
+- All other trademarks are properties of their respective owners.

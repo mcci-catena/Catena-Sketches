@@ -15,6 +15,8 @@ This sketch demonstrates the MCCI Catena&reg; 4450 as a remote temperature/humid
 - [Build and Download](#build-and-download)
 - [Load the sketch into the Catena](#load-the-sketch-into-the-catena)
 - [Provision your Catena 4450](#provision-your-catena-4450)
+- [Boilerplate and acknowledgements](#boilerplate-and-acknowledgements)
+	- [Trademarks](#trademarks)
 	
 <!-- /TOC -->
 <!-- markdownlint-restore -->
@@ -151,3 +153,10 @@ Load the sketch into the Catena using `Sketch`>`Upload` and move on to provision
 ## Provision your Catena 4450
 
 In order to provision (system) the Catena, refer the following document: [How-To-Provision-Your-Catena-Device](https://github.com/mcci-catena/Catena-Sketches/blob/master/extra/How-To-Provision-Your-Catena-Device.md).
+
+## Boilerplate and acknowledgements
+
+### Trademarks
+
+- MCCI and MCCI Catena are registered trademarks of MCCI Corporation.
+- All other trademarks are properties of their respective owners.

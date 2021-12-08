@@ -20,6 +20,8 @@ This sketch is used for the measuring the temperature of a pond and other water 
 	- [Data Format](#data-format)
 	- [Unplugging the USB Cable while running on batteries](#unplugging-the-usb-cable-while-running-on-batteries)
 	- [Deep sleep and USB](#deep-sleep-and-usb)
+- [Boilerplate and acknowledgements](#boilerplate-and-acknowledgements)
+	- [Trademarks](#trademarks)
 	
 <!-- /TOC -->
 <!-- markdownlint-restore -->
@@ -237,3 +239,12 @@ When the Catena 4450 is in deep sleep, the USB port will not respond to cable at
 While disconnected, you won't be able to select the COM port for the board from the Arduino UI. And depending on the various operatingflags settings, even after reset, you may have trouble catching the board to download a sketch before it goes to sleep.
 
 The workaround is to "double tap" the reset button. As with any Feather M0, double-pressing the RESET button will put the Feather into download mode. To confirm this, the red light will flicker rapidly. You may have to temporarily change the download port using `Tools`>`Port`, but once the port setting is correct, you should be able to download no matter what state the board was in.
+
+## Boilerplate and acknowledgements
+
+### Trademarks
+
+- MCCI and MCCI Catena are registered trademarks of MCCI Corporation.
+- LoRa is a registered trademark of Semtech Corporation.
+- LoRaWAN is a registered trademark of the LoRa Alliance
+- All other trademarks are properties of their respective owners.

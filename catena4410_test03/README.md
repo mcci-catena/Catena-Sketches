@@ -1,6 +1,6 @@
 # Catena 4410 Test03 Sketch
 
-This sketch is used for the Ithaca power project and other AC power management applications. It's also a great starting point for doing Catena 4410 work. Because of the portability features of the [Catena-Arduino-Platform](https://github.com/mcci-catena/Catena-Arduino-Platform) library. And also this sketch demonstrates the MCCI Catena&reg; 4410 as a remote temperature/humidity/light/water/soil sensor.
+This sketch demonstrates the MCCI Catena&reg; 4410 as a remote temperature/humidity/pressure sensor.
 
 <!-- markdownlint-disable MD004 MD033 -->
 <!-- markdownlint-capture -->
@@ -14,6 +14,8 @@ This sketch is used for the Ithaca power project and other AC power management a
 	- [List of required libraries](#list-of-required-libraries)
 - [Build and Download](#build-and-download)
 - [Load the sketch into the Catena](#load-the-sketch-into-the-catena)
+- [Boilerplate and acknowledgements](#boilerplate-and-acknowledgements)
+	- [Trademarks](#trademarks)
 
 <!-- /TOC -->
 <!-- markdownlint-restore -->
@@ -195,3 +197,10 @@ Follow normal Arduino IDE procedures to build the sketch: `Sketch`>`Verify/Compi
 Make sure the correct port is selected in `Tools`>`Port`.
 
 Load the sketch into the Catena using `Sketch`>`Upload`.
+
+## Boilerplate and acknowledgements
+
+### Trademarks
+
+- MCCI and MCCI Catena are registered trademarks of MCCI Corporation.
+- All other trademarks are properties of their respective owners.

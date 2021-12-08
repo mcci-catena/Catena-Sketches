@@ -1,6 +1,6 @@
 # Catena 4410 Test01 Sketch
 
-This sketch is used for the Ithaca power project and other AC power management applications. It's also a great starting point for doing Catena 4410 work. Because of the portability features of the [Catena-Arduino-Platform](https://github.com/mcci-catena/Catena-Arduino-Platform) library. And also this sketch demonstrates the MCCI Catena&reg; 4410 as a remote temperature/humidity/light/water/soil sensor.
+This sketch demonstrates the MCCI Catena&reg; 4410 as a remote temperature/humidity/light sensor.
 
 <!-- markdownlint-disable MD004 MD033 -->
 <!-- markdownlint-capture -->
@@ -14,6 +14,8 @@ This sketch is used for the Ithaca power project and other AC power management a
 	- [List of required libraries](#list-of-required-libraries)
 - [Build and Download](#build-and-download)
 - [Load the sketch into the Catena](#load-the-sketch-into-the-catena)
+- [Boilerplate and acknowledgements](#boilerplate-and-acknowledgements)
+	- [Trademarks](#trademarks)
 
 <!-- /TOC -->
 <!-- markdownlint-restore -->
@@ -24,7 +26,6 @@ In order to use this code, you must do several things:
 2. Install the MCCI BSP package.
 3. Install the required Arduino libraries using `git`.
 4. Build and download.
-5. "Provision" your Catena 4410 -- this involves entering USB commands via the Arduino serial monitor to program essential identity information into the Catena 4410, so it can join the targeted network.
 
 ## Clone this repository into a suitable directory on your system
 
@@ -63,14 +64,6 @@ If you already have entries in that list, use a comma (`,`) to separate the entr
 Next, open the board manager. `Tools>Board:...`, and get up to the top of the menu that pops out -- it will give you a list of boards. Search for `MCCI` in the search box and select `MCCI Catena SAMD Boards`. An `[Install]` button will appear to the right; click it.
 
 Then go to `Tools>Board:...` and scroll to the bottom. You should see `MCCI Catena 4410`; select that.
-
-## Select your desired band
-
-When you select a board, the default LoRaWAN region is set to US-915, which is used in North America and much of South America. If you're elsewhere, you need to select your target region. You can do it in the IDE:
-
-![Select Bandplan](./assets/menu-region.gif)
-
-As the animation shows, use `Tools>LoRaWAN Region...` and choose the appropriate entry from the menu.
 
 ## Installing the required libraries
 
@@ -134,3 +127,10 @@ Follow normal Arduino IDE procedures to build the sketch: `Sketch`>`Verify/Compi
 Make sure the correct port is selected in `Tools`>`Port`.
 
 Load the sketch into the Catena using `Sketch`>`Upload`.
+
+## Boilerplate and acknowledgements
+
+### Trademarks
+
+- MCCI and MCCI Catena are registered trademarks of MCCI Corporation.
+- All other trademarks are properties of their respective owners.

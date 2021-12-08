@@ -1,6 +1,6 @@
 # Catena 4410 Test02 Sketch 
 
-This sketch is used for the Ithaca power project and other AC power management applications. It's also a great starting point for doing Catena 4410 work. Because of the portability features of the [Catena-Arduino-Platform](https://github.com/mcci-catena/Catena-Arduino-Platform) library. And also this sketch demonstrates the MCCI Catena&reg; 4410 as a remote temperature/humidity/light/water/soil sensor.
+This sketch demonstrates the MCCI Catena&reg; 4410 as a remote temperature/humidity sensor.
 
 <!-- markdownlint-disable MD004 MD033 -->
 <!-- markdownlint-capture -->
@@ -13,6 +13,8 @@ This sketch is used for the Ithaca power project and other AC power management a
 	- [List of required libraries](#list-of-required-libraries)
 - [Build and Download](#build-and-download)
 - [Load the sketch into the Catena](#load-the-sketch-into-the-catena)
+- [Boilerplate and acknowledgements](#boilerplate-and-acknowledgements)
+	- [Trademarks](#trademarks)
 
 <!-- /TOC -->
 <!-- markdownlint-restore -->
@@ -123,21 +125,6 @@ remote: Enumerating objects: 55, done.
 remote: Total 55 (delta 0), reused 0 (delta 0), pack-reused 55
 Receiving objects: 100% (55/55), 9.30 KiB | 317.00 KiB/s, done.
 Resolving deltas: 100% (26/26), done.
-Cloning into 'arduino-lmic'...
-remote: Enumerating objects: 6239, done.
-remote: Counting objects: 100% (377/377), done.
-remote: Compressing objects: 100% (205/205), done.
-remote: Total 6239 (delta 246), reused 269 (delta 169), pack-reused 5862
-Receiving objects: 100% (6239/6239), 16.84 MiB | 2.18 MiB/s, done.
-Resolving deltas: 100% (4113/4113), done.
-Updating files: 100% (117/117), done.
-Cloning into 'arduino-lorawan'...
-remote: Enumerating objects: 1294, done.
-remote: Counting objects: 100% (200/200), done.
-remote: Compressing objects: 100% (117/117), done.
-remote: Total 1294 (delta 133), reused 133 (delta 81), pack-reused 1094
-Receiving objects: 100% (1294/1294), 309.06 KiB | 795.00 KiB/s, done.
-Resolving deltas: 100% (872/872), done.
 
 ==== Summary =====
 *** No repos with errors ***
@@ -147,8 +134,8 @@ Resolving deltas: 100% (872/872), done.
 *** No existing repos were updated ***
 
 New repos cloned:
-Adafruit_BME280_Library                 Arduino-Temperature-Control-Library     MCCI_FRAM_I2C                           arduino-lmic
-Adafruit_Sensor                         Catena-Arduino-Platform                 OneWire                                 arduino-lorawan
+Adafruit_BME280_Library                 Arduino-Temperature-Control-Library     MCCI_FRAM_I2C
+Adafruit_Sensor                         Catena-Arduino-Platform                 OneWire
 Adafruit_TSL2561                        Catena-mcciadk                          SHT1x
 
 ```
@@ -184,3 +171,10 @@ Follow normal Arduino IDE procedures to build the sketch: `Sketch`>`Verify/Compi
 Make sure the correct port is selected in `Tools`>`Port`.
 
 Load the sketch into the Catena using `Sketch`>`Upload`.
+
+## Boilerplate and acknowledgements
+
+### Trademarks
+
+- MCCI and MCCI Catena are registered trademarks of MCCI Corporation.
+- All other trademarks are properties of their respective owners.
