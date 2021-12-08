@@ -18,6 +18,11 @@ This sketch captures a simple air-quality index, based on the gas resistance ret
 	- [Unattended mode](#unattended-mode)
 	- [Test mode](#test-mode)
 	- [Platform GUID](#platform-guid)
+- [Provision your Catena 4460](#provision-your-catena-4460)
+- [Notes](#notes)
+	- [Getting Started with The Things Network](#getting-started-with-the-things-network)
+	- [Unplugging the USB Cable while running on batteries](#unplugging-the-usb-cable-while-running-on-batteries)
+	- [Deep sleep and USB](#deep-sleep-and-usb)
 - [Boilerplate and acknowledgements](#boilerplate-and-acknowledgements)
 	- [Trademarks](#trademarks)
 
@@ -159,6 +164,30 @@ Please set the platform GUID to `3037D9BE-8EBE-4AE7-970E-91915A2484F8` during co
 ```console
 system configure platformguid 3037D9BE-8EBE-4AE7-970E-91915A2484F8
 ```
+
+## Provision your Catena 4460
+
+In order to provision the Catena, refer the following document: [How-To-Provision-Your-Catena-Device](https://github.com/mcci-catena/Catena-Sketches/blob/master/extra/How-To-Provision-Your-Catena-Device.md).
+
+## Notes
+
+### Getting Started with The Things Network
+
+These notes are in a separate file in this repository, [Getting Started with The Things Network](../extra/Getting-Started-with-The-Things-Network.md).
+
+### Unplugging the USB Cable while running on batteries
+
+The Catena 4460 comes with a rechargable LiPo battery. This allows you to unplug the USB cable after booting the Catena 4460 without causing the Catena 4460 to restart.
+
+Unfortunately, the Arudino USB drivers for the Catena 4460 do not distinguish between cable unplug and USB suspend. Any `Serial.print()` operation referring to the USB port will hang if the cable is unplugged after being used during a boot. The easiest work-around is to reboot the Catena after unplugging the USB cable. You can avoid this by using the Arduino UI to turn off DTR before unplugging the cable... but then you must remember to turn DTR back on. This is very fragile in practice.
+
+### Deep sleep and USB
+
+When the Catena 4460 is in deep sleep, the USB port will not respond to cable attaches. When the 4460 wakes up, it will connect to the PC while it is doing its work, then disconnect to go back to sleep.
+
+While disconnected, you won't be able to select the COM port for the board from the Arduino UI. And depending on the various operatingflags settings, even after reset, you may have trouble catching the board to download a sketch before it goes to sleep.
+
+The workaround is to "double tap" the reset button. As with any Feather M0, double-pressing the RESET button will put the Feather into download mode. To confirm this, the red light will flicker rapidly. You may have to temporarily change the download port using `Tools`>`Port`, but once the port setting is correct, you should be able to download no matter what state the board was in.
 
 ## Boilerplate and acknowledgements
 
