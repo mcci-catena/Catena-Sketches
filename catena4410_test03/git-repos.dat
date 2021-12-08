@@ -1,0 +1,14 @@
+#
+# list of git repositories to be fetched to Arduino libraries directory.
+#
+github.com	mcci-catena/MCCI_FRAM_I2C.git
+github.com	mcci-catena/Catena-Arduino-Platform.git
+github.com	mcci-catena/arduino-lorawan.git
+github.com	mcci-catena/Catena-mcciadk.git
+github.com	mcci-catena/arduino-lmic.git
+github.com	mcci-catena/Adafruit_BME280_Library.git
+github.com	mcci-catena/Adafruit_Sensor.git
+github.com	mcci-catena/Adafruit_TSL2561
+github.com	mcci-catena/OneWire.git
+github.com	mcci-catena/SHT1x.git
+github.com	mcci-catena/Arduino-Temperature-Control-Library.git
