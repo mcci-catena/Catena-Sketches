@@ -1,0 +1,6 @@
+#
+# list of git repositories to be fetched to Arduino libraries directory.
+#
+github.com	mcci-catena/Adafruit_BME280_Library.git
+github.com	mcci-catena/Adafruit_Sensor.git
+github.com	mcci-catena/Adafruit_TSL2561
