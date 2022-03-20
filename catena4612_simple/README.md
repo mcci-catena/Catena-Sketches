@@ -15,27 +15,31 @@
 
 - [Introduction](#introduction)
 - [Getting Started](#getting-started)
-    - [Clone this repository into a suitable directory on your system](#clone-this-repository-into-a-suitable-directory-on-your-system)
-    - [Install the MCCI STM32 board support library](#install-the-mcci-stm32-board-support-library)
-    - [Select your desired region](#select-your-desired-region)
-    - [Installing the required libraries](#installing-the-required-libraries)
-        - [List of required libraries](#list-of-required-libraries)
-    - [Build and Download](#build-and-download)
-    - [Load the sketch into the Catena](#load-the-sketch-into-the-catena)
+	- [Clone this repository into a suitable directory on your system](#clone-this-repository-into-a-suitable-directory-on-your-system)
+	- [Install the MCCI STM32 board support library](#install-the-mcci-stm32-board-support-library)
+	- [Select your desired region](#select-your-desired-region)
+	- [Installing the required libraries](#installing-the-required-libraries)
+		- [List of required libraries](#list-of-required-libraries)
+	- [Build and Download](#build-and-download)
+	- [Load the sketch into the Catena](#load-the-sketch-into-the-catena)
 - [Set the identity of your Catena 461x](#set-the-identity-of-your-catena-461x)
-    - [Check platform and serial number setup](#check-platform-and-serial-number-setup)
-    - [Platform Provisioning](#platform-provisioning)
+	- [Check platform and serial number setup](#check-platform-and-serial-number-setup)
+	- [Platform Provisioning](#platform-provisioning)
 - [LoRaWAN Provisioning](#lorawan-provisioning)
-    - [Preparing the network for your device](#preparing-the-network-for-your-device)
-    - [Preparing your device for the network](#preparing-your-device-for-the-network)
-    - [Changing registration](#changing-registration)
-    - [Starting Over](#starting-over)
+	- [Preparing the network for your device](#preparing-the-network-for-your-device)
+	- [Preparing your device for the network](#preparing-your-device-for-the-network)
+	- [Changing registration](#changing-registration)
+	- [Starting Over](#starting-over)
 - [Notes](#notes)
-    - [Setting up DFU on a Linux or Windows PC](#setting-up-dfu-on-a-linux-or-windows-pc)
-    - [Data Format](#data-format)
-    - [Unplugging the USB Cable while running on batteries](#unplugging-the-usb-cable-while-running-on-batteries)
-    - [Deep sleep and USB](#deep-sleep-and-usb)
-    - [gitboot.sh and the other sketches](#gitbootsh-and-the-other-sketches)
+	- [Setting up DFU on a Linux or Windows PC](#setting-up-dfu-on-a-linux-or-windows-pc)
+	- [Data Format](#data-format)
+	- [Unplugging the USB Cable while running on batteries](#unplugging-the-usb-cable-while-running-on-batteries)
+	- [Deep sleep and USB](#deep-sleep-and-usb)
+	- [gitboot.sh and the other sketches](#gitbootsh-and-the-other-sketches)
+- [Meta](#meta)
+	- [Trademarks and copyright](#trademarks-and-copyright)
+	- [License](#license)
+	- [Support Open Source Hardware and Software](#support-open-source-hardware-and-software)
 
 <!-- /TOC -->
 <!-- markdownlint-restore -->
@@ -43,7 +47,7 @@
 
 ## Introduction
 
-This sketch demonstrates the MCCI Catena&reg; 4612 (or 4610) as a remote temperature/humidity/light sensor using a LoRaWAN&reg;-technology network to transmit to a remote server.
+This sketch demonstrates the [MCCI Catena&reg; 4612](https://mcci.io/catena4612) (or 4610) as a remote temperature/humidity/light sensor using a LoRaWAN&reg;-technology network to transmit to a remote server.
 
 The Catena 4612 is a single-board LoRaWAN-enabled sensor device with the following integrated sensors:
 
@@ -161,12 +165,13 @@ It has a number of advanced options; use `../git-boot.sh -h` to get help, or loo
 
 This sketch depends on the following libraries.
 
-* [`github.com/mcci-catena/Catena4410-Arduino-Library`](https://github.com/mcci-catena/Catena4410-Arduino-Library)
+* [`github.com/mcci-catena/Catena-Arduino-Platform`](https://github.com/mcci-catena/Catena-Arduino-Platform)
 * [`github.com/mcci-catena/arduino-lorawan`](https://github.com/mcci-catena/arduino-lorawan)
 * [`github.com/mcci-catena/Catena-mcciadk`](https://github.com/mcci-catena/Catena-mcciadk)
 * [`github.com/mcci-catena/arduino-lmic`](https://github.com/mcci-catena/arduino-lmic)
 * [`github.com/mcci-catena/MCCI_FRAM_I2C`](https://github.com/mcci-catena/MCCI_FRAM_I2C)
-* [`github.com/mcci-catena/MCCI-Catena-HS300x`](https://github.com/mcci-catena/MCCI-Catena-HS300x)
+* [`github.com/mcci-catena/mcci-catena/Adafruit_BME280_Library`](https://github.com/mcci-catena/mcci-catena/Adafruit_BME280_Library)
+* [`github.com/mcci-catena/mcci-catena/Adafruit_Sensor`](https://github.com/mcci-catena/Adafruit_Sensor)
 
 ### Build and Download
 
@@ -252,7 +257,6 @@ For the Catena 4610, use:
 
 - `system configure platformguid 53ca094b-b888-465e-aa0e-e3064ec56d21`
 
-
 ## LoRaWAN Provisioning
 
 Some background: with LoRaWAN, you have to create a project on your target network, and then register your device with that project.
@@ -283,7 +287,7 @@ For other networks, follow their instructions for determining the DevEUI and get
 
 Make sure your device is still connected to the Arduino IDE, and make sure the serial monitor is still open. (If needed, open it using Tools>Serial Monitor.)
 
-Enter the following commands in the serial monitor, substituting your _`DevEUI`_, _`AppEUI`_, and _`AppKey`_, one at a time.
+Enter the following commands in the serial monitor, substituting your *`DevEUI`*, *`AppEUI`*, and *`AppKey`*, one at a time.
 
 - <code>lorawan configure deveui <em>DevEUI</em></code>
 - <code>lorawan configure appeui <em>AppEUI</em></code>
@@ -361,3 +365,21 @@ The workaround is use DFU boot mode to download the catena-hello sketch from [Ca
 ### gitboot.sh and the other sketches
 
 Many of the sketches in other directories in this tree are for engineering use at MCCI. The `git-repos.dat` file in this directory does not necessarily install all the required libraries needed for building the other directories. However, many sketches have a suitable `git-repos.dat`. In any case, all the libraries should be available from [`github.com/mcci-catena/`](https://github.com/mcci-catena/); and we are working on getting `git-repos.dat` files in every sub-directory.
+
+## Meta
+
+### Trademarks and copyright
+
+MCCI and MCCI Catena are registered trademarks of MCCI Corporation. LoRa is a registered trademark of Semtech Corporation. LoRaWAN is a registered trademark of the LoRa Alliance.
+
+This document and the contents of this repository are copyright 2021, MCCI Corporation.
+
+### License
+
+This repository is released under the [MIT license](../LICENSE.md). Commercial licenses are also available from MCCI Corporation.
+
+### Support Open Source Hardware and Software
+
+MCCI invests time and resources providing this open source code, please support MCCI and open-source hardware by purchasing products from MCCI, Adafruit and other open-source hardware/software vendors!
+
+For information about MCCI's products, please visit [store.mcci.com](https://store.mcci.com/).
