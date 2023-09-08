@@ -39,8 +39,12 @@ Revision history:
 #include <mcciadk_baselib.h>
 #include <type_traits>
 #include <Wire.h>
+#include <Catena_FlashParam.h>
+#include <mcci_ltr_329als.h>
+#include <Catena_Log.h>
 
 using namespace McciCatena;
+using namespace Mcci_Ltr_329als;
 
 /****************************************************************************\
 |
@@ -167,7 +171,7 @@ static constexpr const char *filebasename(const char *s)
 |
 \****************************************************************************/
 
-static const char sVersion[] = "0.4.0";
+static const char sVersion[] = "0.5.0";
 
 /****************************************************************************\
 |
@@ -190,6 +194,34 @@ Catena::LoRaWAN gLoRaWAN;
 //
 StatusLed gLed (Catena::PIN_STATUS_LED);
 
+// concrete type for flash parameters
+using Flash_t = McciCatena::FlashParamsStm32L0_t;
+using ParamBoard_t = Flash_t::ParamBoard_t;
+using PageEndSignature1_t = Flash_t::PageEndSignature1_t;
+using ParamDescId = Flash_t::ParamDescId;
+
+// flag to disable LED
+bool fDisableLED;
+
+// set flag if Network time set to RTC
+bool fNwTimeSet;
+
+// set start time when network time is being set
+std::uint32_t startTime;
+
+// get Rev number
+std::uint8_t boardRev;
+
+// fetch the signature
+const PageEndSignature1_t * const pRomSig =
+        reinterpret_cast<const PageEndSignature1_t *>(Flash_t::kPageEndSignature1Address);
+
+// get pointer to memory block */
+uint32_t descAddr = pRomSig->getParamPointer();
+
+// find the serial number (must be first)
+const ParamBoard_t * const pBoard = reinterpret_cast<const ParamBoard_t *>(descAddr);
+
 //   The temperature/humidity sensor
 Adafruit_BME280 gBME280; // The default initalizer creates an I2C connection
 bool fBme;
@@ -197,6 +229,10 @@ bool fBme;
 //   The LUX sensor
 Catena_Si1133 gSi1133;
 bool fLight;
+
+//   LTR329 LUX sensor
+Ltr_329als gLtr {Wire};
+Mcci_Ltr_329als_Regs::AlsContr_t gAlsCtrl;
 
 /* instantiate SPI */
 SPIClass gSPI2(
@@ -265,9 +301,18 @@ void setup(void)
         gCatena.begin();
 
         setup_platform();
-        setup_light();
-        setup_bme280();
         gfFlash = setup_flash();
+        setup_rev();
+        setup_bme280();
+        if (!isVersion2())
+                {
+                setup_light();
+                }
+        else
+                {
+                setup_ltr329();
+                }
+
         setup_download();
         setup_uplink();
         }
@@ -368,6 +413,20 @@ void setup_platform(void)
                 }
         }
 
+void setup_rev()
+        {
+        if (!flashParam())
+                {
+                gCatena.SafePrintf(
+                        "**Unable to fetch flash parameters, assuming 4610 version 1 (rev C or earlier)!\n"
+                        );
+                boardRev = 2;
+                }
+        else {
+                printBoardInfo();
+                }
+        }
+
 void setup_light(void)
         {
         if (gSi1133.begin())
@@ -376,11 +435,26 @@ void setup_light(void)
                 gSi1133.configure(0, CATENA_SI1133_MODE_SmallIR);
                 gSi1133.configure(1, CATENA_SI1133_MODE_White);
                 gSi1133.configure(2, CATENA_SI1133_MODE_UV);
+                gCatena.SafePrintf("Light sensor found\n");
                 }
         else
                 {
                 fLight = false;
-                gCatena.SafePrintf("No Si1133 found: check hardware\n");
+                gCatena.SafePrintf("No Light Sensor found: check hardware\n");
+                }
+        }
+
+void setup_ltr329(void)
+        {
+        if (! gLtr.begin())
+                {
+                gCatena.SafePrintf("No Light sensor found: check hardware\n");
+                fLight = false;
+                }
+        else
+                {
+                gCatena.SafePrintf("Light sensor found\n");
+                fLight = true;
                 }
         }
 
@@ -389,11 +463,12 @@ void setup_bme280(void)
         if (gBME280.begin(BME280_ADDRESS, Adafruit_BME280::OPERATING_MODE::Sleep))
                 {
                 fBme = true;
+                gCatena.SafePrintf("Temperature/Humidity sensor found\n");
                 }
         else
                 {
                 fBme = false;
-                gCatena.SafePrintf("No BME280 found: check hardware\n");
+                gCatena.SafePrintf("No Temperature/Humidity sensor found: check hardware\n");
                 }
         }
 
@@ -584,7 +659,7 @@ void loop()
 
 void fillBuffer(TxBuffer_t &b)
         {
-        if (fLight)
+        if (fLight && !isVersion2())
                 gSi1133.start(true);
 
         b.begin();
@@ -606,6 +681,8 @@ void fillBuffer(TxBuffer_t &b)
         float vBus = gCatena.ReadVbus();
         gCatena.SafePrintf("vBus:    %d mV\n", (int) (vBus * 1000.0f));
         fUsbPower = (vBus > 3.0) ? true : false;
+        b.putV(vBus);
+        flag |= FlagsSensorPort2::FlagVbus;
 
         uint32_t bootCount;
         if (gCatena.getBootCount(bootCount))
@@ -629,44 +706,98 @@ void fillBuffer(TxBuffer_t &b)
                         );
                 b.putT(m.Temperature);
                 b.putP(m.Pressure);
-                b.putRH(m.Humidity);
+                // no method for 2-byte RH, directly encode it.
+                b.put2uf((m.Humidity / 100.0f) * 65535.0f);
 
                 flag |= FlagsSensorPort2::FlagTPH;
                 }
 
-        if (fLight)
+        if (!isVersion2())
                 {
-                /* Get a new sensor event */
-                uint16_t data[3];
-                uint32_t tBegin = millis();
-
-                while (! gSi1133.isOneTimeReady())
+                if (fLight)
                         {
-                        if (millis() - tBegin > 1000)
-                                break;
+                        /* Get a new sensor event */
+                        uint16_t data[3];
+                        uint32_t tBegin = millis();
 
-                        yield();
+                        while (! gSi1133.isOneTimeReady())
+                                {
+                                if (millis() - tBegin > 1000)
+                                        break;
+
+                                yield();
+                                }
+
+                        /* TODO(tmm@mcci.com): change to 24-bit float */
+                        gSi1133.readMultiChannelData(data, 3);
+                        gSi1133.stop();
+                        gCatena.SafePrintf(
+                                "Si1133:  %u IR, %u White, %u UV\n",
+                                data[0],
+                                data[1],
+                                data[2]
+                                );
+
+                        b.putLux(LMIC_f2uflt16(data[0] / pow(2.0, 24)));
+                        b.putLux(LMIC_f2uflt16(data[1] / pow(2.0, 24)));
+                        b.putLux(LMIC_f2uflt16(data[2] / pow(2.0, 24)));
+
+                        flag |= FlagsSensorPort2::FlagLight;
                         }
-
-                /* TODO(tmm@mcci.com): change to 24-bit float */
-                gSi1133.readMultiChannelData(data, 3);
-                gSi1133.stop();
-                gCatena.SafePrintf(
-                        "Si1133:  %u IR, %u White, %u UV\n",
-                        data[0],
-                        data[1],
-                        data[2]
-                        );
-
-                b.putLux(data[0]);
-                b.putLux(data[1]);
-                b.putLux(data[2]);
-
-                flag |= FlagsSensorPort2::FlagLight;
                 }
+        else
+                {
+                if (fLight)
+                        {
+                        bool fError;
+                        static constexpr float kMax_Gain_96 = 640.0f;
+                        static constexpr float kMax_Gain_48 = 1280.0f;
+                        static constexpr float kMax_Gain_8 = 7936.0f;
+                        static constexpr float kMax_Gain_4 = 16128.0f;
+                        static constexpr float kMax_Gain_2 = 32512.0f;
+                        static constexpr float kMax_Gain_1 = 65535.0f;
 
-        b.putV(vBus);
-        flag |= FlagsSensorPort2::FlagVbus;
+                        // start a measurement
+                        if (! gLtr.startSingleMeasurement())
+                                gCatena.SafePrintf("gLtr.startSingleMeasurement() failed\n");
+
+                        // wait for measurement to complete.
+                        while (! gLtr.queryReady(fError))
+                                {
+                                if (fError)
+                                        break;
+                                }
+
+                        if (fError)
+                                {
+                                gCatena.SafePrintf("queryReady() failed\n");
+                                }
+                        else
+                                {
+                                float currentLux = gLtr.getLux();
+                                gCatena.SafePrintf(
+                                        "LTR329: %d Lux\n",
+                                        (int)currentLux
+                                        );
+                                b.put3f(currentLux);
+
+                                if (currentLux <= kMax_Gain_96)
+                                        gAlsCtrl.setGain(96);
+                                else if (currentLux <= kMax_Gain_48)
+                                        gAlsCtrl.setGain(48);
+                                else if (currentLux <= kMax_Gain_8)
+                                        gAlsCtrl.setGain(8);
+                                else if (currentLux <= kMax_Gain_4)
+                                        gAlsCtrl.setGain(4);
+                                else if (currentLux <= kMax_Gain_2)
+                                        gAlsCtrl.setGain(2);
+                                else
+                                        gAlsCtrl.setGain(1);
+
+                                flag |= FlagsSensorPort2::FlagLight;
+                                }
+                        }
+                }
 
         *pFlag = uint8_t(flag);
         }
@@ -1005,3 +1136,77 @@ void setTxCycleTime(
         gTxCycle = txCycle;
         gTxCycleCount = txCount;
         }
+
+bool flashParam()
+    {
+    const auto guid { Flash_t::kPageEndSignature1_Guid };
+
+    if (std::memcmp((const void *) &pRomSig->Guid, (const void *) &guid, sizeof(pRomSig->Guid)) != 0)
+        {
+        return false;
+        }
+
+    if (! pRomSig->isValidParamPointer(descAddr))
+        {
+        return false;
+        }
+
+    // check the ID and length
+    if (! (
+        pBoard->uLen == sizeof(*pBoard) &&
+        pBoard->uType == unsigned(ParamDescId::Board)
+        ))
+        {
+        return false;
+        }
+
+    boardRev = pBoard->getRev();
+    return true;
+    }
+
+void printBoardInfo()
+    {
+    // print the s/n, model, rev
+    gLog.printf(gLog.kInfo, "serial-number:");
+    uint8_t serial[pBoard->nSerial];
+    pBoard->getSerialNumber(serial);
+
+    for (unsigned i = 0; i < sizeof(serial); ++i)
+        gCatena.SafePrintf("%c%02x", i == 0 ? ' ' : '-', serial[i]);
+
+    gLog.printf(
+            gLog.kInfo,
+            "\nAssembly-number: %u\nModel: %u\n",
+            pBoard->getAssembly(),
+            pBoard->getModel()
+            );
+    delay(1);
+    gLog.printf(
+            gLog.kInfo,
+            "ModNumber: %u\n",
+            pBoard->getModNumber()
+            );
+    gLog.printf(
+            gLog.kInfo,
+            "RevNumber: %u\n",
+            boardRev
+            );
+    gLog.printf(
+            gLog.kInfo,
+            "Rev: %c\n",
+            pBoard->getRevChar()
+            );
+    gLog.printf(
+            gLog.kInfo,
+            "Dash: %u\n",
+            pBoard->getDash()
+            );
+    }
+
+bool isVersion2()
+    {
+    if (boardRev < 3)
+        return false;
+    else
+        return true;
+    }
