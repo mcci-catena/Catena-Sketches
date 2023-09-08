@@ -418,7 +418,7 @@ void setup_rev()
         if (!flashParam())
                 {
                 gCatena.SafePrintf(
-                        "**Unable to fetch flash parameters, assuming 4610 version 1 (rev C or earlier)!\n"
+                        "**Unable to fetch flash parameters, assuming 4612 version 1 (rev C or earlier)!\n"
                         );
                 boardRev = 2;
                 }
