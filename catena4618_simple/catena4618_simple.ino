@@ -497,8 +497,6 @@ void fillBuffer(TxBuffer_t &b)
         float vBus = gCatena.ReadVbus();
         gCatena.SafePrintf("vBus:    %d mV\n", (int) (vBus * 1000.0f));
         fUsbPower = (vBus > 3.0) ? true : false;
-        b.putV(vBus);
-        flag |= FlagsSensorPort3::FlagVbus;
 
         uint32_t bootCount;
         if (gCatena.getBootCount(bootCount))
@@ -617,6 +615,9 @@ void fillBuffer(TxBuffer_t &b)
                                 }
                         }
                 }
+
+        b.putV(vBus);
+        flag |= FlagsSensorPort3::FlagVbus;
 
         *pFlag = uint8_t(flag);
         }
