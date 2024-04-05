@@ -555,9 +555,9 @@ void fillBuffer(TxBuffer_t &b)
                                 data[2]
                                 );
 
-                        b.putLux(LMIC_f2uflt16(data[0] / pow(2.0, 24)));
-                        b.putLux(LMIC_f2uflt16(data[1] / pow(2.0, 24)));
-                        b.putLux(LMIC_f2uflt16(data[2] / pow(2.0, 24)));
+                        b.putLux(data[0]);
+                        b.putLux(data[1]);
+                        b.putLux(data[2]);
 
                         flag |= FlagsSensorPort3::FlagLight;
                         }

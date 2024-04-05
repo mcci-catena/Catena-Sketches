@@ -704,8 +704,7 @@ void fillBuffer(TxBuffer_t &b)
                         );
                 b.putT(m.Temperature);
                 b.putP(m.Pressure);
-                // no method for 2-byte RH, directly encode it.
-                b.put2uf((m.Humidity / 100.0f) * 65535.0f);
+                b.putRH(m.Humidity);
 
                 flag |= FlagsSensorPort2::FlagTPH;
                 }
@@ -736,9 +735,9 @@ void fillBuffer(TxBuffer_t &b)
                                 data[2]
                                 );
 
-                        b.putLux(LMIC_f2uflt16(data[0] / pow(2.0, 24)));
-                        b.putLux(LMIC_f2uflt16(data[1] / pow(2.0, 24)));
-                        b.putLux(LMIC_f2uflt16(data[2] / pow(2.0, 24)));
+                        b.putLux(data[0]);
+                        b.putLux(data[1]);
+                        b.putLux(data[2]);
 
                         flag |= FlagsSensorPort2::FlagLight;
                         }
