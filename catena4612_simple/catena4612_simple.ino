@@ -52,7 +52,8 @@ using namespace Mcci_Ltr_329als;
 |
 \****************************************************************************/
 
-constexpr uint8_t kUplinkPort = 2;
+constexpr uint8_t kUplinkPortV1 = 2;
+constexpr uint8_t kUplinkPortV2 = 4;
 
 enum class FlagsSensorPort2 : uint8_t
         {
@@ -171,7 +172,7 @@ static constexpr const char *filebasename(const char *s)
 |
 \****************************************************************************/
 
-static const char sVersion[] = "0.5.0";
+static const char sVersion[] = "0.5.1";
 
 /****************************************************************************\
 |
@@ -505,7 +506,12 @@ bool setup_flash(void)
 
 void setup_uplink(void)
         {
-        LMIC_setClockError(1*65536/100);
+#if defined(_mcci_arduino_version) && _mcci_arduino_version >= _mcci_arduino_version_calc(2,4,0,90) && \
+    defined(CATENA_ARDUINO_PLATFORM_VERSION_CALC) && CATENA_ARDUINO_PLATFORM_VERSION >= CATENA_ARDUINO_PLATFORM_VERSION_CALC(0,17,0,10)
+        LMIC_setClockError(5*65536/100);
+#else
+        LMIC_setClockError(10*65536/100);
+#endif
 
         /* figure out when to reboot */
         gRebootMs = (CATCFG_T_REBOOT + os_getRndU2() - 32768) * 1000;
@@ -820,6 +826,12 @@ void startSendingUplink(void)
                 gCatena.SafePrintf("requesting confirmed tx\n");
                 fConfirmed = true;
                 }
+
+        uint8_t kUplinkPort;
+        if (!isVersion2())
+                kUplinkPort = kUplinkPortV1;
+        else
+                kUplinkPort = kUplinkPortV2;
 
         gLoRaWAN.SendBuffer(b.getbase(), b.getn(), sendBufferDoneCb, NULL, fConfirmed, kUplinkPort);
         }
