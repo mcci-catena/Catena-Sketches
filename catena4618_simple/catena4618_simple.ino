@@ -53,7 +53,8 @@ using namespace Mcci_Ltr_329als;
 |
 \****************************************************************************/
 
-constexpr uint8_t kUplinkPort = 3;
+constexpr uint8_t kUplinkPortV1 = 3;
+constexpr uint8_t kUplinkPortV2 = 6;
 
 enum class FlagsSensorPort3 : uint8_t
         {
@@ -124,7 +125,7 @@ static Arduino_LoRaWAN::ReceivePortBufferCbFn receiveMessage;
 |
 \****************************************************************************/
 
-static const char sVersion[] = "0.2.0";
+static const char sVersion[] = "0.2.1";
 
 /****************************************************************************\
 |
@@ -641,6 +642,12 @@ void startSendingUplink(void)
                 fConfirmed = true;
                 }
 
+        uint8_t kUplinkPort;
+        if (!isVersion2())
+                kUplinkPort = kUplinkPortV1;
+        else
+                kUplinkPort = kUplinkPortV2;
+
         gLoRaWAN.SendBuffer(b.getbase(), b.getn(), sendBufferDoneCb, NULL, fConfirmed, kUplinkPort);
         }
 
@@ -1019,7 +1026,7 @@ void printBoardInfo()
 
 bool isVersion2()
     {
-    if (boardRev < 3)
+    if (boardRev < 1)
         return false;
     else
         return true;
