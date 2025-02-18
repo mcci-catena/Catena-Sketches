@@ -10,7 +10,7 @@ Copyright and License:
     See accompanying LICENSE file at https://github.com/mcci-catena/MCCI-Catena-PMS7003/
 
 Author:
-    Terry Moore, MCCI Corporation   July 2019
+    Pranau Ravi Kumar, MCCI Corporation   February 2025
 
 */
 
@@ -283,3 +283,12 @@ function Decoder(bytes, port) {
     // at this point, decoded has the real values.
     return decoded;
 }
+
+// TTN V3 decoder
+function decodeUplink(tInput)
+    {
+    var decoded = Decoder(tInput.bytes, tInput.fPort);
+    var result = {};
+    result.data = decoded;
+    return result;
+    }
