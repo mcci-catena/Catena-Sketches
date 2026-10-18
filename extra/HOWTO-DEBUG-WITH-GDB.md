@@ -51,12 +51,14 @@ Attach an ST-LINK-2 to the SWD pins of the 46xx using jumpers.
    | 46xx Pin  |  46xx Label   | ST-Link Pin | Color
    |:---------:|:-------------:|:-----------:|----------
    |   JP1-15  |    `+VDD`     |      1      |  Red
-   |   JP1-13  |     `GND`     |      3      |  Black
+   |   JP1-13  |     `GND`     |      4      |  Black
    |   JP2-9   |  `D6 SWDIO`   |      7      |  Brown
    |   JP2-8   |  `D9 SWDCLK`  |      9      |  Orange
    |   JP1-16  |    `nRST`     |     15      |  Yellow
 
-   Note that these are almost linear; only 9 and 7 on the ST-Link are swapped.
+   ST-LINK/V2 pin 3 is TRST, not ground. Connect GND to pin 4 (or any even-numbered pin);
+   ST requires at least one of them (UM1075 Rev 10, Table 4). Grounding pin 3 as well is
+   optional: ST recommends it for noise on the ribbon.
 
    Catena 4610 pinout for reference:
 
