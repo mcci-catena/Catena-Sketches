@@ -180,7 +180,7 @@ Catena 4801 uses ST-Link V2 programmer for programming the firmware. Below is th
 Catena 4801 (JP1) | ST-Link
 ----------------- | -------
 +VDD | Pin 1
-GND | Pin 3
+GND | Pin 4 (any even-numbered pin; pin 3 is TRST, UM1075 Table 4)
 SWCLK | Pin 9
 SWDIO | Pin 7
 nRST | Pin 15
